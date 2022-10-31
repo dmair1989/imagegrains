@@ -1,11 +1,14 @@
-from dataclasses import dataclass
-import os
-import numpy as np
+import os,pickle
 from cellpose import io
 from tqdm import tqdm
 from glob import glob
 from natsort import natsorted
+from skimage.measure import label
+
+from cellpose import metrics
 from cellpose import models
+
+from GrainSizing import measure
 
 class prediction_helper:
     
@@ -123,20 +126,40 @@ class prediction_helper:
                     all_results[str(mID)+'_'+str(d_idx)]=dataset_res
         return(all_results)
 
-    def images_from_split_data(IMG_DIR):
-        img_list=[]
-        #try if train, test directory exist
-            #get files from there
-        #else: get files from IMG_DIR
-        #filter for png, tif, jpg
-        #remove imgs with _mask, _masks, _flows strings
-        return(img_list)
+
+class eval_helper:
+
+    def loader():
+        #args: paths
+        #kwargs: 
+        #get img, label, pred for 1 image
+        return()
+
+    def eval_image(y_true,y_pred,threshold):
+        ap, tp, fp, fn = metrics.average_precision_(label(y_true),label(y_pred),threshold)
+        iout, preds = metrics.mask_ious(label(y_true),label(y_pred))
+        #j_score = jaccard_score(y_true, y_pred,average="macro")
+        #f1 = f1_score(y_true,y_pred,average="macro")
+        return(ap, tp, fp, fn, iout, preds)
     
-    def labels_from_split_data(LBL_DIR):
-        lbl_list = []
-        #try if train, test directory exist
-            #get files from there
-        #else: get files from IMG_DIR
-        #filter for png, tif, jpg
-        #remove entries that have not _mask, _masks strings
-        return(lbl_list)
+    def eval_set(imgs,lbls,preds,export='export.pkl',thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9],filters=[],filter_props=[],eval_results = {}):
+        # add kwargs: TAR_DIR,verbose,filters,properties,return results, save results
+        # add   
+        for i in range(len(imgs)):
+            #load images, masks and predictions
+            img = io.imread(imgs[i])
+            y_true = io.imread(lbls[i])
+            y_pred = io.imread(preds[i])
+
+            if filters:
+                _, y_true = measure.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
+                _, y_pred = measure.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
+            #do evaluation
+            #print('Assessing ',imgs[i])
+            ap,_,_,_,iout,_ =  eval_helper.eval_image(y_true,y_pred,thresholds)
+
+            eval_results[i] = {'img':img, 'ap':ap, 'iout':iout,}
+        #dump results
+        with open(str(export), 'wb') as f:
+            pickle.dump(eval_results, f)
+        return(eval_results)
