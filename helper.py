@@ -1,12 +1,14 @@
+import os
 import numpy as np
 from cellpose import io
 from tqdm import tqdm
 from glob import glob
 from natsort import natsorted
+from cellpose import models
 
 class cellpose_helper:
 
-    def predict_folder(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',return_results=False,save_masks=True):
+    def predict_folder(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',return_results=False,save_masks=True,mask_l=[],flow_l=[],styles_l=[],ID_l=[]):
         """ Do predictions on all images with `image_format` extension in a folder. 
         If `return_results` is `True` respective lists of 1D arrays for predicted *masks*, *flows* and *styles* 
         from `CellposeModel.eval()` are returned (see https://cellpose.readthedocs.io/en/latest/api.html#id5).
@@ -16,7 +18,7 @@ class cellpose_helper:
         IND_DIR: Directory path (str)
         model: Trained model from 'models.CellposeModel' class. 
             Use either `models.CellposeModel(model_type='')` for built-in cellpose models or 
-            `models.CellposeModel(pretrained:model='') for custom models.
+            `models.CellposeModel(pretrained_model='') for custom models.
             See https://cellpose.readthedocs.io/en/latest/models.html for more details
         image_fromat (str(optional, default 'jpg'))
         return_results (bool(optional, default False))
@@ -48,26 +50,52 @@ class cellpose_helper:
         """
         try:
             Z = sorted(glob(INP_DIR+'/*.'+image_format))
-            print('Predicting masks for files in',INP_DIR,'...')
-            if return_results == True:
-                mask_l,flow_l,styles_l,ID_l = [],[],[],[]
+            print('Predicting masks for files in',INP_DIR,'...')                
             for j in tqdm(range(len(Z)),unit='image',colour='CYAN'):
                 img= io.imread(Z[j])
-                masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels,min_size=-1) 
                 ID = Z[0].split('\\')[len(Z[0].split('\\'))-1].split('.')[0]
-                if save_masks == True:
-                    io.imsave(TAR_DIR+ID+'_pred.tif',masks)
-                if return_results == True:
-                    mask_l.append(masks),flow_l.append(flows),styles_l.append(styles),ID_l.append(ID)
-                break
+                if any(x in 'ID' for x in ['flows', 'masks','mask',]):
+                    print('')
+                else:
+                    masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels,min_size=-1) 
+                    if save_masks == False and return_results == False:
+                        print('Saving and returning of results weres switched of - therefore mask saving was turned on!')
+                        save_masks = True
+                    if save_masks == True:
+                        io.imsave(TAR_DIR+ID+'_pred.tif',masks)
+                    if return_results == True:
+                        mask_l.append(masks),flow_l.append(flows),styles_l.append(styles),ID_l.append(ID)
             print('Sucessfully created predictions for',j+1,'images.')
         except KeyboardInterrupt:
             print('Aborted.')
         if return_results == True:
             return(mask_l,flow_l,styles_l,ID_l)
+
+    def predict_split_data(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',return_results=False,save_masks=True):
+        dirs = next(os.walk(INP_DIR))[1]
+        if 'train' in dirs:
+            W_DIR = INP_DIR+'/train'
+            mask_l,flow_l,styles_l,ID_l = cellpose_helper.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
+            min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks)
+        if 'test' in dirs:       
+            W_DIR = INP_DIR+'/test'
+            if not mask_l:
+                mask_l=[],flow_l=[],styles_l=[],ID_l=[]
+            mask_l,flow_l,styles_l,ID_l = cellpose_helper.predict_folder(W_DIR,model,image_format=image_format,channels=channels,
+            diameter=diameter,min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks,
+            mask_l=mask_l,flow_l=flow_l,styles_l=styles_l,ID_l=ID_l)
+        else:
+            print('No "train" and/or "test" directory found - trying to find images in given directory.')
+            mask_l,flow_l,styles_l,ID_l = cellpose_helper.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
+            min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks)
+        return(mask_l,flow_l,styles_l,ID_l)
     
     def models_from_zoo(MOD_DIR):
         model_list = natsorted(glob(MOD_DIR+'*.*'))
+        try:
+            models.CellposeModel(pretrained_model=model_list[0])
+        except:
+            print('No cellpose model found in this directory.')
         return(model_list)
 
     def images_from_split_data(IMG_DIR):
