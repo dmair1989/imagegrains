@@ -8,7 +8,7 @@ from skimage.measure import label
 from cellpose import metrics
 from cellpose import models
 
-from GrainSizing import measure
+from GrainSizing import measure, filter
 
 class prediction:
     
@@ -162,8 +162,8 @@ class eval:
             y_pred = io.imread(preds[i])
 
             if filters:
-                _, y_true = measure.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
-                _, y_pred = measure.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
+                _, y_true = filter.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
+                _, y_pred = filter.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
             ap,_,_,_,iout,_ =  eval.eval_image(y_true,y_pred, thresholds=thresholds)
 
             eval_results[i] = {'img':img, 'ap':ap, 'iout':iout,}
