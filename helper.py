@@ -8,7 +8,7 @@ from skimage.measure import label
 from cellpose import metrics
 from cellpose import models
 
-from GrainSizing import measure, filter
+from GrainSizing import filter
 
 class prediction:
     
@@ -176,3 +176,8 @@ class eval:
                 pickle.dump(eval_results, f)
         if return_results == True:
             return(eval_results)
+
+    def load_eval_res(name,PATH=''):
+        with open(PATH +'/'+ name +'.pkl', 'rb') as f:
+            eval_results = pickle.load(f)
+        return(eval_results)

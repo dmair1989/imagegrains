@@ -4,7 +4,7 @@ from skimage.measure import label
 from skimage.segmentation import mark_boundaries 
 from skimage.color import label2rgb
 
-from GrainSizing import measure, filter
+from GrainSizing import measure
 
 class segmentation:
 
@@ -56,6 +56,41 @@ class segmentation:
         plt.ylabel('Average precision (AP)')
         plt.xlabel('IoU threshold')
         plt.title(title)
+        plt.legend()
+        plt.tight_layout()
+        return(fig)
+    
+    def AP_IoU_summary_plot(eval_results_list,elements,thresholds=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):    
+        fig = plt.figure(figsize=(3, 5),dpi=450)
+        for ds in range(len(eval_results_list)):
+            res_l= [[] for x in range(len(thresholds))]
+            for i  in range(len(eval_results_list[ds])):
+                for j in range(len(thresholds)):
+                    o = eval_results_list[ds][i]['ap'][j]
+                    res_l[j].append(o)
+            avg_l,std_ul,std_ll =[],[],[]
+            for m in range(len(res_l)):
+                avg_l.append(np.mean(res_l[m]))
+                std_ul.append(np.mean(res_l[m])+np.std(res_l[m]))
+                std_ll.append(np.mean(res_l[m])-np.std(res_l[m]))
+            if not elements['colors']:
+                cmap = plt.cm.get_cmap('tab20', len(elements['model_ID']))
+                elements['colors'] = [cmap(x) for x in range(len(elements['model_ID']))]
+            if elements['images']==True:
+                for i  in range(len(eval_results_list[ds])):
+                    if i ==0:
+                        plt.plot(thresholds,eval_results_list[ds][i]['ap'],'k',alpha=.1,label='Single image')
+                    else:
+                        plt.plot(thresholds,eval_results_list[ds][i]['ap'],color=elements['colors'][ds],alpha=.5)
+            if elements['SD']==True:
+                plt.fill_between(thresholds,std_ul,std_ll,color=elements['colors'][ds],alpha=0.2)
+            if elements['avg_model']==True:
+                plt.plot(thresholds,avg_l,color=elements['colors'][ds],lw=2,label=str(elements['model_ID'][ds]))
+        plt.xlim(0.5,.9)
+        plt.ylim(0,1)
+        plt.title(str(elements['dataset']))
+        plt.ylabel('Average precision (AP)')
+        plt.xlabel('IoU threshold')
         plt.legend()
         plt.tight_layout()
         return(fig)

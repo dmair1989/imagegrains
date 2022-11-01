@@ -10,18 +10,53 @@ from skimage.measure import label, find_contours, regionprops_table, regionprops
 
 class measure:
 
+    def measure_grains_in_mask(masks,filters={'edge':[True,.05],'px_cutoff':[False,10]},mute=True,OT=.5,
+    properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid']):
+
+        masks,num = label(masks,return_num=True)
+        if mute==False:
+            print(str(num)+' grains found')
+        if filters:
+            res_, masks = filter.filter_grains(labels=masks,properties=properties,filters=filters,mask=masks)
+            if mute==False:
+                print(str(len(res_))+' grains after filtering')
+        props = regionprops(masks)
+        props_df = pd.DataFrame(regionprops_table(masks,properties=properties))
+        if mute==False:
+            print('Measuring...')
+        a_list,b_list,a_coords,b_coords = measure.fit_grain_axes(props,OT=OT,mute=mute)
+        fit_res = [a_list,b_list,a_coords,b_coords]
+        if mute==False:
+            print('Data compiled.')
+        _,props_df = measure.compile_ax_stats(masks,fit_res=fit_res)
+        #some data cleaning
+        try:
+            props_df.rename(columns = {
+                'minor_axis_length':'ell: b-axis (px)',
+                'major_axis_length':'ell: a-axis (px)',
+                'centroid-0': 'centerpoint y',
+                'centroid-1': 'centerpoint x',
+                'local_centroid-0':'local centerpoint y',
+                'local_centroid-1':'local centerpoint x',
+                'bbox-0': 'bbox y1',
+                'bbox-1': 'bbox x1',
+                'bbox-2': 'bbox y2',
+                'bbox-3': 'bbox x2'
+                }, inplace = True)
+        except:
+            print('Modified DataFrame structure - check results.')
+        return(props_df)
+
     def compile_ax_stats(grains,props=[],fit_res=[],do_fit=False,fit_method='convex_hull',padding_size=2,
-            export_results=True,properties=[
-                'label','area','orientation','minor_axis_length',
-                'major_axis_length','centroid','local_centroid','bbox'
-                ]):
+            export_results=True, mute = False,
+            properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid','bbox']):
         if not props:
             props = measure.find_grains(grains)
         if export_results == True:
             props_df = pd.DataFrame(regionprops_table(label(grains),properties=properties))
         if not fit_res and do_fit == True:
             print('Fitted axes not found: Attempting axes fit for',fit_method,'...')
-            a_list,b_list,a_coords,b_coords = measure.fit_grain_axes(props,method=fit_method,padding_size=padding_size)
+            a_list,b_list,a_coords,b_coords = measure.fit_grain_axes(props,method=fit_method,padding_size=padding_size,mute=mute)
         if fit_res:
             a_list,b_list,a_coords,b_coords = fit_res[0],fit_res[1],fit_res[2],fit_res[3]
         else:
