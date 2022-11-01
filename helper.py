@@ -10,7 +10,7 @@ from cellpose import models
 
 from GrainSizing import measure
 
-class prediction_helper:
+class prediction:
     
     def predict_folder(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',return_results=False,save_masks=True,mask_l=[],flow_l=[],styles_l=[],ID_l=[],img_l=[]):
         """ Do predictions on all images with `image_format` extension in a folder. 
@@ -54,22 +54,27 @@ class prediction_helper:
         """
         try:
             Z = sorted(glob(INP_DIR+'/*.'+image_format))
-            print('Predicting masks for files in',INP_DIR,'...')                
+            print('Predicting masks for files in',INP_DIR,'...')
+            count=0                
             for j in tqdm(range(len(Z)),unit='image',colour='CYAN'):
                 img= io.imread(Z[j])
-                ID = Z[0].split('\\')[len(Z[0].split('\\'))-1].split('.')[0]
-                if any(x in 'ID' for x in ['flows', 'masks','mask',]):
-                    print('')
+                ID = Z[j].split('\\')[len(Z[j].split('\\'))-1].split('.')[0]
+                if any(x in ID for x in ['flow','flows','masks','mask']):
+                    continue
                 else:
                     masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels) 
                     if save_masks == False and return_results == False:
                         print('Saving and returning of results weres switched of - therefore mask saving was turned on!')
                         save_masks = True
                     if save_masks == True:
-                        io.imsave(TAR_DIR+ID+'_pred.tif',masks)
+                        if TAR_DIR:
+                            io.imsave(TAR_DIR+'/'+ID+'_pred.tif',masks)
+                        else:
+                            io.imsave(INP_DIR+'/'+ID+'_pred.tif',masks)
                     if return_results == True:
                         mask_l.append(masks),flow_l.append(flows),styles_l.append(styles),ID_l.append(ID)
-            print('Sucessfully created predictions for',j+1,'images.')
+                    count+=1
+            print('Sucessfully created predictions for',count,'images.')
         except KeyboardInterrupt:
             print('Aborted.')
         if return_results == True:
@@ -80,23 +85,23 @@ class prediction_helper:
         dirs = next(os.walk(INP_DIR))[1]
         if 'train' in dirs:
             W_DIR = INP_DIR+'/train'
-            mask_l,flow_l,styles_l,ID_l,img_l = prediction_helper.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
+            mask_l,flow_l,styles_l,ID_l,img_l = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
             min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks)
         if 'test' in dirs:       
             W_DIR = INP_DIR+'/test'
             if not mask_l:
                 mask_l=[],flow_l=[],styles_l=[],ID_l=[],img_l=[]
-            mask_l,flow_l,styles_l,ID_l,img_l = prediction_helper.predict_folder(W_DIR,model,image_format=image_format,channels=channels,
+            mask_l,flow_l,styles_l,ID_l,img_l = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,
             diameter=diameter,min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks,
             mask_l=mask_l,flow_l=flow_l,styles_l=styles_l,ID_l=ID_l,img_l=img_l)
         else:
             print('No "train" and/or "test" directory found - trying to find images in given directory.')
-            mask_l,flow_l,styles_l,ID_l,img_l = prediction_helper.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
+            mask_l,flow_l,styles_l,ID_l,img_l = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
             min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks)
         return(mask_l,flow_l,styles_l,ID_l,img_l)
     
     def models_from_zoo(MOD_DIR):
-        model_list = natsorted(glob(MOD_DIR+'*.*'))
+        model_list = natsorted(glob(MOD_DIR+'/*.*'))
         try:
             models.CellposeModel(pretrained_model=model_list[0])
         except:
@@ -106,7 +111,7 @@ class prediction_helper:
 
     def batch_predict(MOD_DIR,DIR_PATHS,configuration=[],image_format='jpg',channels=[0,0],diameter=None,min_size=15,
     rescale=None,TAR_DIR='',return_results=False,save_masks=True):
-        model_list,M_ID = prediction_helper.models_from_zoo(MOD_DIR)
+        model_list,M_ID = prediction.models_from_zoo(MOD_DIR)
         for m_idx in range(len(model_list)):
             model = models.CellposeModel(pretrained_model=model_list[m_idx])
             mID = M_ID[m_idx]
@@ -118,7 +123,7 @@ class prediction_helper:
             for d_idx in range(len(DIR_PATHS)):
                 if return_results == True:
                     all_results = {}
-                mask_l,flow_l,styles_l,ID_l,img_l = prediction_helper.predict_dataset(DIR_PATHS[d_idx],model,
+                mask_l,flow_l,styles_l,ID_l,img_l = prediction.predict_dataset(DIR_PATHS[d_idx],model,
                 image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,
                 return_results=return_results,save_masks=save_masks)
                 if return_results == True:
@@ -127,26 +132,31 @@ class prediction_helper:
         return(all_results)
 
 
-class eval_helper:
+class eval:
 
-    def loader():
-        #args: paths
-        #kwargs: 
-        #get img, label, pred for 1 image
-        return()
+    def load_from_folders(IM_DIR,LBL_DIR='',PRED_DIR='',image_format='jpg',label_format='tif',pred_format='tif',label_str='',pred_str=''):
+        if LBL_DIR:
+            lbls = glob(LBL_DIR+'/*.'+label_format)
+        else:
+            lbls = glob(LBL_DIR+'/*'+label_str+'*.'+label_format)
+        if PRED_DIR:
+            preds = glob(PRED_DIR+'/*.'+pred_format)
+        else:
+            preds = glob(PRED_DIR+'/*'+pred_str+'*.'+pred_format)
+        imgs = glob(IM_DIR+'/*.'+image_format)
+        return(imgs,lbls,preds)
 
-    def eval_image(y_true,y_pred,threshold):
-        ap, tp, fp, fn = metrics.average_precision_(label(y_true),label(y_pred),threshold)
+    def eval_image(y_true,y_pred,thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):
+        ap, tp, fp, fn = metrics.average_precision_(label(y_true),label(y_pred),threshold=thresholds)
         iout, preds = metrics.mask_ious(label(y_true),label(y_pred))
         #j_score = jaccard_score(y_true, y_pred,average="macro")
         #f1 = f1_score(y_true,y_pred,average="macro")
         return(ap, tp, fp, fn, iout, preds)
     
-    def eval_set(imgs,lbls,preds,export='export.pkl',thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9],filters=[],filter_props=[],eval_results = {}):
-        # add kwargs: TAR_DIR,verbose,filters,properties,return results, save results
-        # add   
+    def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],
+        filters={'edge':[False,.05],'px_cutoff':[False,10]},filter_props=['label','area','centroid','major_axis_length','minor_axis_length'],
+        eval_results={},save_results=True,return_results=True):  
         for i in range(len(imgs)):
-            #load images, masks and predictions
             img = io.imread(imgs[i])
             y_true = io.imread(lbls[i])
             y_pred = io.imread(preds[i])
@@ -154,12 +164,15 @@ class eval_helper:
             if filters:
                 _, y_true = measure.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
                 _, y_pred = measure.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
-            #do evaluation
-            #print('Assessing ',imgs[i])
-            ap,_,_,_,iout,_ =  eval_helper.eval_image(y_true,y_pred,thresholds)
+            ap,_,_,_,iout,_ =  eval.eval_image(y_true,y_pred, thresholds=thresholds)
 
             eval_results[i] = {'img':img, 'ap':ap, 'iout':iout,}
-        #dump results
-        with open(str(export), 'wb') as f:
-            pickle.dump(eval_results, f)
-        return(eval_results)
+        if save_results==True:
+            if TAR_DIR:
+                export = TAR_DIR+'/'+dataID+'_eval_res.pkl'
+            else:
+                export = imgs[0].split('\\')[0]+dataID+'_eval_res.pkl'
+            with open(str(export), 'wb') as f:
+                pickle.dump(eval_results, f)
+        if return_results == True:
+            return(eval_results)
