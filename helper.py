@@ -136,11 +136,11 @@ class eval:
 
     def load_from_folders(IM_DIR,LBL_DIR='',PRED_DIR='',image_format='jpg',label_format='tif',pred_format='tif',label_str='',pred_str=''):
         if LBL_DIR:
-            lbls = glob(LBL_DIR+'/*.'+label_format)
+            lbls = glob(LBL_DIR+'/*'+label_str+'*.'+label_format)
         else:
             lbls = glob(LBL_DIR+'/*'+label_str+'*.'+label_format)
         if PRED_DIR:
-            preds = glob(PRED_DIR+'/*.'+pred_format)
+            preds = glob(PRED_DIR+'/*'+pred_str+'*.'+pred_format)
         else:
             preds = glob(PRED_DIR+'/*'+pred_str+'*.'+pred_format)
         imgs = glob(IM_DIR+'/*.'+image_format)
