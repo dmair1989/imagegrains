@@ -33,7 +33,7 @@ class measure:
         if return_results ==True:
             return(res_grains,res_props,IDs) 
 
-    def grains_from_masks(masks,filters={},mute=False,OT=.5,
+    def grains_from_masks(masks,filters={},mute=False,OT=.5,fit_method='',
     properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid']):
         masks,num = label(masks,return_num=True)
         if mute==False:
@@ -42,15 +42,18 @@ class measure:
             res_, masks = filter.filter_grains(labels=masks,properties=properties,filters=filters,mask=masks)
             if mute==False:
                 print(str(len(res_))+' grains after filtering')
-        props = regionprops(masks)
+        props = regionprops(label(masks))
         props_df = pd.DataFrame(regionprops_table(masks,properties=properties))
+        if any(x in fit_method for x in ['convex_hull','mask_outline']):
+            if mute== False:
+                print('Fitting axes...')
+            a_list,b_list,a_coords,b_coords = measure.fit_grain_axes(props,method=fit_method,OT=OT,mute=mute)
+            fit_res = [a_list,b_list,a_coords,b_coords]
+            _,props_df = measure.compile_ax_stats(masks,props=props,fit_res=fit_res)
+        else:
+            props_df = props_df
         if mute==False:
-            print('Measuring...')
-        a_list,b_list,a_coords,b_coords = measure.fit_grain_axes(props,OT=OT,mute=mute)
-        fit_res = [a_list,b_list,a_coords,b_coords]
-        if mute==False:
-            print('Data compiled.')
-        _,props_df = measure.compile_ax_stats(masks,fit_res=fit_res)
+            print('GSD compiled.')
         #some data cleaning
         try:
             props_df.rename(columns = {
@@ -73,7 +76,7 @@ class measure:
             export_results=True, mute = False,
             properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid','bbox']):
         if not props:
-            props = measure.find_grains(grains)
+            props = regionprops(label(grains))
         if export_results == True:
             props_df = pd.DataFrame(regionprops_table(label(grains),properties=properties))
         if not fit_res == True:
@@ -99,16 +102,12 @@ class measure:
             'label','area','orientation','minor_axis_length',
             'major_axis_length','centroid','local_centroid'
             ]):
-        props = measure.find_grains(masks)
+        props = measure.regionprops(label(masks))
         if export_results == True:
             props_df = pd.DataFrame(regionprops_table(label(masks),properties=properties))
             return(props, props_df)
         else:
             return(props)
-
-    def find_grains(masks):
-        props = regionprops(label(masks))
-        return(props)
 
     def fit_grain_axes(props,method='convex_hull',padding=True,padding_size=2,OT=.05,c_threshold=.5,mute=False):
         """
