@@ -1,18 +1,40 @@
-
 import itertools 
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance
 import cv2 as cv
+from skimage import io
 from skimage.measure import label, find_contours, regionprops_table, regionprops
-
+from natsort import natsorted
+from glob import glob
 
 
 class measure:
 
-    def measure_grains_in_mask(masks,filters={'edge':[True,.05],'px_cutoff':[False,10]},mute=True,OT=.5,
-    properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid']):
+    def grains_in_dataset(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters={},mute=False,OT=.5,
+    properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],
+    return_results=False,save_results=True,res_grains = [],res_props = [],IDs=[]):
+        X = natsorted(glob(INP_DIR+'/*'+mask_str+'*.'+mask_format))
+        for i in range(len(X)):
+            ID = X[i].split('\\')[len(X[i].split('\\'))-1].split('.')[0]
+            masks = label(io.imread(X[i]))
+            if filters:
+                _,masks = filter.filter_grains(labels=masks,properties=properties,filters=filters,mask=masks,mute=mute)
+            props_df,props = measure.grains_from_masks(masks,filters=filters,OT=OT,mute=mute,properties=properties)
+            if mute == False:
+                print(ID,': grains found.')
+            if save_results == True:
+                try:
+                    props_df.to_csv(TAR_DIR+'/'+str(ID)+'_grains.csv')
+                except:
+                    props_df.to_csv(INP_DIR+'/'+str(ID)+'_grains.csv')
+            if return_results ==True:
+                res_grains.append(props_df),res_props.append(props),IDs.append(ID)
+        if return_results ==True:
+            return(res_grains,res_props,IDs) 
 
+    def grains_from_masks(masks,filters={},mute=False,OT=.5,
+    properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid']):
         masks,num = label(masks,return_num=True)
         if mute==False:
             print(str(num)+' grains found')
@@ -45,20 +67,20 @@ class measure:
                 }, inplace = True)
         except:
             print('Modified DataFrame structure - check results.')
-        return(props_df)
+        return(props_df,props)
 
-    def compile_ax_stats(grains,props=[],fit_res=[],do_fit=False,fit_method='convex_hull',padding_size=2,
+    def compile_ax_stats(grains,props=[],fit_res=[],fit_method='convex_hull',padding_size=2, OT=.5,
             export_results=True, mute = False,
             properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid','bbox']):
         if not props:
             props = measure.find_grains(grains)
         if export_results == True:
             props_df = pd.DataFrame(regionprops_table(label(grains),properties=properties))
-        if not fit_res and do_fit == True:
+        if not fit_res == True:
             print('Fitted axes not found: Attempting axes fit for',fit_method,'...')
-            a_list,b_list,a_coords,b_coords = measure.fit_grain_axes(props,method=fit_method,padding_size=padding_size,mute=mute)
-        if fit_res:
-            a_list,b_list,a_coords,b_coords = fit_res[0],fit_res[1],fit_res[2],fit_res[3]
+            a_list,b_list,a_coords,b_coords = measure.fit_grain_axes(props,method=fit_method,padding_size=padding_size,OT=OT,mute=mute)
+        elif fit_res:
+                a_list,b_list,a_coords,b_coords = fit_res[0],fit_res[1],fit_res[2],fit_res[3]
         else:
             print('error')
         if fit_method == 'mask_outline':
