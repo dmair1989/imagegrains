@@ -3,20 +3,10 @@ import numpy as np
 from scipy import interpolate as interp
 from scipy import stats
 
-print('All libraries OK')
-
-## -----------------------------------
-##       Grain Size Distribution: Binomial & normally approx. uncertainty
-## -----------------------------------
-# partially from:
-# https://github.com/UP-RS-ESP/PebbleCounts-Application
-# https://doi.org/10.5194/esurf-7-789-2019
-# https://stats.stackexchange.com/questions/99829/how-to-obtain-a-confidence-interval-for-a-percentile/284970#284970
-
 class binom:
     """
     -----------------------------------
-    Grain Size Distribution: Binomial & normally approx. uncertainty
+    Grain Size Distribution: Binomial & normal approx. for percentile uncertainty
     -----------------------------------
     
     partially from:
@@ -83,20 +73,35 @@ class binom:
         p_l, p_u = lu_approx[0]/n, lu_approx[1]/n
         return(p_l, p_u)
 
-## -----------------------------------
-##       Grain Size Distributions: Bootstrapping/Monte Carlo uncertainty
-## -----------------------------------
-class randomize:
+class random:
+    """
+    -----------------------------------
+    Grain Size Distributions: Bootstrapping/Monte Carlo modeling for percentile uncertainty
+    -----------------------------------
+    """
+    def with_bootstrapping(gsd,n=10000,CI_bounds=[2.5,97.5]):
+        rand = np.random.choice(gsd, (len(gsd), n))
+        gsd_list, med_list, upper_CI, lower_CI = [],[],[],[]
+        for p in range(0,100,1):
+            perc_dist = np.percentile(rand, p, axis=0)
+            perc_dist.sort()
+            lower, upper = np.percentile(perc_dist, CI_bounds)
+            med = np.percentile(perc_dist, 50)
+            inp = np.percentile(gsd,p)
+            gsd_list.append(inp), med_list.append(med), upper_CI.append(upper), lower_CI.append(lower)
+        return(med_list, upper_CI, lower_CI, gsd_list)
 
-    def randomize_gsd(b_axes,scale_err,length_err,method='truncnorm',n=1000,cutoff='0'):
+    def MC_with_length_scale(gsd,scale_err,length_err,method='truncnorm',n=1000,cutoff='0',mute=False):
         t = time.time()
-        b_axes = np.delete(b_axes, np.where(b_axes <= cutoff))
+        gsd = np.delete(gsd, np.where(gsd <= cutoff))
         res_list = []
                       
         for count in range(0,n,1):
-            if count == 0: print('Simulating %s curves'% str(n),'with %s grains each...' %round(len(b_axes)))
+            if count == 0: 
+                if mute == False:
+                    print('Simulating %s curves'% str(n),'with %s grains each...' %round(len(gsd)))
             # randomize profile
-            rand_p = np.random.choice(b_axes,len(b_axes))
+            rand_p = np.random.choice(gsd,len(gsd))
             # fit lognorm distribution to randomized profile                               
             shape,lo_c,s_cale = stats.lognorm.fit(rand_p)      
             rand_p_new = ([])                                                      
@@ -115,7 +120,7 @@ class randomize:
                     if method == 'lognorm':
                         """random length error with stats.lognorm"""
                         # draw b-axis from fitted lognorm
-                        rand_gi = stats.lognorm.rvs(s=shape,lo_c=cutoff,scale=s_cale)
+                        rand_gi = stats.lognorm.rvs(s=shape,loc=lo_c,scale=s_cale)
                         # uncertainty funtion
                         rand_length_err = stats.norm.rvs(loc = 0, scale = length_err)
                         rand_g = (rand_gi + rand_length_err) * rand_scale_err
@@ -124,17 +129,19 @@ class randomize:
         elapsed = time.time() - t
         return(count, elapsed, res_list)
 
-    def randomize_gsd_with_sfm_err_SI(b_axes,n,cutoff,method,avg_res,alt,alt_std,point_prec_z,point_prec_std,dom_amp):
+    def MC_with_sfm_err_SI(gsd,n,cutoff,method,avg_res,alt,alt_std,point_prec_z,point_prec_std,dom_amp,mute=False):
         t = time.time()
-        b_axes = np.delete(b_axes, np.where(b_axes <= cutoff))
+        gsd = np.delete(gsd, np.where(gsd <= cutoff))
         res_list = []
         for count in range(0,n,1):
-            if count == 0: print('Simulating %s curves'% str(n),'with %s grains each...' %round(len(b_axes)))
-            rand_p = np.random.choice(b_axes,len(b_axes))                                          
+            if count == 0: 
+                if mute == False:
+                    print('Simulating %s curves'% str(n),'with %s grains each...' %round(len(gsd)))
+            rand_p = np.random.choice(gsd,len(gsd))                                          
             rand_p_new = ([])
 
             # fit lognorm distribution to randomized profile                               
-            shape,loc,s_cale = stats.lognorm.fit(rand_p)
+            shape,lo_c,s_cale = stats.lognorm.fit(rand_p)
             
             for g in rand_p:
                 # taking the diagonal of 2 px as max error; d = std, b-axis_sim = mean
@@ -166,7 +173,7 @@ class randomize:
                     if method == 'lognorm':
                         """random length error with stats.lognorm"""
                         # fit lognorm to input
-                        rand_gi = stats.lognorm.rvs(s=shape,loc=cutoff,scale=s_cale)
+                        rand_gi = stats.lognorm.rvs(s=shape,loc=lo_c,scale=s_cale)
                         # uncertainty funtion
                         rand_length_err = stats.norm.rvs(loc = 0, scale = length_std)
                         rand_g = (rand_gi + rand_length_err) * rand_scale_err
@@ -175,26 +182,28 @@ class randomize:
             """Edge handling"""
             ## Only useful when fitting lognorm distributions (uncomment to use)
             ## filtering values above some maximum threshold
-            # rand_p_new = np.delete(rand_p_new,np.where(rand_p_new > 1.5*np.max(b_axes)))                                     
+            # rand_p_new = np.delete(rand_p_new,np.where(rand_p_new > 1.5*np.max(gsd)))                                     
             ## filtering values below cutoff threshold
             # rand_p_new = np.delete(rand_p_new,np.where(rand_p_new<cutoff-length_std))
             res_list.append(rand_p_new)
         elapsed = time.time() - t
-        print('...successfully completed in',np.round(elapsed/60,decimals=1),'minutes.')
+        if mute == False:
+            print('...successfully completed in',np.round(elapsed/60,decimals=1),'minutes.')
         return(res_list)
 
-    def randomize_gsd_with_sfm_err_OM(b_axes,n,cutoff,method,avg_res,om_res,alt,alt_std,point_prec_z,point_prec_std,dom_amp,px_err,px_rms):
+    def MC_with_sfm_err_OM(gsd,n,cutoff,method,avg_res,om_res,alt,alt_std,point_prec_z,point_prec_std,dom_amp,px_err,px_rms,mute=False):
         t = time.time()
-        b_axes = np.delete(b_axes, np.where(b_axes <= cutoff))
-        count = 0
+        gsd = np.delete(gsd, np.where(gsd <= cutoff))
         res_list = []
-        for ni in range(0,n,1):
-            if count == 0: print('Simulating %s curves'% str(n),'with %s grains each...' %round(len(b_axes)))
-            rand_p = np.random.choice(b_axes,len(b_axes))                                           
+        for count in range(0,n,1):
+            if count == 0:
+                if mute==False:
+                    print('Simulating %s curves'% str(n),'with %s grains each...' %round(len(gsd)))
+            rand_p = np.random.choice(gsd,len(gsd))                                           
             rand_p_new = ([])
 
-            # fit lognorm distribution to randomized profile                               
-            shape,loc,s_cale = stats.lognorm.fit(rand_p)
+            ## fit lognorm distribution to randomized profile                               
+            #shape,loc,s_cale = stats.lognorm.fit(rand_p)
 
             for g in rand_p:
                 # taking the diagonal of 2 px as max error; d = std, b-axis_sim = mean
@@ -253,13 +262,14 @@ class randomize:
             ## filtering values below cutoff threshold
             #rand_p_new = np.delete(rand_p_new,np.where(rand_p_new<cutoff-length_std))
             res_list.append(rand_p_new)
-            count += 1
         elapsed = time.time() - t
-        print('...successfully completed in',np.round(elapsed/60,decimals=1),'minutes.')
+        if mute == False:
+            print('...successfully completed in',np.round(elapsed/60,decimals=1),'minutes.')
         return(res_list)
 
-    def get_MC_percentiles(res_list,gsd,ID,TAR_DIR,save):                                                   
+    def get_MC_percentiles(res_list,gsd,CI_bounds=[2.5,97.5]):                                                   
         # get percentiles in 1% steps (shape = [n[100]])
+        gsd=gsd.sort()
         D_list = []
         for k in range(0,len(res_list),1):
             pc = [np.percentile(res_list[k],pi) for pi in range(0,100,1)]
@@ -270,12 +280,24 @@ class randomize:
         # get estimates for upperCI,lowerCI and median & the percentiles for the input
         gsd_list, med_list, upper_CI, lower_CI = [],[],[],[]
         for j in range(0,len(a),1):
-            lower_CI.append(np.percentile(a[j],2.5))
-            upper_CI.append(np.percentile(a[j],97.5))
+            lower_CI.append(np.percentile(a[j],CI_bounds[0]))
+            upper_CI.append(np.percentile(a[j],CI_bounds[1]))
             med_list.append(np.percentile(a[j],50))
-            gsd_list.append(np.percentile(gsd,j))                                      
+            gsd_list.append(np.percentile(gsd,j))                                                               
+        return(med_list, upper_CI, lower_CI, gsd_list)
+
+class calculate:
+
+    def gsd_uncertainty(gsd,method=''):
+        #do perc_uncert with one of the available methods
+        return()     
         
-        if save == True:
+    def dataset_uncertainty(INP_DIR,TAR_DIR='',method='',save_results=True):
+        gsd = []
+        ID = []
+        med_list, upper_CI, lower_CI, gsd_list = random.do_uncert_for_gsd(gsd,method=method)
+
+        if save_results == True:
             try:
                 os.makedirs(TAR_DIR)    
             except FileExistsError:
@@ -287,5 +309,4 @@ class randomize:
                 fwriter.writerow(upper_CI)
                 fwriter.writerow(lower_CI)
                 f.close()
-                print('Results for',ID,'successfully saved.')                           
-        return(med_list, upper_CI, lower_CI, gsd_list)
+                print('Results for',ID,'successfully saved.')  
