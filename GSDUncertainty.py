@@ -1,7 +1,10 @@
-import os, time, csv
+import os, csv
 import numpy as np
+import pandas as pd
 from scipy import interpolate as interp
 from scipy import stats
+from glob import glob
+from natsort import(natsorted)
 
 class binom:
     """
@@ -79,7 +82,7 @@ class random:
     Grain Size Distributions: Bootstrapping/Monte Carlo modeling for percentile uncertainty
     -----------------------------------
     """
-    def with_bootstrapping(gsd,n=10000,CI_bounds=[2.5,97.5]):
+    def bootstrapping(gsd,n=10000,CI_bounds=[2.5,97.5]):
         rand = np.random.choice(gsd, (len(gsd), n))
         gsd_list, med_list, upper_CI, lower_CI = [],[],[],[]
         for p in range(0,100,1):
@@ -91,15 +94,12 @@ class random:
             gsd_list.append(inp), med_list.append(med), upper_CI.append(upper), lower_CI.append(lower)
         return(med_list, upper_CI, lower_CI, gsd_list)
 
-    def MC_with_length_scale(gsd,scale_err,length_err,method='truncnorm',n=1000,cutoff='0',mute=False):
-        t = time.time()
+    def MC_with_length_scale(gsd,scale_err,length_err,method='truncnorm',n=1000,cutoff=0,mute=False):
         gsd = np.delete(gsd, np.where(gsd <= cutoff))
         res_list = []
-                      
+        if mute == False:
+            print('Simulating %s curves'% str(n),'with %s grains each...' %round(len(gsd)))     
         for count in range(0,n,1):
-            if count == 0: 
-                if mute == False:
-                    print('Simulating %s curves'% str(n),'with %s grains each...' %round(len(gsd)))
             # randomize profile
             rand_p = np.random.choice(gsd,len(gsd))
             # fit lognorm distribution to randomized profile                               
@@ -126,11 +126,15 @@ class random:
                         rand_g = (rand_gi + rand_length_err) * rand_scale_err
                 rand_p_new = np.append(rand_p_new,rand_g)
             res_list.append(rand_p_new)
-        elapsed = time.time() - t
-        return(count, elapsed, res_list)
+        return(res_list)
 
-    def MC_with_sfm_err_SI(gsd,n,cutoff,method,avg_res,alt,alt_std,point_prec_z,point_prec_std,dom_amp,mute=False):
-        t = time.time()
+    def MC_with_sfm_err_SI(gsd,alt,sfm_error,method='truncnorm',avg_res=1,n=1000,cutoff=0,mute=False):
+        try:
+            alt = sfm_error['alt'], alt_std = sfm_error['alt_std'] 
+            point_prec_z = sfm_error['point_prec_z'], point_prec_std = sfm_error['point_prec_std']
+            dom_amp = sfm_error['dom_amp']
+        except:
+            print('Incorrect SfM error input!')
         gsd = np.delete(gsd, np.where(gsd <= cutoff))
         res_list = []
         for count in range(0,n,1):
@@ -171,12 +175,13 @@ class random:
                         rand_g = rand_gi * rand_scale_err
 
                     if method == 'lognorm':
-                        """random length error with stats.lognorm"""
-                        # fit lognorm to input
-                        rand_gi = stats.lognorm.rvs(s=shape,loc=lo_c,scale=s_cale)
-                        # uncertainty funtion
-                        rand_length_err = stats.norm.rvs(loc = 0, scale = length_std)
-                        rand_g = (rand_gi + rand_length_err) * rand_scale_err
+                        print('not implemented yet')
+                        #"""random length error with stats.lognorm"""
+                        ## fit lognorm to input
+                        #rand_gi = stats.lognorm.rvs(s=shape,loc=lo_c,scale=s_cale)
+                        ## uncertainty funtion
+                        #rand_length_err = stats.norm.rvs(loc = 0, scale = length_std)
+                        #rand_g = (rand_gi + rand_length_err) * rand_scale_err
 
                     rand_p_new = np.append(rand_p_new,rand_g)
             """Edge handling"""
@@ -186,13 +191,17 @@ class random:
             ## filtering values below cutoff threshold
             # rand_p_new = np.delete(rand_p_new,np.where(rand_p_new<cutoff-length_std))
             res_list.append(rand_p_new)
-        elapsed = time.time() - t
-        if mute == False:
-            print('...successfully completed in',np.round(elapsed/60,decimals=1),'minutes.')
         return(res_list)
 
-    def MC_with_sfm_err_OM(gsd,n,cutoff,method,avg_res,om_res,alt,alt_std,point_prec_z,point_prec_std,dom_amp,px_err,px_rms,mute=False):
-        t = time.time()
+    def MC_with_sfm_err_OM(gsd,sfm_error,method='truncnorm',avg_res=1,n=1000,cutoff=0,mute=False):
+        try:
+            alt = sfm_error['alt'], alt_std = sfm_error['alt_std'] 
+            point_prec_z = sfm_error['point_prec_z'], point_prec_std = sfm_error['point_prec_std']
+            dom_amp = sfm_error['dom_amp']
+            om_res = sfm_error['om_res']
+            px_err = sfm_error['px_err'], px_rms = sfm_error['px_rms'] 
+        except:
+            print('Incorrect SfM error input!')
         gsd = np.delete(gsd, np.where(gsd <= cutoff))
         res_list = []
         for count in range(0,n,1):
@@ -262,9 +271,6 @@ class random:
             ## filtering values below cutoff threshold
             #rand_p_new = np.delete(rand_p_new,np.where(rand_p_new<cutoff-length_std))
             res_list.append(rand_p_new)
-        elapsed = time.time() - t
-        if mute == False:
-            print('...successfully completed in',np.round(elapsed/60,decimals=1),'minutes.')
         return(res_list)
 
     def get_MC_percentiles(res_list,gsd,CI_bounds=[2.5,97.5]):                                                   
@@ -288,25 +294,54 @@ class random:
 
 class calculate:
 
-    def gsd_uncertainty(gsd,method=''):
+    def uncertainty(gsd,method='bootstrapping',scale_err=[],length_err=[],sfm_error={},n=10000,CI_bounds=[2.5,97.5],
+    MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False):
+        if method == 'bootstrapping':
+            med_list, upper_CI, lower_CI, gsd_list = random.bootstrapping(gsd,n=n,CI_bounds=CI_bounds)
+        elif method == 'MC':
+            res_list = random.MC_with_length_scale(gsd,scale_err,length_err,method=MC_method,n=1000,cutoff=MC_cutoff,mute=mute)
+            med_list, upper_CI, lower_CI, gsd_list = random.get_MC_percentiles(res_list,gsd,CI_bounds=CI_bounds)
+        elif method == 'MC_SfM':
+            if sfm_error['om_res']:
+                res_list = random.MC_with_sfm_err_OM(gsd,sfm_error=sfm_error,method=method,avg_res=avg_res,n=n,cutoff=MC_cutoff,method=MC_method)
+                med_list, upper_CI, lower_CI, gsd_list = random.get_MC_percentiles(res_list,gsd,CI_bounds=CI_bounds)
+            else:
+                res_list = random.MC_with_sfm_err_SI(gsd,sfm_error=sfm_error,method=method,avg_res=avg_res,n=n,cutoff=MC_cutoff,method=MC_method)
+                med_list, upper_CI, lower_CI, gsd_list = random.get_MC_percentiles(res_list,gsd,CI_bounds=CI_bounds)
         #do perc_uncert with one of the available methods
-        return()     
-        
-    def dataset_uncertainty(INP_DIR,TAR_DIR='',method='',save_results=True):
-        gsd = []
-        ID = []
-        med_list, upper_CI, lower_CI, gsd_list = random.do_uncert_for_gsd(gsd,method=method)
+        return(med_list, upper_CI, lower_CI, gsd_list)
 
+    def gsd_uncertainty(gsd=[],ID='',INP_PATH='',sep=',',column_name='ell: b-axis (px)',conv_factor=1,method='bootstrapping',scale_err=[],length_err=[],sfm_error={},n=10000,CI_bounds=[2.5,97.5],
+    MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,TAR_DIR='',return_results=True):
+        if not gsd:
+            df = pd.read_csv(INP_PATH , sep=sep) 
+            gsd = np.sort(df[column_name].to_numpy())*conv_factor
+            ID = INP_PATH.split('\\')[len(INP_PATH.split('\\'))-1].split('.')[0]
+        med_list, upper_CI, lower_CI, gsd_list = calculate.uncertainty(gsd,method=method,scale_err=scale_err,length_err=length_err,
+        sfm_error=sfm_error,n=n,CI_bounds=CI_bounds,MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res,mute=mute)
         if save_results == True:
             try:
                 os.makedirs(TAR_DIR)    
-            except FileExistsError:
-                print(TAR_DIR,  " already exists")
-            with open(TAR_DIR + '/' + ID + '_MC_perc_uncertainties.txt', 'w') as f:
+            except:
+                print()
+            with open(TAR_DIR + '/' + ID + '_perc_uncert.txt', 'w') as f:
                 fwriter = csv.writer(f,delimiter=';')
                 fwriter.writerow(gsd_list)
                 fwriter.writerow(med_list)
                 fwriter.writerow(upper_CI)
                 fwriter.writerow(lower_CI)
                 f.close()
-                print('Results for',ID,'successfully saved.')  
+                if mute == False:
+                    print('Results for',ID,'successfully saved.') 
+        if return_results == True:
+            return(med_list, upper_CI, lower_CI, gsd_list, ID)     
+        
+    def dataset_uncertainty(INP_DIR,grain_str='_grains',sep=',',column_name='ell: b-axis (px)',conv_factor=1,method='bootstrapping',scale_err=[],length_err=[],sfm_error={},n=10000,CI_bounds=[2.5,97.5],
+    MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=True,TAR_DIR='',return_results=False,res_dict={}):
+        gsds = natsorted(glob(INP_DIR+'/*'+grain_str+'*.csv'))
+        for gsd in gsds:
+            med_list, upper_CI, lower_CI, gsd_list, ID = calculate.gsd_uncertainty(INP_PATH=gsd,sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err,length_err=length_err,
+            sfm_error=sfm_error,n=n,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res,mute=mute,save_results=save_results,TAR_DIR=TAR_DIR,return_results=True)
+            if return_results==True:
+                res_dict[ID]=[med_list, upper_CI, lower_CI, gsd_list]
+        return(res_dict)
