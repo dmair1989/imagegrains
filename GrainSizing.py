@@ -13,14 +13,18 @@ class measure:
 
     def grains_in_dataset(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters={},mute=False,OT=.5,
     properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],
-    return_results=False,save_results=True,res_grains = [],res_props = [],IDs=[]):
+    return_results=False,save_results=True,res_grains = [],res_props = [],IDs=[],image_res=[]):
         X = natsorted(glob(INP_DIR+'/*'+mask_str+'*.'+mask_format))
         for i in range(len(X)):
             ID = X[i].split('\\')[len(X[i].split('\\'))-1].split('.')[0]
             masks = label(io.imread(X[i]))
+            if image_res:
+                image_res_i=image_res[i]
+            else:
+                image_res_i = []
             if filters:
                 _,masks = filter.filter_grains(labels=masks,properties=properties,filters=filters,mask=masks,mute=mute)
-            props_df,props = measure.grains_from_masks(masks,filters=filters,OT=OT,mute=mute,properties=properties)
+            props_df,props = measure.grains_from_masks(masks,filters=filters,OT=OT,mute=mute,properties=properties,image_res=image_res_i)
             if mute == False:
                 print(ID,': grains found.')
             if save_results == True:
@@ -33,7 +37,7 @@ class measure:
         if return_results ==True:
             return(res_grains,res_props,IDs) 
 
-    def grains_from_masks(masks,filters={},mute=False,OT=.5,fit_method='',
+    def grains_from_masks(masks,filters={},mute=False,OT=.5,fit_method='',image_res=[],
     properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid']):
         masks,num = label(masks,return_num=True)
         if mute==False:
@@ -52,6 +56,15 @@ class measure:
             _,props_df = measure.compile_ax_stats(masks,props=props,fit_res=fit_res)
         else:
             props_df = props_df
+        if image_res:
+            props_df['ell: b-axis (mm)']=props_df['minor_axis_length']*image_res
+            props_df['ell: a-axis (mm)']=props_df['major_axis_length']*image_res
+            if props_df['mask outline: b axis (px)']:
+                props_df['mask outline: b axis (mm)'] = props_df['mask outline: b axis (px)']*image_res
+                props_df['mask outline: a axis (mm)'] = props_df['mask outline: a axis (px)']*image_res
+            if props_df['convex hull: b axis (px)']:
+                props_df['convex hull: b axis (mm)'] = props_df['convex hull: b axis (px)']*image_res
+                props_df['convex hull: a axis (mm)'] = props_df['convex hull: a axis (px)']*image_res
         if mute==False:
             print('GSD compiled.')
         #some data cleaning
@@ -261,3 +274,13 @@ class filter:
         if a-b !=0:
             print(a-b,' entries dropped')
         return(gsd)
+    
+class scale:
+
+    def calculate_camera_res(focal_length_mm, height_m, sensorH_mm, sensorW_mm, pixelsH, pixelsW):
+        fovH_m = (sensorH_mm/focal_length_mm)*height_m
+        fovW_m = (sensorW_mm/focal_length_mm)*height_m
+        #print("\nFoV: {:0.4f} by {:0.4f} m\n".format(fovH_m, fovW_m))
+        X_res, Y_res = np.round(fovH_m*1000/pixelsH, 4), np.round(fovW_m*1000/pixelsW, 4)
+        average_res = np.round(np.mean([X_res, Y_res]), 4)
+        return(average_res)

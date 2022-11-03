@@ -317,6 +317,8 @@ class calculate:
             df = pd.read_csv(INP_PATH , sep=sep) 
             gsd = np.sort(df[column_name].to_numpy())*conv_factor
             ID = INP_PATH.split('\\')[len(INP_PATH.split('\\'))-1].split('.')[0]
+        if not avg_res:
+            avg_res=1
         med_list, upper_CI, lower_CI, gsd_list = calculate.uncertainty(gsd,method=method,scale_err=scale_err,length_err=length_err,
         sfm_error=sfm_error,n=n,CI_bounds=CI_bounds,MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res,mute=mute)
         if save_results == True:
@@ -337,11 +339,27 @@ class calculate:
             return(med_list, upper_CI, lower_CI, gsd_list, ID)     
         
     def dataset_uncertainty(INP_DIR,grain_str='_grains',sep=',',column_name='ell: b-axis (px)',conv_factor=1,method='bootstrapping',scale_err=[],length_err=[],sfm_error={},n=10000,CI_bounds=[2.5,97.5],
-    MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=True,TAR_DIR='',return_results=False,res_dict={}):
+    MC_method='truncnorm',MC_cutoff=0,avg_res=[],mute=False,save_results=True,TAR_DIR='',return_results=False,res_dict={}):
         gsds = natsorted(glob(INP_DIR+'/*'+grain_str+'*.csv'))
-        for gsd in gsds:
-            med_list, upper_CI, lower_CI, gsd_list, ID = calculate.gsd_uncertainty(INP_PATH=gsd,sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err,length_err=length_err,
-            sfm_error=sfm_error,n=n,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res,mute=mute,save_results=save_results,TAR_DIR=TAR_DIR,return_results=True)
+        for i in range(len(gsds)):
+            if scale_err: 
+                scale_err_i=scale_err[i]
+            else:
+                scale_err_i = []
+            if length_err: 
+                length_err_i=length_err[i]
+            else:
+                length_err_i = []
+            if sfm_error:
+                sfm_error_i = sfm_error[i]
+            else:
+                sfm_error_i = {}
+            if avg_res:
+                avg_res_i = avg_res[i]
+            else:
+                avg_res_i = []
+            med_list, upper_CI, lower_CI, gsd_list, ID = calculate.gsd_uncertainty(INP_PATH=gsds[i],sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
+            sfm_error=sfm_error_i,n=n,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,TAR_DIR=TAR_DIR,return_results=True)
             if return_results==True:
                 res_dict[ID]=[med_list, upper_CI, lower_CI, gsd_list]
         return(res_dict)
