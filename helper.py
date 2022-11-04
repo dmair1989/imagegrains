@@ -12,7 +12,8 @@ from GrainSizing import filter
 
 class prediction:
     
-    def predict_folder(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',return_results=False,save_masks=True,mask_l=[],flow_l=[],styles_l=[],ID_l=[],img_l=[]):
+    def predict_folder(INP_DIR,model,image_format='jpg',filter_str='',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',
+    return_results=False,save_masks=True,mute=False,mask_l=[],flow_l=[],styles_l=[],ID_l=[],img_l=[]):
         """ Do predictions on all images with `image_format` extension in a folder. 
         If `return_results` is `True` respective lists of 1D arrays for predicted *masks*, *flows* and *styles* 
         from `CellposeModel.eval()` are returned (see https://cellpose.readthedocs.io/en/latest/api.html#id5).
@@ -25,6 +26,7 @@ class prediction:
             `models.CellposeModel(pretrained_model='') for custom models.
             See https://cellpose.readthedocs.io/en/latest/models.html for more details
         image_format (str(optional, default 'jpg'))
+        filter_str (str(optional, default ''))
         return_results (bool(optional, default False))
         TAR_DIR (str(optional, default '')) - output directory
         save_masks (bool(optional, default True)) - flag for saving predicted mask as `.tif` files in `TAR_DIR`
@@ -53,8 +55,9 @@ class prediction:
 
         """
         try:
-            Z = sorted(glob(INP_DIR+'/*.'+image_format))
-            print('Predicting masks for files in',INP_DIR,'...')
+            Z = sorted(glob(INP_DIR+'/*'+filter_str+'*.'+image_format))
+            if mute== False:
+                print('Predicting masks for files in',INP_DIR,'...')
             count=0                
             for j in tqdm(range(len(Z)),unit='image',colour='CYAN'):
                 img= io.imread(Z[j])
@@ -74,30 +77,34 @@ class prediction:
                     if return_results == True:
                         mask_l.append(masks),flow_l.append(flows),styles_l.append(styles),ID_l.append(ID)
                     count+=1
-            print('Sucessfully created predictions for',count,'images.')
+            if mute== False:
+                print('Sucessfully created predictions for',count,'images.')
         except KeyboardInterrupt:
             print('Aborted.')
         if return_results == True:
             img_l = Z
             return(mask_l,flow_l,styles_l,ID_l,img_l)
 
-    def predict_dataset(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',return_results=False,save_masks=True):
+    def predict_dataset(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',
+    return_results=False,save_masks=True,mute=False,do_subfolders=False):
         dirs = next(os.walk(INP_DIR))[1]
-        if 'train' in dirs:
-            W_DIR = INP_DIR+'/train'
-            mask_l,flow_l,styles_l,ID_l,img_l = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
-            min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks)
-        if 'test' in dirs:       
-            W_DIR = INP_DIR+'/test'
-            if not mask_l:
-                mask_l=[],flow_l=[],styles_l=[],ID_l=[],img_l=[]
-            mask_l,flow_l,styles_l,ID_l,img_l = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,
-            diameter=diameter,min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks,
-            mask_l=mask_l,flow_l=flow_l,styles_l=styles_l,ID_l=ID_l,img_l=img_l)
-        else:
-            print('No "train" and/or "test" directory found - trying to find images in given directory.')
-            mask_l,flow_l,styles_l,ID_l,img_l = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
-            min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks)
+        for dir in dirs:
+            if 'train' in dir:
+                W_DIR = INP_DIR+'/'+str(dir)
+            elif 'test' in dir:
+                W_DIR = INP_DIR+'/'+str(dir)
+            elif do_subfolders == True:
+                W_DIR = INP_DIR+'/'+str(dir)
+            else:
+                W_DIR = INP_DIR
+        mask_l=[],flow_l=[],styles_l=[],ID_l=[],img_l=[]
+        mask_l_i,flow_l_i,styles_l_i,ID_l_i,img_l_i = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
+            min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks,mute=mute)
+        mask_l.append(mask_l_i)
+        flow_l.append(flow_l_i)
+        styles_l.append(styles_l_i)
+        ID_l.append(ID_l_i)
+        img_l.append(img_l_i)
         return(mask_l,flow_l,styles_l,ID_l,img_l)
     
     def models_from_zoo(MOD_DIR):
@@ -110,22 +117,24 @@ class prediction:
         return(model_list,M_ID)
 
     def batch_predict(MOD_DIR,DIR_PATHS,configuration=[],image_format='jpg',channels=[0,0],diameter=None,min_size=15,
-    rescale=None,TAR_DIR='',return_results=False,save_masks=True):
+    rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfolders=False):
         model_list,M_ID = prediction.models_from_zoo(MOD_DIR)
         for m_idx in range(len(model_list)):
             model = models.CellposeModel(pretrained_model=model_list[m_idx])
             mID = M_ID[m_idx]
-            print(mID,'found...')
+            if mute == False:
+                print(mID,'found...')
             if configuration[m_idx]:
                 for key,val in configuration[m_idx].items():
                     exec(key + '=val')
-                print('... with custom configuration.')
+                if mute == False:
+                    print('... with custom configuration.')
             for d_idx in range(len(DIR_PATHS)):
                 if return_results == True:
                     all_results = {}
                 mask_l,flow_l,styles_l,ID_l,img_l = prediction.predict_dataset(DIR_PATHS[d_idx],model,
                 image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,
-                return_results=return_results,save_masks=save_masks)
+                return_results=return_results,save_masks=save_masks,mute=mute,do_subfolders=do_subfolders)
                 if return_results == True:
                     dataset_res = {'masks':mask_l,'flows':flow_l,'styles':styles_l,'id':ID_l,'images':img_l}
                     all_results[str(mID)+'_'+str(d_idx)]=dataset_res
@@ -138,12 +147,14 @@ class eval:
         if LBL_DIR:
             lbls = glob(LBL_DIR+'/*'+label_str+'*.'+label_format)
         else:
-            lbls = glob(LBL_DIR+'/*'+label_str+'*.'+label_format)
+            lbls = glob(IM_DIR+'/*'+label_str+'*.'+label_format)
         if PRED_DIR:
             preds = glob(PRED_DIR+'/*'+pred_str+'*.'+pred_format)
         else:
-            preds = glob(PRED_DIR+'/*'+pred_str+'*.'+pred_format)
+            preds = glob(IM_DIR+'/*'+pred_str+'*.'+pred_format)
         imgs = glob(IM_DIR+'/*.'+image_format)
+        if not any(imgs,lbls,preds):
+            print('Could not load images and/or masks.')
         return(imgs,lbls,preds)
 
     def eval_image(y_true,y_pred,thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):
