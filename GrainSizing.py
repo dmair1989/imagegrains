@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import distance
 import cv2 as cv
+from tqdm import tqdm
 from skimage import io
 from skimage.measure import label, find_contours, regionprops_table, regionprops
 from natsort import natsorted
@@ -12,10 +13,10 @@ from glob import glob
 class measure:
 
     def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters={},mute=False,OT=.5,
-    properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],
+    properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
     return_results=False,save_results=True,do_subfolders=False):
         dirs = next(os.walk(INP_DIR))[1]
-        res_grains,res_props,IDs = [],[],[]
+        res_grains_l,res_props_l,IDs_l = [],[],[]
         for dir in dirs:
             if 'train' in dir:
                 W_DIR = INP_DIR+'/'+str(dir)
@@ -26,44 +27,42 @@ class measure:
             else:
                 W_DIR = INP_DIR
             res_grains_i,res_props_i,IDs_i= measure.grains_in_dataset(W_DIR,mask_format=mask_format,mask_str=mask_str,
-            TAR_DIR=TAR_DIR,filters=filters,mute=mute,OT=OT,properties=properties,
+            TAR_DIR=TAR_DIR,filters=filters,mute=mute,OT=OT,properties=properties,fit_method=fit_method,
             return_results=return_results,save_results=save_results)
-            res_grains.append(res_grains_i)
-            res_props.append(res_props_i)
-            IDs.append(IDs_i)
-        return(res_grains,res_props,IDs)
+            if return_results==True:
+                for x in range(len(res_grains_i)):
+                    res_grains_l.append(res_grains_i[x])
+                    res_props_l.append(res_props_i[x])
+                    IDs_l.append(IDs_i[x])
+        return(res_grains_l,res_props_l,IDs_l)
 
     def grains_in_dataset(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters={},mute=False,OT=.5,
-    properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],
-    return_results=False,save_results=True,res_grains = [],res_props = [],IDs=[],image_res=[]):
+    properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
+    return_results=False,save_results=True,image_res=[]):
         X = natsorted(glob(INP_DIR+'/*'+mask_str+'*.'+mask_format))
-        for i in range(len(X)):
+        res_grains,res_props,IDs = [],[],[]
+        for i in tqdm(range(len(X)),desc=str(INP_DIR),unit='file',colour='MAGENTA',position=0,leave=True):
             ID = X[i].split('\\')[len(X[i].split('\\'))-1].split('.')[0]
             masks = label(io.imread(X[i]))
             if image_res:
                 image_res_i=image_res[i]
             else:
                 image_res_i = []
-            if filters:
-                _,masks = filter.filter_grains(labels=masks,properties=properties,filters=filters,mask=masks,mute=mute)
-            props_df,props = measure.grains_from_masks(masks,filters=filters,OT=OT,mute=mute,properties=properties,image_res=image_res_i)
-            if mute == False:
-                print(ID,': grains found.')
+            props_df,props = measure.grains_from_masks(masks,filters=filters,OT=OT,mute=mute,properties=properties,ID=ID,image_res=image_res_i,fit_method=fit_method)
             if save_results == True:
-                try:
+                if TAR_DIR:
                     props_df.to_csv(TAR_DIR+'/'+str(ID)+'_grains.csv')
-                except:
+                else:
                     props_df.to_csv(INP_DIR+'/'+str(ID)+'_grains.csv')
             if return_results ==True:
                 res_grains.append(props_df),res_props.append(props),IDs.append(ID)
-        if return_results ==True:
-            return(res_grains,res_props,IDs) 
+        return(res_grains,res_props,IDs) 
 
-    def grains_from_masks(masks,filters={},mute=False,OT=.5,fit_method='',image_res=[],
+    def grains_from_masks(masks,filters={},mute=False,OT=.5,fit_method='',image_res=[],ID='',
     properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid']):
         masks,num = label(masks,return_num=True)
         if mute==False:
-            print(str(num)+' grains found')
+            print(ID,':',str(num),' grains found')
         if filters:
             res_, masks = filter.filter_grains(labels=masks,properties=properties,filters=filters,mask=masks)
             if mute==False:
@@ -114,7 +113,7 @@ class measure:
             props = regionprops(label(grains))
         if export_results == True:
             props_df = pd.DataFrame(regionprops_table(label(grains),properties=properties))
-        if not fit_res == True:
+        if not fit_method:
             print('Fitted axes not found: Attempting axes fit for',fit_method,'...')
             a_list,b_list,a_coords,b_coords = measure.fit_grain_axes(props,method=fit_method,padding_size=padding_size,OT=OT,mute=mute)
         elif fit_res:

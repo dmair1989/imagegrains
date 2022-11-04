@@ -13,7 +13,7 @@ from GrainSizing import filter
 class prediction:
     
     def predict_folder(INP_DIR,model,image_format='jpg',filter_str='',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',
-    return_results=False,save_masks=True,mute=False,mID='',mask_l=[],flow_l=[],styles_l=[],ID_l=[],img_l=[]):
+    return_results=False,save_masks=True,mute=False,mID=''):
         """ Do predictions on all images with `image_format` extension in a folder. 
         If `return_results` is `True` respective lists of 1D arrays for predicted *masks*, *flows* and *styles* 
         from `CellposeModel.eval()` are returned (see https://cellpose.readthedocs.io/en/latest/api.html#id5).
@@ -54,12 +54,13 @@ class prediction:
             style vector summarizing each image, also used to estimate size of objects in image
 
         """
+        mask_l,flow_l,styles_l,ID_l,img_l = [],[],[],[],[]
         try:
             Z = natsorted(glob(INP_DIR+'/*'+filter_str+'*.'+image_format))
             if mute== False:
                 print('Predicting for ',INP_DIR,'...')
             count=0                
-            for j in tqdm(range(len(Z)), unit='image',colour='CYAN'):
+            for j in tqdm(range(len(Z)), desc=INP_DIR,unit='image',colour='CYAN'):
                 img= io.imread(Z[j])
                 ID = Z[j].split('\\')[len(Z[j].split('\\'))-1].split('.')[0]
                 if any(x in ID for x in ['flow','flows','masks','mask']):
@@ -75,8 +76,11 @@ class prediction:
                         else:
                             io.imsave(INP_DIR+'/'+ID+mID+'_pred.tif',masks)
                     if return_results == True:
-                        mask_l.append(masks),flow_l.append(flows),styles_l.append(styles),ID_l.append(ID)
-                        img_l = Z
+                        mask_l.append(masks)
+                        flow_l.append(flows)
+                        styles_l.append(styles)
+                        ID_l.append(ID)
+                        img_l = [Z[x] for x in range(len(Z))]
                     count+=1
             if mute== False:
                 print('Sucessfully created predictions for',count,'image(s).')
@@ -86,7 +90,7 @@ class prediction:
 
     def predict_dataset(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',
     return_results=False,save_masks=True,mute=False,do_subfolders=False,mID=''):
-        mask_l,flow_l,styles_l,ID_l,img_l=[],[],[],[],[]
+        mask_ll,flow_ll,styles_ll,ID_ll,=[],[],[],[]
         dirs = next(os.walk(INP_DIR))[1]
         for dir in dirs:
             if dir=='train':
@@ -97,14 +101,15 @@ class prediction:
                 W_DIR = INP_DIR+'/'+str(dir)+'/'
             else:
                 W_DIR = INP_DIR
-            mask_l_i,flow_l_i,styles_l_i,ID_l_i,img_l_i = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
+            mask_l_i,flow_l_i,styles_l_i,ID_l_i,_ = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
             min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks,mute=mute,mID=mID)
-            mask_l.append(mask_l_i)
-            flow_l.append(flow_l_i)
-            styles_l.append(styles_l_i)
-            ID_l.append(ID_l_i)
-            img_l.append(img_l_i)
-        return(mask_l,flow_l,styles_l,ID_l,img_l)
+            if return_results==True:
+                for x in range(len(mask_l_i)):
+                    mask_ll.append(mask_l_i[x])
+                    flow_ll.append(flow_l_i[x])
+                    styles_ll.append(styles_l_i[x])
+                    ID_ll.append(ID_l_i[x])
+        return(mask_ll,flow_ll,styles_ll,ID_ll)
     
     def models_from_zoo(MOD_DIR):
         model_list = natsorted(glob(MOD_DIR+'/*.*'))
@@ -132,11 +137,11 @@ class prediction:
                 except AttributeError:
                    pass 
             for d_idx in range(len(DIR_PATHS)):
-                mask_l,flow_l,styles_l,ID_l,img_l = prediction.predict_dataset(DIR_PATHS[d_idx],model,
+                all_mask,all_flow_l,all_styles_l,all_ID_l = prediction.predict_dataset(DIR_PATHS[d_idx],model,
                 image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,
                 return_results=return_results,save_masks=save_masks,mute=mute,do_subfolders=do_subfolders,mID=mID)
                 if return_results == True:
-                    dataset_res = {'masks':mask_l,'flows':flow_l,'styles':styles_l,'id':ID_l,'images':img_l}
+                    dataset_res = {'masks':all_mask,'flows':all_flow_l,'styles':all_styles_l,'id':all_ID_l}
                     all_results[str(mID)+'_'+str(d_idx)]=dataset_res
         return(all_results)
 

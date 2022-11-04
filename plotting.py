@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage.measure import label
+from skimage.measure import label, regionprops
 from skimage.segmentation import mark_boundaries 
 from skimage.color import label2rgb
 
@@ -100,14 +100,14 @@ class grains:
     def all_grains_plot(masks,elements,props=[], image =[], 
                         fit_res =[],fit_method ='convex_hull',do_fit= False,
                         padding_size=2,figsize=(10,10)):
-        fig = plt.figure(figsize=figsize)
+        #fig = plt.figure(figsize=figsize)
         if 'image' in elements and image.any:
             plt.imshow(image)
         if 'masks_individual' in elements:
             plt.imshow(label2rgb(label(masks), bg_label=0),alpha=0.3)
         if not props:
             print('No regionprops found: Finding grains...')
-            props = measure.find_grains(masks)
+            props = regionprops(label(masks))
         if not fit_res and do_fit == True:
             print('Fitted axes not found: Attempting axes fit for',fit_method,'...')
             _,_,a_coords,b_coords = measure.fit_grain_axes(props,method=fit_method,padding_size=padding_size)
@@ -160,7 +160,7 @@ class grains:
                 by = (miny, miny, maxy, maxy, miny)
                 plt.plot(bx, by, '-r', linewidth=1,label='bbox')
         plt.axis('off')
-        return(fig)
+        return()
 
     def single_grain_plot(mask,elements,props=[], image =[], fit_res =[],
                             fit_method ='convex_hull',do_fit= False,
@@ -168,7 +168,7 @@ class grains:
         fig = plt.figure(figsize=figsize)
         if not props:
             print('No regionprops found: Finding grains...')
-            props = measure.find_grains(mask)
+            props = regionprops(label(grains))(mask)
         miny, minx, maxy, maxx = props[0].bbox
         if 'image' in elements and image.any:
             plt.imshow(image,extent=[minx,maxx,maxy,miny])
