@@ -303,10 +303,10 @@ class calculate:
             med_list, upper_CI, lower_CI, gsd_list = random.get_MC_percentiles(res_list,gsd,CI_bounds=CI_bounds)
         elif method == 'MC_SfM':
             if sfm_error['om_res']:
-                res_list = random.MC_with_sfm_err_OM(gsd,sfm_error=sfm_error,method=method,avg_res=avg_res,n=n,cutoff=MC_cutoff,method=MC_method)
+                res_list = random.MC_with_sfm_err_OM(gsd,sfm_error=sfm_error,avg_res=avg_res,n=n,cutoff=MC_cutoff,method=MC_method)
                 med_list, upper_CI, lower_CI, gsd_list = random.get_MC_percentiles(res_list,gsd,CI_bounds=CI_bounds)
             else:
-                res_list = random.MC_with_sfm_err_SI(gsd,sfm_error=sfm_error,method=method,avg_res=avg_res,n=n,cutoff=MC_cutoff,method=MC_method)
+                res_list = random.MC_with_sfm_err_SI(gsd,sfm_error=sfm_error,avg_res=avg_res,n=n,cutoff=MC_cutoff,method=MC_method)
                 med_list, upper_CI, lower_CI, gsd_list = random.get_MC_percentiles(res_list,gsd,CI_bounds=CI_bounds)
         #do perc_uncert with one of the available methods
         return(med_list, upper_CI, lower_CI, gsd_list)

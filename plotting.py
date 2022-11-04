@@ -32,7 +32,7 @@ class segmentation:
      plt.axis('off')
      return(fig)
     
-    def AP_IoU_plot(eval_results,thresholds=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9],title=''):    
+    def AP_IoU_plot(eval_results,thresholds=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],title=''):    
         res_l= [[] for x in range(len(thresholds))]
         for i  in range(len(eval_results)):
             for j in range(len(thresholds)):
@@ -51,7 +51,7 @@ class segmentation:
             else:
                 plt.plot(thresholds,eval_results[i]['ap'],'k',alpha=.5)
         plt.plot(thresholds,avg_l,'r',lw=2,label='Dataset mean')
-        plt.xlim(0.5,.9)
+        plt.xlim(np.min(thresholds),np.max(thresholds))
         plt.ylim(0,1)
         plt.ylabel('Average precision (AP)')
         plt.xlabel('IoU threshold')
@@ -61,7 +61,7 @@ class segmentation:
         return(fig)
     
     def AP_IoU_summary_plot(eval_results_list,elements,thresholds=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):    
-        fig = plt.figure(figsize=(3, 5),dpi=450)
+        fig = plt.figure(figsize=(3, 5))
         for ds in range(len(eval_results_list)):
             res_l= [[] for x in range(len(thresholds))]
             for i  in range(len(eval_results_list[ds])):
@@ -86,7 +86,7 @@ class segmentation:
                 plt.fill_between(thresholds,std_ul,std_ll,color=elements['colors'][ds],alpha=0.2)
             if elements['avg_model']==True:
                 plt.plot(thresholds,avg_l,color=elements['colors'][ds],lw=2,label=str(elements['model_ID'][ds]))
-        plt.xlim(0.5,.9)
+        plt.xlim(np.min(thresholds),np.max(thresholds))
         plt.ylim(0,1)
         plt.title(str(elements['dataset']))
         plt.ylabel('Average precision (AP)')

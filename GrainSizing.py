@@ -1,4 +1,4 @@
-import itertools 
+import itertools, os
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance
@@ -10,6 +10,28 @@ from glob import glob
 
 
 class measure:
+
+    def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters={},mute=False,OT=.5,
+    properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],
+    return_results=False,save_results=True,do_subfolders=False):
+        dirs = next(os.walk(INP_DIR))[1]
+        res_grains,res_props,IDs = [],[],[]
+        for dir in dirs:
+            if 'train' in dir:
+                W_DIR = INP_DIR+'/'+str(dir)
+            elif 'test' in dir:
+                W_DIR = INP_DIR+'/'+str(dir)
+            elif do_subfolders == True:
+                W_DIR = INP_DIR+'/'+str(dir)
+            else:
+                W_DIR = INP_DIR
+            res_grains_i,res_props_i,IDs_i= measure.grains_in_dataset(W_DIR,mask_format=mask_format,mask_str=mask_str,
+            TAR_DIR=TAR_DIR,filters=filters,mute=mute,OT=OT,properties=properties,
+            return_results=return_results,save_results=save_results)
+            res_grains.append(res_grains_i)
+            res_props.append(res_props_i)
+            IDs.append(IDs_i)
+        return(res_grains,res_props,IDs)
 
     def grains_in_dataset(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters={},mute=False,OT=.5,
     properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],
