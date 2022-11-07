@@ -298,6 +298,95 @@ class filter:
     
 class scale:
 
+    def re_scale_dataset(DIR,resolution=[],camera_parameters= [],gsd_format='csv',gsd_str='grains',return_results=False,save_gsds=True,TAR_DIR=''):
+        gsds = scale.load_grain_set(DIR,gsd_format=gsd_format,gsd_str=gsd_str)
+        rescaled_l = []
+        for i in range(len(gsds)):
+            try:
+                df = pd.read_csv(gsds[i],index_col='Unnamed: 0')
+            except:
+                df = pd.read_csv(gsds[i])
+            if len(resolution)> 1:
+                resolution_i = resolution[i]
+            else:
+                resolution_i = resolution[0]
+            if camera_parameters:
+                camera_parameters_i=camera_parameters[i]
+            else:
+                camera_parameters_i = []
+            rescaled_df = scale.scale_grains(df,resolution=resolution_i,camera_parameters=camera_parameters_i,GSD_DIR=gsds[i],return_results=return_results,save_gsds=save_gsds,TAR_DIR=TAR_DIR)
+            rescaled_l.append(rescaled_df)
+        return(rescaled_l)
+
+    def load_grain_set(DIR,gsd_format='csv',gsd_str='grains'):
+        dirs = next(os.walk(DIR[0]))[1]
+        G_DIR = []
+        if 'test' in dirs:
+                G_DIR = [str(DIR[0]+'/test/')]
+        if 'train' in dirs:
+                G_DIR += [str(DIR[0]+'/train/')]
+        if not G_DIR:
+            G_DIR = DIR
+        gsds=[]
+        for path in G_DIR:
+            gsds += scale.gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str)
+        return(gsds)
+    
+    def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains'):
+        gsds_raw = natsorted(glob(PATH+'/*'+gsd_str+'*.'+gsd_format))
+        gsds = []
+        for gsd in gsds_raw:
+            if 're_scaled' not in gsd:
+                gsds.append(gsd)
+        if not any(gsds):
+            print('Could not load GSDs.')
+        return(gsds)
+
+    def scale_grains(df,resolution='', ID='', GSD_DIR ='', camera_parameters= {
+        'image_distance_m': [], 
+        'focal_length_mm': [],
+        'sensorH_mm': [],
+        'sensorW_mm': [],
+        'pixelsW':[],
+        'pixelsH':[]},return_results=False,save_gsds=True,TAR_DIR=''):
+        if not ID:
+            ID = GSD_DIR.split('\\')[len(GSD_DIR.split('\\'))-1].split('.')[0]
+            T_DIR = GSD_DIR.split(str(ID))[0]
+
+        if resolution:
+            resolution = resolution
+        elif camera_parameters['image_distance_m']:
+            height_m = camera_parameters['image_distance_m']
+            focal_length_mm = camera_parameters['focal_length_mm']
+            sensorH_mm = camera_parameters['sensorH_mm']
+            sensorW_mm = camera_parameters['sensorW_mm']
+            pixelsW = camera_parameters['pixelsW']
+            pixelsH = camera_parameters['pixelsH']
+            resolution = scale.calculate_camera_res(focal_length_mm, height_m, sensorH_mm, sensorW_mm, pixelsH, pixelsW)
+        try: 
+            df['ell: b-axis (mm)']
+        except:
+            df['ell: a-axis (mm)'] = df['ell: a-axis (px)']*resolution
+            df['ell: b-axis (mm)'] = df['ell: b-axis (px)']*resolution
+        try:
+            df['mask outline: a axis (mm)'] = df['mask outline: a axis (px)']*resolution
+            df['mask outline: b axis (mm)'] = df['mask outline: b axis (px)']*resolution
+        except KeyError:
+            pass
+        try:
+            df['convex hull: a axis (mm)'] = df['convex hull: a axis (px)']*resolution
+            df['convex hull: b axis (mm)'] = df['convex hull: b axis (px)']*resolution
+        except KeyError:
+            pass
+        if save_gsds == True:
+            if TAR_DIR:
+                df.to_csv(TAR_DIR+'/'+str(ID)+'_grains_re_scaled.csv')
+            else:
+                df.to_csv(T_DIR+str(ID)+'_grains_re_scaled.csv')
+        if return_results == False:
+            df = []
+        return(df)
+
     def calculate_camera_res(focal_length_mm, height_m, sensorH_mm, sensorW_mm, pixelsH, pixelsW):
         fovH_m = (sensorH_mm/focal_length_mm)*height_m
         fovW_m = (sensorW_mm/focal_length_mm)*height_m

@@ -149,10 +149,16 @@ class eval:
 
     def dataset_loader(IM_DIRs,image_format='jpg',label_format='tif',pred_format='tif',label_str='',pred_str=''):
         imgs,lbls,preds = [],[],[]
-        if len(IM_DIRs)==1:
-                IM_DIRs = [IM_DIRs[0]+'/test/',IM_DIRs[0]+'/train/']
-        for i in range(len(IM_DIRs)):
-            imgs1,lbls1,preds1 = eval.load_from_folders(IM_DIRs[i],image_format=image_format,label_format=label_format,pred_format=pred_format,label_str=label_str,pred_str=pred_str)
+        dirs = next(os.walk(IM_DIRs[0]))[1]
+        IM_DIR = []
+        if 'test' in dirs:
+                IM_DIR += [str(IM_DIRs[0]+'/test/')]
+        if 'train' in dirs:
+                IM_DIR += [str(IM_DIRs[0]+'/train/')]
+        if not IM_DIR:
+            IM_DIR = IM_DIRs
+        for i in range(len(IM_DIR)):
+            imgs1,lbls1,preds1 = eval.load_from_folders(IM_DIR[i],image_format=image_format,label_format=label_format,pred_format=pred_format,label_str=label_str,pred_str=pred_str)
             imgs += imgs1
             lbls += lbls1
             preds += preds1
