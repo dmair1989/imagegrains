@@ -147,6 +147,17 @@ class prediction:
 
 class eval:
 
+    def dataset_loader(IM_DIRs,image_format='jpg',label_format='tif',pred_format='tif',label_str='',pred_str=''):
+        imgs,lbls,preds = [],[],[]
+        if len(IM_DIRs)==1:
+                IM_DIRs = [IM_DIRs[0]+'/test/',IM_DIRs[0]+'/train/']
+        for i in range(len(IM_DIRs)):
+            imgs1,lbls1,preds1 = eval.load_from_folders(IM_DIRs[i],image_format=image_format,label_format=label_format,pred_format=pred_format,label_str=label_str,pred_str=pred_str)
+            imgs += imgs1
+            lbls += lbls1
+            preds += preds1
+        return(imgs,lbls,preds)
+
     def load_from_folders(IM_DIR,LBL_DIR='',PRED_DIR='',image_format='jpg',label_format='tif',pred_format='tif',label_str='',pred_str=''):
         if LBL_DIR:
             lbls = natsorted(glob(LBL_DIR+'/*'+label_str+'*.'+label_format))

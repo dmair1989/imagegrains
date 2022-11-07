@@ -1,8 +1,10 @@
 import numpy as np
+import cv2 as cv
 import matplotlib.pyplot as plt
 from skimage.measure import label, regionprops
 from skimage.segmentation import mark_boundaries 
 from skimage.color import label2rgb
+from cellpose import io
 
 from GrainSizing import measure
 
@@ -95,14 +97,61 @@ class segmentation:
         plt.tight_layout()
         return(fig)
     
+    def inspect_predictions(imgs,lbls,preds,PATH=''):
+        fig = plt.figure(figsize=(len(imgs)*2,7), dpi=300)
+        for k in range(len(imgs)):
+            img = io.imread(imgs[k])
+            plt.subplot(3,len(imgs),k+1)
+            plt.imshow(img)
+            
+            if k == 0:
+                plt.ylabel('Image')
+            plt.xticks([],[])
+            plt.yticks([],[])
+            plt.tight_layout()
+            
+
+            plt.subplot(3,len(imgs),len(imgs) + k+1)
+            lbl = io.imread(lbls[k])
+            plt.imshow(label2rgb(lbl, image=img, bg_label=0))
+            if k == 0:
+                plt.ylabel('Ground truth')
+            plt.xticks([],[])
+            plt.yticks([],[])
+            plt.tight_layout()
+
+            plt.subplot(3,len(imgs),(len(imgs)*2)+ k+1)
+            prd = io.imread(preds[k])
+            plt.imshow(label2rgb(prd, image=img, bg_label=0))
+            if k == 0:
+                plt.ylabel('Predictions')
+            plt.xticks([],[])
+            plt.yticks([],[])
+            i_ID = imgs[k].split('\\')[len(imgs[k].split('\\'))-1].split('.')[0]
+            plt.xlabel(i_ID)
+            plt.tight_layout()
+        plt.suptitle(str(PATH))
+        return(fig)
+    
 class grains:
+
+    def inspect_dataset_grains(imgs,masks,res_props,elements=['image','mask','ellipse_b','ellipse_a','ellipse']):
+        fig = plt.subplots(figsize=(18,len(masks)*1.3))
+        for k in range(len(masks)):
+            m_ID = masks[k].split('\\')[len(masks[k].split('\\'))-1].split('.')[0]
+            plt.subplot(np.int(np.int(np.round(len(masks)/4))), 4, k+1)
+            grains.all_grains_plot(io.imread(masks[k]),elements,props=res_props[k],image=io.imread(imgs[k]),title=m_ID)
+            plt.tight_layout()
+        return(fig)
 
     def all_grains_plot(masks,elements,props=[], image =[], 
                         fit_res =[],fit_method ='convex_hull',do_fit= False,
-                        padding_size=2,figsize=(10,10)):
-        #fig = plt.figure(figsize=figsize)
+                        padding_size=2,title='',plot_padding=15):
         if 'image' in elements and image.any:
             plt.imshow(image)
+            h,w,_ = image.shape
+            plt.xlim(0-np.int(w/plot_padding),w+np.int(w/plot_padding))
+            plt.ylim(0-np.int(h/plot_padding),h+np.int(h/plot_padding))
         if 'masks_individual' in elements:
             plt.imshow(label2rgb(label(masks), bg_label=0),alpha=0.3)
         if not props:
@@ -159,7 +208,9 @@ class grains:
                 bx = (minx, maxx, maxx, minx, minx)
                 by = (miny, miny, maxy, maxy, miny)
                 plt.plot(bx, by, '-r', linewidth=1,label='bbox')
+        plt.title(title)
         plt.axis('off')
+        plt.tight_layout()
         return()
 
     def single_grain_plot(mask,elements,props=[], image =[], fit_res =[],
@@ -222,7 +273,7 @@ class grains:
             bx = (minx, maxx, maxx, minx, minx)
             by = (miny, miny, maxy, maxy, miny)
             plt.plot(bx, by, '-r', linewidth=2,label='bbox')
-        plt.axis('off')
+        #plt.axis('off')
         return(fig)
 
     def ell_from_props(props,_idx=0):
