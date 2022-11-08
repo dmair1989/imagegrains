@@ -9,7 +9,6 @@ from skimage.measure import label, find_contours, regionprops_table, regionprops
 from natsort import natsorted
 from glob import glob
 
-
 class measure:
 
     def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters={},mute=False,OT=.5,
@@ -299,7 +298,7 @@ class filter:
 class scale:
 
     def re_scale_dataset(DIR,resolution=[],camera_parameters= [],gsd_format='csv',gsd_str='grains',return_results=False,save_gsds=True,TAR_DIR=''):
-        gsds = scale.load_grain_set(DIR,gsd_format=gsd_format,gsd_str=gsd_str)
+        gsds = load.load_grain_set(DIR,gsd_format=gsd_format,gsd_str=gsd_str)
         rescaled_l = []
         for i in range(len(gsds)):
             try:
@@ -317,30 +316,6 @@ class scale:
             rescaled_df = scale.scale_grains(df,resolution=resolution_i,camera_parameters=camera_parameters_i,GSD_DIR=gsds[i],return_results=return_results,save_gsds=save_gsds,TAR_DIR=TAR_DIR)
             rescaled_l.append(rescaled_df)
         return(rescaled_l)
-
-    def load_grain_set(DIR,gsd_format='csv',gsd_str='grains'):
-        dirs = next(os.walk(DIR[0]))[1]
-        G_DIR = []
-        if 'test' in dirs:
-                G_DIR = [str(DIR[0]+'/test/')]
-        if 'train' in dirs:
-                G_DIR += [str(DIR[0]+'/train/')]
-        if not G_DIR:
-            G_DIR = DIR
-        gsds=[]
-        for path in G_DIR:
-            gsds += scale.gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str)
-        return(gsds)
-    
-    def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains'):
-        gsds_raw = natsorted(glob(PATH+'/*'+gsd_str+'*.'+gsd_format))
-        gsds = []
-        for gsd in gsds_raw:
-            if 're_scaled' not in gsd:
-                gsds.append(gsd)
-        if not any(gsds):
-            print('Could not load GSDs.')
-        return(gsds)
 
     def scale_grains(df,resolution='', ID='', GSD_DIR ='', camera_parameters= {
         'image_distance_m': [], 
@@ -394,3 +369,32 @@ class scale:
         X_res, Y_res = np.round(fovH_m*1000/pixelsH, 4), np.round(fovW_m*1000/pixelsW, 4)
         average_res = np.round(np.mean([X_res, Y_res]), 4)
         return(average_res)
+
+class load:
+
+    def load_grain_set(DIR,gsd_format='csv',gsd_str='grains',filter_str='re_scaled'):
+        dirs = next(os.walk(DIR[0]))[1]
+        G_DIR = []
+        if 'test' in dirs:
+                G_DIR = [str(DIR[0]+'/test/')]
+        if 'train' in dirs:
+                G_DIR += [str(DIR[0]+'/train/')]
+        if not G_DIR:
+            G_DIR = DIR
+        gsds=[]
+        for path in G_DIR:
+            gsds += load.gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str,filter_str=filter_str)
+        return(gsds)
+    
+    def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains',filter_str='re_scaled'):
+        gsds_raw = natsorted(glob(PATH+'/*'+gsd_str+'*.'+gsd_format))
+        gsds = []
+        for gsd in gsds_raw:
+            if filter_str== '0':
+                gsds.append(gsd)
+            else:
+                if filter_str not in gsd:
+                    gsds.append(gsd)
+        if not any(gsds):
+            print('Could not load GSDs.')
+        return(gsds)
