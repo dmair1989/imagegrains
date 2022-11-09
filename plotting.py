@@ -292,3 +292,23 @@ class grains:
         x = x0 + a/2 * np.cos(phi) * np.cos(-orientation) - b/2 * np.sin(phi) * np.sin(-orientation)
         y = y0 + a/2 * np.cos(phi) * np.sin(-orientation) + b/2 * np.sin(phi) * np.cos(-orientation)
         return(x0,x1,x2,x3,x4,y0,y1,y2,y3,y4,x,y)
+    
+class uncertainty:
+    
+    def plot_gsd(df,data_ID='',elem='',cix=0):
+        y = np.arange(0.01,1.01,0.01)
+        if 'colors' in elem:
+            colors = elem['colors']
+        else:
+            colors = [plt.cm.get_cmap('tab20')(i) for i in range(20)]
+        if 'input' in elem:
+            plt.plot(df['data'],y, color=colors[cix], label = data_ID)
+        if 'median' in elem:
+            plt.plot(df['med'],y, color=colors[cix], linestyle = 'dashed',label = 'Percentile median')
+        if 'CI_bounds' in elem:
+            plt.plot(df['uci'],y, color=colors[cix+1], alpha=.5 ,label = '95% CI')
+            plt.plot(df['lci'],y, color=colors[cix+1], alpha=.5 )
+        if 'CI_area' in elem:    
+            plt.fill_betweenx(y,df['lci'],df['uci'],color=colors[cix+1],alpha=0.5,label='95% CI')
+        plt.xlim(0)
+        plt.ylim(0.05,1)
