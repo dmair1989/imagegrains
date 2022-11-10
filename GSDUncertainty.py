@@ -6,6 +6,9 @@ from scipy import stats
 from glob import glob
 from natsort import(natsorted)
 from tqdm import tqdm
+import multiprocessing
+from multiprocessing import Pool
+from functools import partial
 
 class binom:
     """
@@ -103,34 +106,36 @@ class random:
         res_list = []
         if mute == False:
             print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))     
-        for count in range(0,num_it,1):
-            # randomize profile
-            rand_p = np.random.choice(gsd,len(gsd))
-            # fit lognorm distribution to randomized profile                               
-            shape,lo_c,s_cale = stats.lognorm.fit(rand_p)      
-            rand_p_new = ([])                                                      
-            for g in rand_p:
-                if length_err==0:
-                    rand_gi = g
-                else:
-                    rand_scale_err = stats.norm.rvs(loc = 1.0, scale = scale_err)
-                    if method == 'truncnorm':
-                        """random length error with stats.truncnorm"""
-                        # truncnorm parameters with cut-off at 'cutoff' and inf 
-                        a_g, b_g = (cutoff - g) / length_err, (np.inf - g) / length_err 
-                        # uncertainty funtion
-                        rand_gi = stats.truncnorm.rvs(a_g, b_g, loc = g, scale = length_err)
-                        rand_g = rand_gi * rand_scale_err
-                    if method == 'lognorm':
-                        """random length error with stats.lognorm"""
-                        # draw b-axis from fitted lognorm
-                        rand_gi = stats.lognorm.rvs(s=shape,loc=lo_c,scale=s_cale)
-                        # uncertainty funtion
-                        rand_length_err = stats.norm.rvs(loc = 0, scale = length_err)
-                        rand_g = (rand_gi + rand_length_err) * rand_scale_err
-                rand_p_new = np.append(rand_p_new,rand_g)
-            res_list.append(rand_p_new)
+        with Pool(processes=multiprocessing.cpu_count()-1) as pool:
+            res_list=pool.map(partial(random.MC_loop, gsd=gsd,length_err=length_err,scale_err=scale_err,method=method,cutoff=cutoff), range(num_it))
         return(res_list)
+    
+    def MC_loop(arg,gsd=[],length_err=0,scale_err=1,method ='truncnorm',cutoff=0):
+        rand_p = np.random.choice(gsd,len(gsd))
+        #shape,lo_c,s_cale = stats.lognorm.fit(rand_p)
+        rand_p_new = ([])
+        for g in rand_p:
+                    if length_err==0:
+                        rand_gi = g
+                    else:
+                        rand_scale_err = stats.norm.rvs(loc = 1.0, scale = scale_err)
+                        if method == 'truncnorm':
+                            """random length error with stats.truncnorm"""
+                            # truncnorm parameters with cut-off at 'cutoff' and inf 
+                            a_g, b_g = (cutoff - g) / length_err, (np.inf - g) / length_err 
+                            # uncertainty funtion
+                            rand_gi = stats.truncnorm.rvs(a_g, b_g, loc = g, scale = length_err)
+                            rand_g = rand_gi * rand_scale_err
+        #                if method == 'lognorm':
+        #                    """random length error with stats.lognorm"""
+        #                    # draw b-axis from fitted lognorm
+        #                    rand_gi = stats.lognorm.rvs(s=shape,loc=lo_c,scale=s_cale)
+        #                    # uncertainty funtion
+        #                    rand_length_err = stats.norm.rvs(loc = 0, scale = length_err)
+        #                   rand_g = (rand_gi + rand_length_err) * rand_scale_err
+                    rand_p_new = np.append(rand_p_new,rand_g)
+        return(rand_p_new)
+
 
     def MC_with_sfm_err_SI(gsd,sfm_error,method='truncnorm',avg_res=1,num_it=1000,cutoff=0,mute=False):
         alt = sfm_error['alt_mean']
@@ -140,61 +145,60 @@ class random:
         dom_amp = sfm_error['dom_amp']
         gsd = np.delete(gsd, np.where(gsd <= cutoff))
         res_list = []
-        for count in range(0,num_it,1):
-            if count == 0: 
-                if mute == False:
-                    print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))
-            rand_p = np.random.choice(gsd,len(gsd))                                          
-            rand_p_new = ([])
+        if mute == False:
+            print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))
+        with Pool(processes=multiprocessing.cpu_count()-1) as pool:
+            res_list=pool.map(partial(random.MC_SfM_SI_loop,gsd=gsd,avg_res=avg_res,alt=alt,alt_std=alt_std,
+            method =method,point_prec_z=point_prec_z,point_prec_std=point_prec_std,dom_amp=dom_amp,cutoff=cutoff), range(num_it))
+        return(res_list)
+
+    def MC_SfM_SI_loop(arg,gsd=[],avg_res=1,alt=5,alt_std=1,method ='truncnorm',point_prec_z=1,
+        point_prec_std=0.5,dom_amp=0.4,cutoff=0):
+        rand_p = np.random.choice(gsd,len(gsd))
+        #shape,lo_c,s_cale = stats.lognorm.fit(rand_p)
+        rand_p_new = ([])
+        rand_p = np.random.choice(gsd,len(gsd))                                      
 
             # fit lognorm distribution to randomized profile                               
-            shape,lo_c,s_cale = stats.lognorm.fit(rand_p)
-            
-            for g in rand_p:
+            #shape,lo_c,s_cale = stats.lognorm.fit(rand_p)
+        for g in rand_p:
                 # taking the diagonal of 2 px as max error; d = std, b-axis_sim = mean
-                length_std = np.sqrt(2)*avg_res
+            length_std = np.sqrt(2)*avg_res
 
-                if length_std ==0:
-                    rand_gi = g
-                else:
-                    #scale_err from SFM uncertainty 
-                    # altitude prec. estimation for image
-                    e1 = stats.norm.rvs(loc=0,scale=alt_std)
+            if length_std ==0:
+                rand_gi = g
+            else:
+                #scale_err from SFM uncertainty 
+                # altitude prec. estimation for image
+                e1 = stats.norm.rvs(loc=0,scale=alt_std)
                     # survey-wide point precision from sparse cloud, see also James et al. 2020: https://doi.org/10.1002/esp.4878
-                    e2 = stats.norm.rvs(loc=0,scale=(point_prec_z + point_prec_std)) 
+                e2 = stats.norm.rvs(loc=0,scale=(point_prec_z + point_prec_std)) 
                     # survey-wide systematic 'doming' error amplitude from GCPs see also James et al. 2020: https://doi.org/10.1002/esp.4878
                     # amp/4 = std
-                    e3 = stats.uniform.rvs(loc=0,scale=(dom_amp/4))
+                e3 = stats.uniform.rvs(loc=0,scale=(dom_amp/4))
                     # random scale error
-                    rand_scale_err = 1 + (e1 + e2 + e3)/alt
+                rand_scale_err = 1 + (e1 + e2 + e3)/alt
                     
-                    if method == 'truncnorm':
-                        # truncnorm parameters with cut-off at 'cutoff' and inf 
-                        a_g, b_g = (cutoff - g) / length_std , (np.inf - g) / length_std 
-                        # uncertainty funtion
-                        rand_gi = stats.truncnorm.rvs(a_g, b_g, loc = g, scale = length_std)
+                if method == 'truncnorm':
+                    # truncnorm parameters with cut-off at 'cutoff' and inf 
+                    a_g, b_g = (cutoff - g) / length_std , (np.inf - g) / length_std 
+                    # uncertainty funtion
+                    rand_gi = stats.truncnorm.rvs(a_g, b_g, loc = g, scale = length_std)
 
-                        # scaling randomizd b-axis_sim with scale_err
-                        rand_g = rand_gi * rand_scale_err
+                    # scaling randomizd b-axis_sim with scale_err
+                    rand_g = rand_gi * rand_scale_err
 
-                    if method == 'lognorm':
-                        print('not implemented yet')
-                        #"""random length error with stats.lognorm"""
-                        ## fit lognorm to input
-                        #rand_gi = stats.lognorm.rvs(s=shape,loc=lo_c,scale=s_cale)
-                        ## uncertainty funtion
-                        #rand_length_err = stats.norm.rvs(loc = 0, scale = length_std)
-                        #rand_g = (rand_gi + rand_length_err) * rand_scale_err
+                if method == 'lognorm':
+                    print('not implemented yet')
+                    #"""random length error with stats.lognorm"""
+                    ## fit lognorm to input
+                    #rand_gi = stats.lognorm.rvs(s=shape,loc=lo_c,scale=s_cale)
+                    ## uncertainty funtion
+                    #rand_length_err = stats.norm.rvs(loc = 0, scale = length_std)
+                    #rand_g = (rand_gi + rand_length_err) * rand_scale_err
 
-                    rand_p_new = np.append(rand_p_new,rand_g)
-            """Edge handling"""
-            ## Only useful when fitting lognorm distributions (uncomment to use)
-            ## filtering values above some maximum threshold
-            # rand_p_new = np.delete(rand_p_new,np.where(rand_p_new > 1.5*np.max(gsd)))                                     
-            ## filtering values below cutoff threshold
-            # rand_p_new = np.delete(rand_p_new,np.where(rand_p_new<cutoff-length_std))
-            res_list.append(rand_p_new)
-        return(res_list)
+                rand_p_new = np.append(rand_p_new,rand_g)
+        return(rand_p_new)
 
     def MC_with_sfm_err_OM(gsd,sfm_error,method='truncnorm',avg_res=1,num_it=1000,cutoff=0,mute=False):
         alt = sfm_error['alt_mean']
@@ -207,74 +211,73 @@ class random:
         px_rms = sfm_error['pix_rms'] 
         gsd = np.delete(gsd, np.where(gsd <= cutoff))
         res_list = []
-        for count in range(0,num_it,1):
-            if count == 0:
-                if mute==False:
-                    print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))
-            rand_p = np.random.choice(gsd,len(gsd))                                           
-            rand_p_new = ([])
+        if mute == False:
+            print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))
+        with Pool(processes=multiprocessing.cpu_count()-1) as pool:
+            res_list=pool.map(partial(random.MC_SfM_OM_loop,gsd=gsd,avg_res=avg_res,alt=alt,alt_std=alt_std,
+            method =method,point_prec_z=point_prec_z,point_prec_std=point_prec_std,dom_amp=dom_amp,
+            cutoff=cutoff,om_res=om_res,px_err=px_err,px_rms=px_rms), range(num_it))
+        return(res_list)
 
-            ## fit lognorm distribution to randomized profile                               
-            #shape,loc,s_cale = stats.lognorm.fit(rand_p)
-
-            for g in rand_p:
-                # taking the diagonal of 2 px as max error; d = std, b-axis_sim = mean
-                length_std = 2*np.sqrt(2)*om_res
-
-                if length_std ==0:
-                    rand_gi = g
+    def MC_SfM_OM_loop(arg,gsd=[],avg_res=1,alt=5,alt_std=1,method ='truncnorm',
+        point_prec_z=1,point_prec_std=0.5,dom_amp=0.4,cutoff=0,om_res=1,px_err=1,px_rms=.5):
+        rand_p = np.random.choice(gsd,len(gsd))                                           
+        rand_p_new = ([])
+        ## fit lognorm distribution to randomized profile                               
+        #shape,loc,s_cale = stats.lognorm.fit(rand_p)
+        for g in rand_p:
+            # taking the diagonal of 2 px as max error; d = std, b-axis_sim = mean
+            length_std = 2*np.sqrt(2)*om_res
+            if length_std ==0:
+                rand_gi = g
+            else:
+                #scale_err from SFM uncertainty 
+                # altitude prec. estimation for image
+                e1 = stats.norm.rvs(loc=0,scale=alt_std)
+                # survey-wide point precision from sparse cloud, see also James et al. 2020
+                if point_prec_z > alt:
+                    e2 = stats.norm.rvs(loc=0,scale=(point_prec_z))
                 else:
-                    #scale_err from SFM uncertainty 
-                    # altitude prec. estimation for image
-                    e1 = stats.norm.rvs(loc=0,scale=alt_std)
-                    # survey-wide point precision from sparse cloud, see also James et al. 2020
-                    if point_prec_z > alt:
-                        e2 = stats.norm.rvs(loc=0,scale=(point_prec_z))
-                    else:
-                        e2 = stats.norm.rvs(loc=0,scale=point_prec_z + point_prec_std) 
-                        # survey-wide systematic 'doming' error amplitude from GCPs see also James et al. 2020
-                    # amp/4 = std
-                    e3 = stats.uniform.rvs(loc=0,scale=(np.absolute(dom_amp/4)))
-                    # random scale error
-                    rand_scale_err = 1 + (e1 + e2 + e3)/alt
-                        
-                    if method == 'truncnorm':
-                        # get shape err from pix uncertainty
-                        a, b = (0 - px_err) / px_rms , (np.inf - px_err) / px_rms
-                        pix_err = stats.truncnorm.rvs(a, b, loc = px_err, scale = px_rms)
-                        shape_err =  avg_res*pix_err
-                        # account for model shape uncertainty with truncnorm
-                        a_g, b_g = (0 - g) / shape_err , (np.inf - g) / shape_err
-                        g1 = stats.truncnorm.rvs(a_g, b_g, loc = g, scale = shape_err)
-                        # scaling with scale_err
-                        g = g1 * rand_scale_err
-                        # truncnorm parameters with cut-off at 'cutoff' and inf 
-                        a_g, b_g = (cutoff - g) / length_std , (np.inf - g) / length_std 
-                        # uncertainty funtion for supersampling
-                        rand_gi = stats.truncnorm.rvs(a_g, b_g, loc = g, scale = length_std)
-                        # missfit error from ellipsoid fit to mask; acceptance criterion >30% misfit;
-                        # 30% taken as 2 sigma of Gaussian --> scale = 0.3/2
-                        rand_g = rand_gi #* stats.norm.rvs(loc=1,scale=0.3)
-
-                    if method == 'lognorm':
-                            print('not implemented yet')
-                            #"""random length error with stats.lognorm"""
-                            ## fit lognorm to input
-                            #rand_gi = stats.lognorm.rvs(s=shape,loc=loc,scale=s_cale)
-                            ## uncertainty funtion
-                            #rand_length_err = stats.norm.rvs(loc = 0, scale = length_std)
-                            ## missfit error from ellipsoid fit to mask; acceptance criterion >30% misfit;
-                            #rand_gi = stats.norm.rvs(loc=rand_gi,scale=0.3)
-                            #rand_g = (rand_gi + rand_length_err) * rand_scale_err
-
-                    rand_p_new = np.append(rand_p_new,rand_g)
+                    e2 = stats.norm.rvs(loc=0,scale=point_prec_z + point_prec_std) 
+                    # survey-wide systematic 'doming' error amplitude from GCPs see also James et al. 2020
+                # amp/4 = std
+                e3 = stats.uniform.rvs(loc=0,scale=(np.absolute(dom_amp/4)))
+                # random scale error
+                rand_scale_err = 1 + (e1 + e2 + e3)/alt   
+                if method == 'truncnorm':
+                    # get shape err from pix uncertainty
+                    a, b = (0 - px_err) / px_rms , (np.inf - px_err) / px_rms
+                    pix_err = stats.truncnorm.rvs(a, b, loc = px_err, scale = px_rms)
+                    shape_err =  avg_res*pix_err
+                    # account for model shape uncertainty with truncnorm
+                    a_g, b_g = (0 - g) / shape_err , (np.inf - g) / shape_err
+                    g1 = stats.truncnorm.rvs(a_g, b_g, loc = g, scale = shape_err)
+                    # scaling with scale_err
+                    g = g1 * rand_scale_err
+                    # truncnorm parameters with cut-off at 'cutoff' and inf 
+                    a_g, b_g = (cutoff - g) / length_std , (np.inf - g) / length_std 
+                    # uncertainty funtion for supersampling
+                    rand_gi = stats.truncnorm.rvs(a_g, b_g, loc = g, scale = length_std)
+                    # missfit error from ellipsoid fit to mask; acceptance criterion >30% misfit;
+                    # 30% taken as 2 sigma of Gaussian --> scale = 0.3/2
+                    rand_g = rand_gi #* stats.norm.rvs(loc=1,scale=0.3)
+                if method == 'lognorm':
+                        print('not implemented yet')
+                        #"""random length error with stats.lognorm"""
+                        ## fit lognorm to input
+                        #rand_gi = stats.lognorm.rvs(s=shape,loc=loc,scale=s_cale)
+                        ## uncertainty funtion
+                        #rand_length_err = stats.norm.rvs(loc = 0, scale = length_std)
+                        ## missfit error from ellipsoid fit to mask; acceptance criterion >30% misfit;
+                        #rand_gi = stats.norm.rvs(loc=rand_gi,scale=0.3)
+                        #rand_g = (rand_gi + rand_length_err) * rand_scale_err
+                rand_p_new = np.append(rand_p_new,rand_g)
             """Edge handling"""
             ## filtering values above some maximum threshold
             #rand_p_new = np.delete(rand_p_new,np.where(rand_p_new > 2*np.max(gsd)))                                     
             ## filtering values below cutoff threshold
             #rand_p_new = np.delete(rand_p_new,np.where(rand_p_new<cutoff-length_std))
-            res_list.append(rand_p_new)
-        return(res_list)
+        return(rand_p_new)
 
     def get_MC_percentiles(res_list,CI_bounds=[2.5,97.5]):                                                   
         # get percentiles in 1% steps (shape = [n[100]])
