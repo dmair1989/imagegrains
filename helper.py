@@ -10,6 +10,58 @@ from cellpose import models
 
 from GrainSizing import filter
 
+class train:
+
+    def load_data(PATH,mask_str='mask',im_str='',im_format='jpg',mask_format='tif'):
+        dirs = next(os.walk(PATH))[1]
+        W_PATH = []
+        if 'test' in dirs:
+            W_PATH = str(PATH+'/test/')
+            test_images = train.load_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
+            test_masks = train.load_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
+        if 'train' in dirs:
+            W_PATH = str(PATH+'/train/')
+            train_images = train.load_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
+            train_masks = train.load_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
+        if not W_PATH:
+            W_PATH = PATH
+            train_images = train.load_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
+            train_masks = train.load_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
+            test_images,test_masks = [],[]
+        return(train_images,train_masks,test_images,test_masks)
+
+    def load_imgs_masks(W_PATH,format='',filter_str=''):
+        ret_list = natsorted(glob(W_PATH+'/*'+filter_str+'*.'+format))
+        return(ret_list)
+    
+    def check_labels(labels,lbl_str='_mask',mask_format='tif'):
+        track_l = []
+        for i in labels:
+            if lbl_str in i:
+                continue
+            else:
+                img= io.imread(i)
+                ID = i.split('\\')[1].split('.')[0]
+                print(ID)
+                #plt.imshow(img)
+                io.imsave(i.split('\\')[0]+'/'+ID+'lbl_str'+'.'+mask_format,img)
+                track_l.append(ID)
+        if len(track_l) == 0:
+            print('No files renamed.')
+        return(track_l)
+
+    def check_im_label_pairs(img_list,lbl_list):
+        error_list=[]
+        for k in img_list:
+            ID = k.split('\\')[len(k.split('\\'))-1].split('.')[0]
+            if any(ID in x for x in lbl_list):
+                continue
+            else:
+                error_list.append(k)
+        if len(error_list)==0:
+            print('All images have labels.')
+        return(error_list)
+
 class prediction:
     
     def predict_folder(INP_DIR,model,image_format='jpg',filter_str='',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',
