@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
@@ -7,6 +8,22 @@ from skimage.color import label2rgb
 from cellpose import io
 
 from GrainSizing import measure
+
+class training:
+
+    def show_training_set(inp_list,mask_str='_mask'):
+        for k,f in enumerate(inp_list):
+            img = io.imread(f)
+            plt.subplot(2,len(inp_list),k+1)
+        
+            plt.imshow(img)
+            plt.axis('off')
+
+            plt.subplot(2,len(inp_list),len(inp_list) + k+1)
+            seg = io.imread(os.path.splitext(f)[0] + mask_str+'.tif')
+            #masks= seg['masks'].squeeze()
+            plt.imshow(seg)
+            plt.axis('off')
 
 class segmentation:
 
