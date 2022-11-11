@@ -1,4 +1,4 @@
-import itertools, os
+import itertools, os, math
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance
@@ -171,6 +171,23 @@ class measure:
         contours = find_contours(grain_img,c_threshold)
         return(contours)
 
+    def get_axes(outline,counter=0,OT=0.05,_idx=0):
+            """"
+            Takes outline as series of X,Y points.
+            """
+            a_ax, a_points = measure.get_a_axis(outline)
+            a_norm = (a_points[1]-a_points[0]) / a_ax
+            b_ax,b_points = measure.iterate_b(outline,a_norm,OT)
+            if b_ax == 0:
+                counter += 1
+            while b_ax == 0:
+                OT = OT+.5
+                b_ax,b_points = measure.iterate_b(outline,a_norm,OT)
+                if b_ax == 0 and OT > 5:
+                    print('! Irregular grain skipped - check shape of grain @index:',_idx)
+                    break
+            return(a_ax, a_points,b_ax,b_points,counter)
+
     def get_a_axis(outline):
         """"
         Takes outline as series of X,Y points
@@ -180,23 +197,6 @@ class measure:
         max_keys = np.where(dist_matrix  == np.amax(dist_matrix))
         a_points =[outline[0][max_keys[0][0]],outline[0][max_keys[0][1]]]
         return(a_ax,a_points)
-
-    def get_axes(outline,counter=0,OT=0.05,_idx=0):
-        """"
-        Takes outline as series of X,Y points.
-        """
-        a_ax, a_points = measure.get_a_axis(outline)
-        a_norm = (a_points[1]-a_points[0]) / a_ax
-        b_ax,b_points = measure.iterate_b(outline,a_norm,OT)
-        if b_ax == 0:
-            counter += 1
-        while b_ax == 0:
-            OT = OT+.5
-            b_ax,b_points = measure.iterate_b(outline,a_norm,OT)
-            if b_ax == 0 and OT > 5:
-                print('! Irregular grain skipped - check shape of grain @index:',_idx)
-                break
-        return(a_ax, a_points,b_ax,b_points,counter)
     
     def iterate_b(outline,a_norm,OT=0.05):
         """
@@ -206,7 +206,8 @@ class measure:
         b_ax = 0
         b_points =[]
         for a, b in itertools.combinations(np.array(outline[0]), 2):
-                current_distance = np.linalg.norm(a-b)
+                current_distance = math.dist(a,b)
+                # for python < 3.8 use: current_distance = np.linalg.norm(a-b)
                 if current_distance  != 0: #catch zero distances
                     b_norm = (b-a) / current_distance
                     dot_p = np.dot(b_norm,a_norm)

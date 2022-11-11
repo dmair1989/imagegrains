@@ -6,8 +6,7 @@ from scipy import stats
 from glob import glob
 from natsort import(natsorted)
 from tqdm import tqdm
-import multiprocessing
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 from functools import partial
 
 class binom:
@@ -95,7 +94,6 @@ class random:
             perc_dist.sort()
             lower, upper = np.percentile(perc_dist, CI_bounds)
             med = np.percentile(perc_dist, 50)
-            inp = np.percentile(gsd,p)
             med_list.append(med), upper_CI.append(upper), lower_CI.append(lower)
         return(med_list, upper_CI, lower_CI)
 
@@ -106,7 +104,7 @@ class random:
         res_list = []
         if mute == False:
             print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))     
-        with Pool(processes=multiprocessing.cpu_count()-1) as pool:
+        with Pool(processes=cpu_count()-1) as pool:
             res_list=pool.map(partial(random.MC_loop, gsd=gsd,length_err=length_err,scale_err=scale_err,method=method,cutoff=cutoff), range(num_it))
         return(res_list)
     
@@ -147,7 +145,7 @@ class random:
         res_list = []
         if mute == False:
             print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))
-        with Pool(processes=multiprocessing.cpu_count()-1) as pool:
+        with Pool(processes=cpu_count()-1) as pool:
             res_list=pool.map(partial(random.MC_SfM_SI_loop,gsd=gsd,avg_res=avg_res,alt=alt,alt_std=alt_std,
             method =method,point_prec_z=point_prec_z,point_prec_std=point_prec_std,dom_amp=dom_amp,cutoff=cutoff), range(num_it))
         return(res_list)
@@ -213,7 +211,7 @@ class random:
         res_list = []
         if mute == False:
             print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))
-        with Pool(processes=multiprocessing.cpu_count()-1) as pool:
+        with Pool(processes=cpu_count()-1) as pool:
             res_list=pool.map(partial(random.MC_SfM_OM_loop,gsd=gsd,avg_res=avg_res,alt=alt,alt_std=alt_std,
             method =method,point_prec_z=point_prec_z,point_prec_std=point_prec_std,dom_amp=dom_amp,
             cutoff=cutoff,om_res=om_res,px_err=px_err,px_rms=px_rms), range(num_it))
