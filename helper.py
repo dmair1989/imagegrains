@@ -166,7 +166,7 @@ class prediction:
     def models_from_zoo(MOD_DIR):
         model_list = natsorted(glob(MOD_DIR+'/*.*'))
         try:
-            models.CellposeModel(pretrained_model=model_list[0])
+            models.CellposeModel(gpu=True,pretrained_model=model_list[0])
         except:
             print('No cellpose model found in this directory.')
         M_ID = [model_list[i].split('\\')[len(model_list[i].split('\\'))-1].split('.')[0] for i in range(len(model_list))]
@@ -177,7 +177,7 @@ class prediction:
         model_list,M_ID = prediction.models_from_zoo(MOD_DIR)
         all_results= {}
         for m_idx in range(len(model_list)):
-            model = models.CellposeModel(pretrained_model=model_list[m_idx])
+            model = models.CellposeModel(gpu=True,pretrained_model=model_list[m_idx])
             mID = M_ID[m_idx]
             print(mID,'found...')
             if configuration:
