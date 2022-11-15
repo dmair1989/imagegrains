@@ -15,6 +15,8 @@ class measure:
     properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
     return_results=False,save_results=True,do_subfolders=False):
         dirs = next(os.walk(INP_DIR))[1]
+        if len(dirs)==0:
+            dirs=['']
         res_grains_l,res_props_l,IDs_l = [],[],[]
         for dir in dirs:
             if 'train' in dir:
@@ -24,7 +26,7 @@ class measure:
             elif do_subfolders == True:
                 W_DIR = INP_DIR+'/'+str(dir)
             else:
-                W_DIR = INP_DIR
+                W_DIR = INP_DIR+'/'
             res_grains_i,res_props_i,IDs_i= measure.grains_in_dataset(W_DIR,mask_format=mask_format,mask_str=mask_str,
             TAR_DIR=TAR_DIR,filters=filters,mute=mute,OT=OT,properties=properties,fit_method=fit_method,
             return_results=return_results,save_results=save_results)
@@ -399,3 +401,19 @@ class load:
         if not any(gsds):
             print('Could not load GSDs.')
         return(gsds)
+
+class compile:
+
+    def dataset_object_size(gsds,TAR_DIR='',save_results=True):
+        ID_l,min_l,max_l,med_l,mean_l = [],[],[],[],[]
+        for i in range(len(gsds)):
+            dfi = pd.read_csv(gsds[i])
+            ID_l.append(gsds[i].split('\\')[len(gsds[i].split('\\'))-1].split('.')[0])
+            min_l.append(np.min(dfi['ell: b-axis (px)']))
+            max_l.append(np.max(dfi['ell: b-axis (px)']))
+            med_l.append(np.median(dfi['ell: b-axis (px)']))
+            mean_l.append(np.mean(dfi['ell: b-axis (px)']))
+        res_df = pd.DataFrame(list(zip(ID_l,min_l,max_l,med_l,mean_l)),columns=['ID','min','max','med','mean'])
+        if save_results ==True:
+            res_df.to_csv(TAR_DIR+'dataset_object_size.csv')
+        return(res_df)
