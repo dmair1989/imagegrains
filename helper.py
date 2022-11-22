@@ -124,9 +124,13 @@ class prediction:
                         save_masks = True
                     if save_masks == True:
                         if TAR_DIR:
-                            io.imsave(TAR_DIR+'/'+ID+mID+'_pred.tif',masks)
+                            try:
+                                os.makedirs(TAR_DIR)
+                            except FileExistsError:
+                                pass
+                            io.imsave(TAR_DIR+'/'+ID+'_'+mID+'_pred.tif',masks)
                         else:
-                            io.imsave(INP_DIR+'/'+ID+mID+'_pred.tif',masks)
+                            io.imsave(INP_DIR+'/'+ID+'_'+mID+'_pred.tif',masks)
                     if return_results == True:
                         mask_l.append(masks)
                         flow_l.append(flows)
@@ -153,14 +157,18 @@ class prediction:
                 W_DIR = INP_DIR+'/'+str(dir)+'/'
             else:
                 W_DIR = INP_DIR
-            mask_l_i,flow_l_i,styles_l_i,ID_l_i,_ = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
-            min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks,mute=mute,mID=mID)
-            if return_results==True:
-                for x in range(len(mask_l_i)):
-                    mask_ll.append(mask_l_i[x])
-                    flow_ll.append(flow_l_i[x])
-                    styles_ll.append(styles_l_i[x])
-                    ID_ll.append(ID_l_i[x])
+            check_l = natsorted(glob(W_DIR+'/*.'+image_format))
+            if len(check_l)>0:
+                mask_l_i,flow_l_i,styles_l_i,ID_l_i,_ = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
+                min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks,mute=mute,mID=mID)
+                if return_results==True:
+                    for x in range(len(mask_l_i)):
+                        mask_ll.append(mask_l_i[x])
+                        flow_ll.append(flow_l_i[x])
+                        styles_ll.append(styles_l_i[x])
+                        ID_ll.append(ID_l_i[x])
+            else:
+                continue
         return(mask_ll,flow_ll,styles_ll,ID_ll)
     
     def models_from_zoo(MOD_DIR):
@@ -226,8 +234,8 @@ class eval:
         else:
             preds = natsorted(glob(IM_DIR+'/*'+pred_str+'*.'+pred_format))
         imgs = natsorted(glob(IM_DIR+'/*.'+image_format))
-        if not any(imgs):
-            print('Could not load images and/or masks.')
+        if not any(imgs) and not any(preds) and not any(lbls):
+            print('Could not load any images and/or masks.')
         return(imgs,lbls,preds)
 
     def eval_image(y_true,y_pred,thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):
@@ -253,9 +261,13 @@ class eval:
             eval_results[i] = {'img':img, 'ap':ap, 'iout':iout,}
         if save_results==True:
             if TAR_DIR:
+                try:
+                    os.makedirs(TAR_DIR)
+                except FileExistsError:
+                    pass
                 export = TAR_DIR+'/'+dataID+'_eval_res.pkl'
             else:
-                export = imgs[0].split('\\')[0]+'/'+dataID+'_eval_res.pkl'
+                export = dataID+'_eval_res.pkl'
             with open(str(export), 'wb') as f:
                 pickle.dump(eval_results, f)
         if return_results == True:

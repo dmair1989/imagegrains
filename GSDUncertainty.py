@@ -362,7 +362,7 @@ class calculate:
             if TAR_DIR:
                 try:
                     os.makedirs(TAR_DIR)    
-                except:
+                except FileExistsError:
                     pass
                 OUT_DIR = TAR_DIR
             elif INP_PATH:

@@ -52,6 +52,10 @@ class measure:
             props_df,props = measure.grains_from_masks(masks,filters=filters,OT=OT,mute=mute,properties=properties,ID=ID,image_res=image_res_i,fit_method=fit_method)
             if save_results == True:
                 if TAR_DIR:
+                    try:
+                        os.makedirs(TAR_DIR)
+                    except FileExistsError:
+                        pass
                     props_df.to_csv(TAR_DIR+'/'+str(ID)+'_grains.csv')
                 else:
                     props_df.to_csv(INP_DIR+'/'+str(ID)+'_grains.csv')
@@ -358,6 +362,10 @@ class scale:
             pass
         if save_gsds == True:
             if TAR_DIR:
+                try:
+                    os.makedirs(TAR_DIR)
+                except FileExistsError:
+                    pass
                 df.to_csv(TAR_DIR+'/'+str(ID)+'_grains_re_scaled.csv')
             else:
                 df.to_csv(T_DIR+str(ID)+'_grains_re_scaled.csv')
