@@ -34,17 +34,17 @@ class train:
         ret_list = natsorted(glob(W_PATH+'/*'+filter_str+'*.'+format))
         return(ret_list)
     
-    def check_labels(labels,lbl_str='_mask',mask_format='tif'):
+    def check_labels(labels,TAR_DIR='',lbl_str='_mask',mask_format='tif'):
         track_l = []
         for i in labels:
             if lbl_str in i:
                 continue
             else:
                 img= io.imread(i)
-                ID = i.split('\\')[1].split('.')[0]
+                ID = i.split('\\')[len(i.split('\\'))-1].split('.')[0]
                 print(ID)
                 #plt.imshow(img)
-                io.imsave(i.split('\\')[0]+'/'+ID+'lbl_str'+'.'+mask_format,img)
+                io.imsave(TAR_DIR+'/'+ID+lbl_str+'.'+mask_format,img)
                 track_l.append(ID)
         if len(track_l) == 0:
             print('No files renamed.')
