@@ -247,7 +247,8 @@ class eval:
     
     def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],
         filters={'edge':[False,.05],'px_cutoff':[False,10]},filter_props=['label','area','centroid','major_axis_length','minor_axis_length'],
-        eval_results={},save_results=True,return_results=True):  
+        save_results=True,return_results=True):  
+        eval_results={}
         for i in range(len(imgs)):
             img = io.imread(imgs[i])
             y_true = io.imread(lbls[i])
