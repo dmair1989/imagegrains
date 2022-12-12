@@ -58,7 +58,7 @@ class segmentation:
                 o = eval_results[i]['ap'][j]
                 res_l[j].append(o)
         avg_l,std_ul,std_ll =[],[],[]
-        fig = plt.figure(figsize=(3, 5))
+        plt.figure(figsize=(3, 5))
         for m in range(len(res_l)):
             avg_l.append(np.mean(res_l[m]))
             std_ul.append(np.mean(res_l[m])+np.std(res_l[m]))
@@ -77,7 +77,7 @@ class segmentation:
         plt.title(title)
         plt.legend()
         plt.tight_layout()
-        return(fig)
+        return()
     
     def AP_IoU_summary_plot(eval_results_list,elements,thresholds=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):    
         fig = plt.figure(figsize=(3, 5))
@@ -152,9 +152,17 @@ class segmentation:
     
 class grains:
 
-    def inspect_dataset_grains(imgs,masks,res_props,elements=['image','mask','ellipse_b','ellipse_a','ellipse']):
+    def inspect_dataset_grains(imgs,masks,res_props=[],elements=['image','mask','ellipse_b','ellipse_a','ellipse']):
         fig = plt.subplots(figsize=(18,len(masks)*1.3))
+        if not res_props:
+            print('No regionprops: Finding grains...')
+            for x in range(len(masks)):
+                masks_ = io.imread(masks[x])
+                res_props_i = regionprops(label(masks_))
+                res_props.append(res_props_i)
         for k in range(len(masks)):
+            if not res_props:
+                masks_ = io.imread(masks)
             m_ID = masks[k].split('\\')[len(masks[k].split('\\'))-1].split('.')[0]
             plt.subplot(np.int(np.int(np.round(len(masks)/4))), 4, k+1)
             grains.all_grains_plot(io.imread(masks[k]),elements,props=res_props[k],image=io.imread(imgs[k]),title=m_ID)
