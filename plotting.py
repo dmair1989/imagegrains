@@ -155,6 +155,7 @@ class grains:
     def inspect_dataset_grains(imgs,masks,res_props=[],elements=['image','mask','ellipse_b','ellipse_a','ellipse']):
         fig = plt.subplots(figsize=(18,len(masks)*1.3))
         if not res_props:
+            res_props = []
             print('No regionprops: Finding grains...')
             for x in range(len(masks)):
                 masks_ = io.imread(masks[x])
@@ -234,6 +235,7 @@ class grains:
                 by = (miny, miny, maxy, maxy, miny)
                 plt.plot(bx, by, '-r', linewidth=1,label='bbox')
         plt.title(title)
+        plt.gca().invert_yaxis()
         plt.axis('off')
         plt.tight_layout()
         return()
