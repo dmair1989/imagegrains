@@ -189,13 +189,22 @@ class prediction:
             mID = M_ID[m_idx]
             print(mID,'found...')
             if configuration:
-                try:
-                    for key,val in configuration[m_idx].items():
-                        exec(key + '=val')
-                    if mute == False:
-                        print('... with custom configuration.')
-                except AttributeError:
-                   pass 
+                if len(configuration)>1:
+                    try:
+                        for key,val in configuration[m_idx].items():
+                            exec(key + '=val')
+                        if mute == False:
+                            print('... with custom configuration.')
+                    except AttributeError:
+                        pass
+                else:
+                    try:
+                        for key,val in configuration.items():
+                            exec(key + '=val')
+                        if mute == False:
+                            print('... with custom configuration.')
+                    except AttributeError:
+                        pass 
             for d_idx in range(len(DIR_PATHS)):
                 all_mask,all_flow_l,all_styles_l,all_ID_l = prediction.predict_dataset(DIR_PATHS[d_idx],model,
                 image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,
