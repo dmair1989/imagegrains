@@ -108,7 +108,7 @@ class random:
             res_list=pool.map(partial(random.MC_loop, gsd=gsd,length_err=length_err,scale_err=scale_err,method=method,cutoff=cutoff), range(num_it))
         return(res_list)
     
-    def MC_loop(arg,gsd=[],length_err=0,scale_err=1,method ='truncnorm',cutoff=0):
+    def MC_loop(arg,gsd=None,length_err=0,scale_err=1,method ='truncnorm',cutoff=0):
         rand_p = np.random.choice(gsd,len(gsd))
         #shape,lo_c,s_cale = stats.lognorm.fit(rand_p)
         rand_p_new = ([])
@@ -150,7 +150,7 @@ class random:
             method =method,point_prec_z=point_prec_z,point_prec_std=point_prec_std,dom_amp=dom_amp,cutoff=cutoff), range(num_it))
         return(res_list)
 
-    def MC_SfM_SI_loop(arg,gsd=[],avg_res=1,alt=5,alt_std=1,method ='truncnorm',point_prec_z=1,
+    def MC_SfM_SI_loop(arg,gsd=None,avg_res=1,alt=5,alt_std=1,method ='truncnorm',point_prec_z=1,
         point_prec_std=0.5,dom_amp=0.4,cutoff=0):
         rand_p = np.random.choice(gsd,len(gsd))
         #shape,lo_c,s_cale = stats.lognorm.fit(rand_p)
@@ -217,7 +217,7 @@ class random:
             cutoff=cutoff,om_res=om_res,px_err=px_err,px_rms=px_rms), range(num_it))
         return(res_list)
 
-    def MC_SfM_OM_loop(arg,gsd=[],avg_res=1,alt=5,alt_std=1,method ='truncnorm',
+    def MC_SfM_OM_loop(arg,gsd=None,avg_res=1,alt=5,alt_std=1,method ='truncnorm',
         point_prec_z=1,point_prec_std=0.5,dom_amp=0.4,cutoff=0,om_res=1,px_err=1,px_rms=.5):
         rand_p = np.random.choice(gsd,len(gsd))                                           
         rand_p_new = ([])
@@ -299,8 +299,8 @@ class random:
 
 class calculate:
 
-    def dataset_uncertainty(gsds=[],INP_DIR='',grain_str='_grains',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=[],length_err=[],sfm_error={},num_it=1000,CI_bounds=[2.5,97.5],
-    MC_method='truncnorm',MC_cutoff=0,avg_res=[],mute=False,save_results=True,TAR_DIR='',return_results=False,res_dict={},sfm_type=''):
+    def dataset_uncertainty(gsds=None,INP_DIR='',grain_str='_grains',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=None,length_err=None,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
+    MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,TAR_DIR='',return_results=False,res_dict=None,sfm_type=''):
         if INP_DIR:
             gsds = natsorted(glob(INP_DIR+'/*'+grain_str+'*.csv'))
         if not gsds:
@@ -341,7 +341,7 @@ class calculate:
                 res_dict[ID]=[med_list, upper_CI, lower_CI, gsd_list]
         return(res_dict)
 
-    def gsd_uncertainty(gsd=[],ID='',INP_PATH='',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=[],length_err=[],sfm_error={},num_it=1000,CI_bounds=[2.5,97.5],
+    def gsd_uncertainty(gsd=None,ID='',INP_PATH='',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=None,length_err=None,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
     MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,TAR_DIR='',return_results=True,sfm_type=''):
         if len(gsd)==0:
             df = pd.read_csv(INP_PATH , sep=sep)
@@ -379,7 +379,7 @@ class calculate:
         if return_results == True:
             return(med_list, upper_CI, lower_CI, gsd_list, ID)
 
-    def uncertainty(gsd,method='bootstrapping',scale_err=[],length_err=[],sfm_error={},num_it=1000,CI_bounds=[2.5,97.5],
+    def uncertainty(gsd,method='bootstrapping',scale_err=None,length_err=None,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
     MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,sfm_type=''):
         if method == 'bootstrapping':
             med_list, upper_CI, lower_CI = random.bootstrapping(gsd,num_it=num_it,CI_bounds=CI_bounds)

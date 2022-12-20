@@ -11,7 +11,7 @@ from glob import glob
 
 class measure:
 
-    def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters={},mute=False,OT=.5,
+    def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
     properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
     return_results=False,save_results=True,do_subfolders=False):
         dirs = next(os.walk(INP_DIR))[1]
@@ -37,9 +37,9 @@ class measure:
                     IDs_l.append(IDs_i[x])
         return(res_grains_l,res_props_l,IDs_l)
 
-    def grains_in_dataset(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters={},mute=False,OT=.5,
+    def grains_in_dataset(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
     properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
-    return_results=False,save_results=True,image_res=[]):
+    return_results=False,save_results=True,image_res=None):
         X = natsorted(glob(INP_DIR+'/*'+mask_str+'*.'+mask_format))
         res_grains,res_props,IDs = [],[],[]
         for i in tqdm(range(len(X)),desc=str(INP_DIR),unit='file',colour='MAGENTA',position=0,leave=True):
@@ -63,7 +63,7 @@ class measure:
                 res_grains.append(props_df),res_props.append(props),IDs.append(ID)
         return(res_grains,res_props,IDs) 
 
-    def grains_from_masks(masks,filters={},mute=False,OT=.5,fit_method='',image_res=[],ID='',
+    def grains_from_masks(masks,filters=None,mute=False,OT=.5,fit_method='',image_res=[],ID='',
     properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid']):
         masks,num = label(masks,return_num=True)
         if mute==False:
@@ -111,7 +111,7 @@ class measure:
             print('Modified DataFrame structure - check results.')
         return(props_df,props)
 
-    def compile_ax_stats(grains,props=[],fit_res=[],fit_method='convex_hull',padding_size=2, OT=.5,
+    def compile_ax_stats(grains,props=None,fit_res=None,fit_method='convex_hull',padding_size=2, OT=.5,
             export_results=True, mute = False,
             properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid','bbox']):
         if not props:
@@ -254,7 +254,7 @@ class filter:
             mask[labels == label]=0
         return(filtered,mask)
     
-    def resample_masks(masks,filters=[],method='wolman',grid_size=[],edge_offset=[],n_rand=100):
+    def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset=None,n_rand=100):
         w,h = masks.shape[0],masks.shape[1]
         print('image shape:',h,'x',w)
         lbs = label(masks)
@@ -304,8 +304,8 @@ class filter:
     
 class scale:
 
-    def re_scale_dataset(DIR,resolution=[],camera_parameters= [],gsd_format='csv',gsd_str='grains',return_results=False,save_gsds=True,TAR_DIR=''):
-        gsds = load.load_grain_set(DIR,gsd_format=gsd_format,gsd_str=gsd_str)
+    def re_scale_dataset(DIR,resolution= None, camera_parameters= None, gsd_format='csv', gsd_str='grains', return_results=False, save_gsds=True, TAR_DIR=''):
+        gsds = load.load_grain_set(DIR, gsd_format = gsd_format, gsd_str=gsd_str)
         rescaled_l = []
         for i in range(len(gsds)):
             try:

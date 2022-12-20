@@ -152,7 +152,7 @@ class segmentation:
     
 class grains:
 
-    def inspect_dataset_grains(imgs,masks,res_props=[],elements=['image','mask','ellipse_b','ellipse_a','ellipse']):
+    def inspect_dataset_grains(imgs,masks,res_props=None,elements=['image','mask','ellipse_b','ellipse_a','ellipse']):
         fig = plt.subplots(figsize=(18,len(masks)*1.3))
         if not res_props:
             res_props = []
@@ -170,8 +170,8 @@ class grains:
             plt.tight_layout()
         return(fig)
 
-    def all_grains_plot(masks,elements,props=[], image =[], 
-                        fit_res =[],fit_method ='convex_hull',do_fit= False,
+    def all_grains_plot(masks,elements,props=None, image =None, 
+                        fit_res =None,fit_method ='convex_hull',do_fit= False,
                         padding_size=2,title='',plot_padding=15):
         if 'image' in elements and image.any:
             plt.imshow(image)
@@ -240,7 +240,7 @@ class grains:
         plt.tight_layout()
         return()
 
-    def single_grain_plot(mask,elements,props=[], image =[], fit_res =[],
+    def single_grain_plot(mask,elements,props=None, image =None, fit_res =None,
                             fit_method ='convex_hull',do_fit= False,
                             padding_size=2,figsize=(8,8)):
         fig = plt.figure(figsize=figsize)

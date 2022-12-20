@@ -180,7 +180,7 @@ class prediction:
         M_ID = [model_list[i].split('\\')[len(model_list[i].split('\\'))-1].split('.')[0] for i in range(len(model_list))]
         return(model_list,M_ID)
 
-    def batch_predict(MOD_DIR,DIR_PATHS,configuration=[],image_format='jpg',channels=[0,0],diameter=None,min_size=15,
+    def batch_predict(MOD_DIR,DIR_PATHS,configuration=None,image_format='jpg',channels=[0,0],diameter=None,min_size=15,
     rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfolders=False):
         model_list,M_ID = prediction.models_from_zoo(MOD_DIR)
         all_results= {}
