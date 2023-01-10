@@ -427,7 +427,7 @@ class evaluate:
         ------------
         y_true (array) - ground truth mask
         y_pred (array) - predicted mask
-        thresholds (list (optional, default=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1])) - list of thresholds to evaluate at
+        thresholds (list (optional, default=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1])) - Thresholds to evaluate at
         
         Returns
         ------------
@@ -453,20 +453,20 @@ class evaluate:
 
         Parameters:
         ------------
-        imgs (list) - list of images
-        lbls (list) - list of labels
-        preds (list) - list of predictions
+        imgs (list) - List of images
+        lbls (list) - List of labels
+        preds (list) - List of predictions
         dataID (str (optional, default='')) - ID for the dataset
-        TAR_DIR (str (optional, default='')) - directory to save results to
-        thresholds (list (optional, default=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1])) - list of thresholds to evaluate at
-        filters (dict (optional, default={'edge':[False,.05],'px_cutoff':[False,10]})) - dictionary of filters to apply to labels and predictions
-        filter_props (list (optional, default=['label','area','centroid','major_axis_length','minor_axis_length'])) - properties to filter on
-        save_results (bool (optional, default=True)) - whether to save results to a pkl file
-        return_results (bool (optional, default=True)) - whether to return results
+        TAR_DIR (str (optional, default='')) - Directory to save results to
+        thresholds (list (optional, default=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1])) - Thresholds to evaluate at
+        filters (dict (optional, default={'edge':[False,.05],'px_cutoff':[False,10]})) - Dictionary of filters to apply to labels and predictions
+        filter_props (list (optional, default=['label','area','centroid','major_axis_length','minor_axis_length'])) - pPoperties to filter on
+        save_results (bool (optional, default=True)) - Flag whether to save results to a pkl file
+        return_results (bool (optional, default=True)) - Flag whether to return results
 
         Returns
         ------------
-        eval_results (dict) - dictionary of evaluation results
+        eval_results (dict) - Dictionary of evaluation results
 
         """
         eval_results={}
@@ -502,11 +502,11 @@ class evaluate:
         Parameters:
         ------------
         name (str) - name of the pkl file
-        PATH (str (optional, default='')) - path to the pkl file
+        PATH (str (optional, default='')) - Path to the pkl file
         
         Returns
         ------------
-        eval_results (dict) - dictionary of evaluation results
+        eval_results (dict) - Dictionary of evaluation results
 
         """
         with open(PATH +'/'+ name +'.pkl', 'rb') as f:
