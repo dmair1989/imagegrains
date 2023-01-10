@@ -13,6 +13,25 @@ from GrainSizing import filter
 class train:
 
     def load_data(PATH,mask_str='mask',im_str='',im_format='jpg',mask_format='tif'):
+        """
+        This function loads images and masks from a directory. The directory can contain a 'train' and 'test' subfolder.
+
+        Parameters:
+        ------------
+        PATH (str) - Path to the directory containing the images and masks
+        mask_str (str(optional, default 'mask')) - A string used to filter the masks in `PATH`
+        im_str (str(optional, default '')) - A string used to filter the images in `PATH`
+        im_format (str(optional, default 'jpg')) - Image format of the images in `PATH`
+        mask_format (str(optional, default 'tif')) - Image format of the masks in `PATH`
+
+        Returns:
+        ------------
+        train_images (list) - List of paths to the training images
+        train_masks (list) - List of paths to the training masks
+        test_images (list) - List of paths to the test images
+        test_masks (list) - List of paths to the test masks
+
+        """
         dirs = next(os.walk(PATH))[1]
         W_PATH = []
         if 'test' in dirs:
@@ -31,10 +50,40 @@ class train:
         return(train_images,train_masks,test_images,test_masks)
 
     def load_imgs_masks(W_PATH,format='',filter_str=''):
+        """
+        This function loads images and masks from a directory.
+
+        Parameters:
+        ------------
+        W_PATH (str) - Path to the directory containing the images and masks
+        format (str) - Image format of the images in `W_PATH`
+        filter_str (str) - A string used to filter the images in `W_PATH`
+
+        Returns:
+        ------------
+        ret_list (list) - List of paths to the images
+
+        """
         ret_list = natsorted(glob(W_PATH+'/*'+filter_str+'*.'+format))
         return(ret_list)
     
     def check_labels(labels,TAR_DIR='',lbl_str='_mask',mask_format='tif'):
+        """
+        This function checks if the labels are in the correct format. If not, it renames the labels to the correct format.
+        The labels are renamed to the format: <image_ID><lbl_str>.<mask_format>
+        
+        Parameters:
+        ------------
+        labels (list) - List of paths to the labels
+        TAR_DIR (str(optional, default '')) - Target directory to save the renamed labels. If not specified, the labels are saved in the same directory as the original labels.
+        lbl_str (str(optional, default '_mask')) - String to be added to the image ID to form the label ID
+        mask_format (str(optional, default 'tif')) - Image format of the labels
+
+        Returns:
+        ------------
+        track_l (list) - List of image IDs for which the labels were renamed
+        
+        """
         track_l = []
         for i in labels:
             if lbl_str in i:
@@ -51,6 +100,19 @@ class train:
         return(track_l)
 
     def check_im_label_pairs(img_list,lbl_list):
+        """
+        This function checks if the images and labels are paired correctly. If not, it returns a list of images for which the labels are missing.	
+
+        Parameters:
+        ------------
+        img_list (list) - List of paths to the images
+        lbl_list (list) - List of paths to the labels
+        
+        Returns:
+        ------------
+        error_list (list) - List of paths to the images for which the labels are missing
+
+        """
         error_list=[]
         for k in img_list:
             ID = k.split('\\')[len(k.split('\\'))-1].split('.')[0]
@@ -64,24 +126,25 @@ class train:
 
 class prediction:
     
-    def predict_folder(INP_DIR,model,image_format='jpg',filter_str='',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',
+    def predict_folder(INP_DIR,model,image_format='jpg',filter_str='',channels=[0,0],diameter=None,min_size=15,rescale=None,config=None,TAR_DIR='',
     return_results=False,save_masks=True,mute=False,mID=''):
         """
-        Does predictions on all images with `image_format` extension in a folder. 
+        This function takes in a directory containing images, and uses a pre-trained model to predict segmentation masks for the images.
         If `return_results` is `True` respective lists of 1D arrays for predicted *masks*, *flows* and *styles* 
         from `CellposeModel.eval()` are returned (see https://cellpose.readthedocs.io/en/latest/api.html#id5).
 
         Parameters:
         ------------
-        INP_DIR (str) - input directory 
-        model: Trained model from 'models.CellposeModel' class. 
+        INP_DIR (str) - Input directory 
+        model (obj) - Trained model from 'models.CellposeModel' class. 
             Use either `models.CellposeModel(model_type='')` for built-in cellpose models or 
             `models.CellposeModel(pretrained_model='') for custom models.
             See https://cellpose.readthedocs.io/en/latest/models.html for more details
-        image_format (str(optional, default 'jpg'))
-        filter_str (str(optional, default ''))
-        return_results (bool(optional, default False))
-        TAR_DIR (str(optional, default '')) - output directory
+        image_format (str(optional, default 'jpg')) - Image format of the images in `INP_DIR`
+        filter_str (str(optional, default '')) - A string used to filter the images in `INP_DIR`
+        return_results (bool(optional, default False)) - flag for returning predicted masks, flows and styles
+        config (dict(optional, default None)) - dictionary of advanced parameters to be handed down to `CellposeModel.eval()` where keys are parameters and values are parameter values.
+        TAR_DIR (str(optional, default '')) - The directory to save the predicted masks to.
         save_masks (bool(optional, default True)) - flag for saving predicted mask as `.tif` files in `TAR_DIR`
         mute (bool (optional, default=False)) - flag for muting console output
         mID (str (optional, default = '')) - optional model name that will be written into output file names
@@ -96,22 +159,13 @@ class prediction:
         
         Returns
         ------------
-        mask_l (list of 2D array lists (optional, default = []))
-            labelled image, where 0=no masks; 1,2,…=mask labels
-
-        flow_l (list of 2D array lists (optional, default = [])) 
-            flows[k][0] = XY flow in HSV 0-255 flows[k][1] = XY flows at each pixel 
+        mask_l (list of 2D array lists (optional, default = [])) - labelled image, where 0=no masks; 1,2,…=mask labels
+        flow_l (list of 2D array lists (optional, default = [])) - flows[k][0] = XY flow in HSV 0-255 flows[k][1] = XY flows at each pixel 
             flows[k][2] = cell probability (if > cellprob_threshold, pixel used for dynamics) 
             flows[k][3] = final pixel locations after Euler integration
-
-        styles_l (list of 1D arrays of length 64 (optional, default = [])) 
-            style vector summarizing each image, also used to estimate size of objects in image
-        
-        ID_l (list of strings (optional, default = []))
-            Name tags for input images
-
-        img_l (list 2D array lists (optional, default = []))
-            Input images
+        styles_l (list of 1D arrays of length 64 (optional, default = [])) - style vector summarizing each image, also used to estimate size of objects in image
+        ID_l (list of strings (optional, default = [])) - Name tags for input images
+        img_l (list 2D array lists (optional, default = [])) - Input images
 
         """
         mask_l,flow_l,styles_l,ID_l,img_l = [],[],[],[],[]
@@ -126,7 +180,20 @@ class prediction:
                 if any(x in ID for x in ['flow','flows','masks','mask']):
                     continue
                 else:
-                    masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels) 
+                    if config:
+                        try:
+                            eval_str = ''
+                            for key,val in config.items():
+                                if not eval_str:
+                                    i_str=f'{key}={val}'
+                                else:
+                                    i_str=f',{key}={val}'
+                                eval_str+=i_str
+                            exec(f'masks, flows, styles = model.eval(img, {eval_str})')
+                        except AttributeError:
+                            print('Config file is not formatted correctly. Please check the documentation for more information.')
+                    else:
+                        masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels) 
                     if save_masks == False and return_results == False:
                         print('Saving and returning of results weres switched of - therefore mask saving was turned on!')
                         save_masks = True
@@ -152,7 +219,7 @@ class prediction:
             print('Aborted.')
         return(mask_l,flow_l,styles_l,ID_l,img_l)
 
-    def predict_dataset(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',
+    def predict_dataset(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,config=None,TAR_DIR='',
     return_results=False,save_masks=True,mute=False,do_subfolders=False,mID=''):
         """
         Wrapper for helper.prediction.predict_folder() for a dataset that is organised in subfolders (e.g., in directories named `train`,`test`)
@@ -165,22 +232,17 @@ class prediction:
 
         Returns
         ------------
-        mask_ll (list of 2D array lists (optional, default = []))
-            labelled image, where 0=no masks; 1,2,…=mask labels
+        mask_ll (list of 2D array lists (optional, default = [])) - labelled image, where 0=no masks; 1,2,…=mask labels
 
-        flow_ll (list of 2D array lists (optional, default = [])) 
-            flows[k][0] = XY flow in HSV 0-255 flows[k][1] = XY flows at each pixel 
+        flow_ll (list of 2D array lists (optional, default = [])) - flows[k][0] = XY flow in HSV 0-255 flows[k][1] = XY flows at each pixel 
             flows[k][2] = cell probability (if > cellprob_threshold, pixel used for dynamics) 
             flows[k][3] = final pixel locations after Euler integration
 
-        styles_ll (list of 1D arrays of length 64 (optional, default = [])) 
-            style vector summarizing each image, also used to estimate size of objects in image
+        styles_ll (list of 1D arrays of length 64 (optional, default = [])) - style vector summarizing each image, also used to estimate size of objects in image
         
-        ID_ll (list of strings (optional, default = []))
-            Name tags for input images
+        ID_ll (list of strings (optional, default = [])) - Name tags for input images
 
-        img_ll (list 2D array lists (optional, default = []))
-            Input images
+        img_ll (list 2D array lists (optional, default = [])) - Input images
 
         """
         mask_ll,flow_ll,styles_ll,ID_ll,=[],[],[],[]
@@ -197,7 +259,7 @@ class prediction:
             check_l = natsorted(glob(W_DIR+'/*.'+image_format))
             if len(check_l)>0:
                 mask_l_i,flow_l_i,styles_l_i,ID_l_i,_ = prediction.predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
-                min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks,mute=mute,mID=mID)
+                min_size=min_size,rescale=rescale,config=config,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks,mute=mute,mID=mID)
                 if return_results==True:
                     for x in range(len(mask_l_i)):
                         mask_ll.append(mask_l_i[x])
@@ -253,7 +315,7 @@ class prediction:
         Returns
         ------------
         all_results (dict (optional, default = {})) - dict containing output from helper.prediction.predict_dataset().
-
+        
         """
         model_list,M_ID = prediction.models_from_zoo(MOD_DIR)
         all_results= {}
@@ -264,10 +326,7 @@ class prediction:
             if configuration:
                 if len(configuration)>1:
                     try:
-                        for key,val in configuration[m_idx].items():
-                            exec(key + '=val')
-                        if mute == False:
-                            print('... with custom configuration.')
+                        config = configuration[m_idx]
                     except AttributeError:
                         pass
                 else:
@@ -280,16 +339,35 @@ class prediction:
                         pass 
             for d_idx in range(len(DIR_PATHS)):
                 all_mask_l,all_flow_l,all_styles_l,all_ID_l = prediction.predict_dataset(DIR_PATHS[d_idx],model,
-                image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,
+                image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,config=config,TAR_DIR=TAR_DIR,
                 return_results=return_results,save_masks=save_masks,mute=mute,do_subfolders=do_subfolders,mID=mID)
                 if return_results == True:
                     dataset_res = {'masks':all_mask_l,'flows':all_flow_l,'styles':all_styles_l,'id':all_ID_l}
                     all_results[str(mID)+'_'+str(d_idx)]=dataset_res
         return(all_results)
 
-class eval:
+class evaluate:
 
     def dataset_loader(IM_DIRs,image_format='jpg',label_format='tif',pred_format='tif',label_str='',pred_str=''):
+        """
+        Loads images, labels, and predictions from a folder or list of folders.
+
+        Parameters:
+        ------------
+        IM_DIRs (str or list of str) - image directory or list of image directories.
+        image_format (str (optional, default='jpg')) - The file format of the images.
+        label_format (str (optional, default='tif')) - The file format of the labels.
+        pred_format (str (optional, default='tif')) - The file format of the predictions.
+        label_str (str (optional, default='')) - A string to search for in label file name.
+        pred_str (str (optional, default='')) - A string to search for in prediction file name.
+
+        Returns
+        ------------
+        imgs (list) - list of images
+        lbls (list) - list of labels
+        preds (list) - list of predictions      
+        
+        """
         imgs,lbls,preds = [],[],[]
         dirs = next(os.walk(IM_DIRs[0]))[1]
         IM_DIR = []
@@ -300,13 +378,34 @@ class eval:
         if not IM_DIR:
             IM_DIR = IM_DIRs
         for i in range(len(IM_DIR)):
-            imgs1,lbls1,preds1 = eval.load_from_folders(IM_DIR[i],image_format=image_format,label_format=label_format,pred_format=pred_format,label_str=label_str,pred_str=pred_str)
+            imgs1,lbls1,preds1 = evaluate.load_from_folders(IM_DIR[i],image_format=image_format,label_format=label_format,pred_format=pred_format,label_str=label_str,pred_str=pred_str)
             imgs += imgs1
             lbls += lbls1
             preds += preds1
         return(imgs,lbls,preds)
 
     def load_from_folders(IM_DIR,LBL_DIR='',PRED_DIR='',image_format='jpg',label_format='tif',pred_format='tif',label_str='',pred_str=''):
+        """
+        Loads images, labels, and predictions from separate folders.
+
+        Parameters:
+        ------------
+        IM_DIR (str) - image directory.
+        LBL_DIR (str (optional, default='')) - label directory.
+        PRED_DIR (str (optional, default='')) - prediction directory.
+        image_format (str (optional, default='jpg')) - The file format of the images.
+        label_format (str (optional, default='tif')) - The file format of the labels.
+        pred_format (str (optional, default='tif')) - The file format of the predictions.
+        label_str (str (optional, default='')) - A string to search for in label file name.
+        pred_str (str (optional, default='')) - A string to search for in prediction file name.
+
+        Returns
+        ------------    
+        imgs (list) - list of images
+        lbls (list) - list of labels
+        preds (list) - list of predictions
+
+        """
         if LBL_DIR:
             lbls = natsorted(glob(LBL_DIR+'/*'+label_str+'*.'+label_format))
         else:
@@ -321,6 +420,25 @@ class eval:
         return(imgs,lbls,preds)
 
     def eval_image(y_true,y_pred,thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):
+        """
+        Evaluates a single image. Uses cellpose.metrics (https://cellpose.readthedocs.io/en/latest/api.html#module-cellpose.metrics).
+        
+        Parameters:
+        ------------
+        y_true (array) - ground truth mask
+        y_pred (array) - predicted mask
+        thresholds (list (optional, default=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1])) - list of thresholds to evaluate at
+        
+        Returns
+        ------------
+        ap (float) - average precision
+        tp (float) - true positives
+        fp (float) - false positives
+        fn (float) - false negatives
+        iout (float) - intersection over union
+        preds (float) - predicted mask
+        
+        """
         ap, tp, fp, fn = metrics.average_precision(label(y_true),label(y_pred),threshold=thresholds)
         iout, preds = metrics.mask_ious(label(y_true),label(y_pred))
         #j_score = jaccard_score(y_true, y_pred,average="macro")
@@ -329,7 +447,28 @@ class eval:
     
     def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],
         filters={'edge':[False,.05],'px_cutoff':[False,10]},filter_props=['label','area','centroid','major_axis_length','minor_axis_length'],
-        save_results=True,return_results=True):  
+        save_results=True,return_results=True):
+        """
+        Evaluates a set of images with eval_image. Saves results to a pkl file.
+
+        Parameters:
+        ------------
+        imgs (list) - list of images
+        lbls (list) - list of labels
+        preds (list) - list of predictions
+        dataID (str (optional, default='')) - ID for the dataset
+        TAR_DIR (str (optional, default='')) - directory to save results to
+        thresholds (list (optional, default=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1])) - list of thresholds to evaluate at
+        filters (dict (optional, default={'edge':[False,.05],'px_cutoff':[False,10]})) - dictionary of filters to apply to labels and predictions
+        filter_props (list (optional, default=['label','area','centroid','major_axis_length','minor_axis_length'])) - properties to filter on
+        save_results (bool (optional, default=True)) - whether to save results to a pkl file
+        return_results (bool (optional, default=True)) - whether to return results
+
+        Returns
+        ------------
+        eval_results (dict) - dictionary of evaluation results
+
+        """
         eval_results={}
         for i in range(len(imgs)):
             img = io.imread(imgs[i])
@@ -339,7 +478,7 @@ class eval:
             if filters:
                 _, y_true = filter.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
                 _, y_pred = filter.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
-            ap,_,_,_,iout,_ =  eval.eval_image(y_true,y_pred, thresholds=thresholds)
+            ap,_,_,_,iout,_ =  evaluate.eval_image(y_true,y_pred, thresholds=thresholds)
 
             eval_results[i] = {'img':img, 'ap':ap, 'iout':iout,}
         if save_results==True:
@@ -357,6 +496,19 @@ class eval:
             return(eval_results)
 
     def load_eval_res(name,PATH=''):
+        """
+        Loads evaluation results from a pkl file.
+        
+        Parameters:
+        ------------
+        name (str) - name of the pkl file
+        PATH (str (optional, default='')) - path to the pkl file
+        
+        Returns
+        ------------
+        eval_results (dict) - dictionary of evaluation results
+
+        """
         with open(PATH +'/'+ name +'.pkl', 'rb') as f:
             eval_results = pickle.load(f)
         return(eval_results)
