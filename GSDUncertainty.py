@@ -4,7 +4,7 @@ import pandas as pd
 from scipy import interpolate as interp
 from scipy import stats
 from glob import glob
-from natsort import(natsorted)
+from natsort import natsorted
 from tqdm import tqdm
 from multiprocessing import Pool, cpu_count
 from functools import partial

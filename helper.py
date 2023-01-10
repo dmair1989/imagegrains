@@ -66,13 +66,14 @@ class prediction:
     
     def predict_folder(INP_DIR,model,image_format='jpg',filter_str='',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',
     return_results=False,save_masks=True,mute=False,mID=''):
-        """ Do predictions on all images with `image_format` extension in a folder. 
+        """
+        Does predictions on all images with `image_format` extension in a folder. 
         If `return_results` is `True` respective lists of 1D arrays for predicted *masks*, *flows* and *styles* 
         from `CellposeModel.eval()` are returned (see https://cellpose.readthedocs.io/en/latest/api.html#id5).
 
         Parameters:
         ------------
-        IND_DIR: Directory path (str)
+        INP_DIR (str) - input directory 
         model: Trained model from 'models.CellposeModel' class. 
             Use either `models.CellposeModel(model_type='')` for built-in cellpose models or 
             `models.CellposeModel(pretrained_model='') for custom models.
@@ -82,28 +83,35 @@ class prediction:
         return_results (bool(optional, default False))
         TAR_DIR (str(optional, default '')) - output directory
         save_masks (bool(optional, default True)) - flag for saving predicted mask as `.tif` files in `TAR_DIR`
+        mute (bool (optional, default=False)) - flag for muting console output
+        mID (str (optional, default = '')) - optional model name that will be written into output file names
 
-        Parameters that can be handed down to`CellposeModel.eval()`, 
+        Parameters that can be handed down explicitly to `CellposeModel.eval()`, 
         see https://cellpose.readthedocs.io/en/latest/api.html#id5 :
 
         channels (list (optional, default [0,0]))
         diameter (float (optional, default None))
         rescale (float (optional, default None))
-        min_size (int (optional, default 15))   
-        
+        min_size (int (optional, default 15))      
         
         Returns
         ------------
-        masks (optional; list of 2D arrays)
+        mask_l (list of 2D array lists (optional, default = []))
             labelled image, where 0=no masks; 1,2,…=mask labels
 
-        flows (optional; list of lists 2D arrays) 
+        flow_l (list of 2D array lists (optional, default = [])) 
             flows[k][0] = XY flow in HSV 0-255 flows[k][1] = XY flows at each pixel 
             flows[k][2] = cell probability (if > cellprob_threshold, pixel used for dynamics) 
             flows[k][3] = final pixel locations after Euler integration
 
-        styles (optional; list of 1D arrays of length 64) 
+        styles_l (list of 1D arrays of length 64 (optional, default = [])) 
             style vector summarizing each image, also used to estimate size of objects in image
+        
+        ID_l (list of strings (optional, default = []))
+            Name tags for input images
+
+        img_l (list 2D array lists (optional, default = []))
+            Input images
 
         """
         mask_l,flow_l,styles_l,ID_l,img_l = [],[],[],[],[]
@@ -146,6 +154,35 @@ class prediction:
 
     def predict_dataset(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,TAR_DIR='',
     return_results=False,save_masks=True,mute=False,do_subfolders=False,mID=''):
+        """
+        Wrapper for helper.prediction.predict_folder() for a dataset that is organised in subfolders (e.g., in directories named `train`,`test`)
+
+        Parameters:
+        ------------
+        do_subfolders (bool (optional, default=False)) - flag to look for files in subfolders
+
+        all others are the same as helper.prediction.predict_folder()
+
+        Returns
+        ------------
+        mask_ll (list of 2D array lists (optional, default = []))
+            labelled image, where 0=no masks; 1,2,…=mask labels
+
+        flow_ll (list of 2D array lists (optional, default = [])) 
+            flows[k][0] = XY flow in HSV 0-255 flows[k][1] = XY flows at each pixel 
+            flows[k][2] = cell probability (if > cellprob_threshold, pixel used for dynamics) 
+            flows[k][3] = final pixel locations after Euler integration
+
+        styles_ll (list of 1D arrays of length 64 (optional, default = [])) 
+            style vector summarizing each image, also used to estimate size of objects in image
+        
+        ID_ll (list of strings (optional, default = []))
+            Name tags for input images
+
+        img_ll (list 2D array lists (optional, default = []))
+            Input images
+
+        """
         mask_ll,flow_ll,styles_ll,ID_ll,=[],[],[],[]
         dirs = next(os.walk(INP_DIR))[1]
         for dir in dirs:
@@ -171,21 +208,57 @@ class prediction:
                 continue
         return(mask_ll,flow_ll,styles_ll,ID_ll)
     
-    def models_from_zoo(MOD_DIR):
+    def models_from_zoo(MOD_DIR,use_GPU=True):
+        """
+        Loads pre-trained cellpose model(s) from a folder.
+
+        Parameters:
+        ------------
+        MOD_DIR (str) - model directory 
+        use_GPU (bool (optional, default=True)) - GPU flag
+
+        Returns
+        ------------
+        model_list (list) - list of cellpose model paths
+        M_ID (list) - list of cellpose model names
+
+        """
         model_list = natsorted(glob(MOD_DIR+'/*.*'))
         try:
-            models.CellposeModel(gpu=True,pretrained_model=model_list[0])
+            models.CellposeModel(gpu=use_GPU,pretrained_model=model_list[0])
         except:
             print('No cellpose model found in this directory.')
         M_ID = [model_list[i].split('\\')[len(model_list[i].split('\\'))-1].split('.')[0] for i in range(len(model_list))]
         return(model_list,M_ID)
 
-    def batch_predict(MOD_DIR,DIR_PATHS,configuration=None,image_format='jpg',channels=[0,0],diameter=None,min_size=15,
+    def batch_predict(MOD_DIR,DIR_PATHS,configuration=None,image_format='jpg',use_GPU=True,channels=[0,0],diameter=None,min_size=15,
     rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfolders=False):
+        """
+        Wrapper for helper.prediction.predict_dataset() that can do predictions on the same dataset for multiple models from a directory (`MOD_DIR`).
+
+        Parameters:
+        ------------
+        MOD_DIR (str) - model directory 
+        use_GPU (bool (optional, default=True)) - GPU flag
+        configuration (dict or list of dicts (optional, default = None))
+            dictionary where `key` = paramter name and `val` = parameter value; can be varied for each cellpose model model in `MOD_DIR`
+            currently handed down are:
+                channels (list (optional, default [0,0]))
+                diameter (float (optional, default None))
+                rescale (float (optional, default None))
+                min_size (int (optional, default 15))
+
+        all others are thesame as helper.prediction.predict_dataset()
+
+        Returns
+        ------------
+        all_results (dict (optional, default = {})) - dict containing output from helper.prediction.predict_dataset().
+
+        """
         model_list,M_ID = prediction.models_from_zoo(MOD_DIR)
         all_results= {}
         for m_idx in range(len(model_list)):
-            model = models.CellposeModel(gpu=True,pretrained_model=model_list[m_idx])
+            model = models.CellposeModel(gpu=use_GPU,pretrained_model=model_list[m_idx])
             mID = M_ID[m_idx]
             print(mID,'found...')
             if configuration:
@@ -206,11 +279,11 @@ class prediction:
                     except AttributeError:
                         pass 
             for d_idx in range(len(DIR_PATHS)):
-                all_mask,all_flow_l,all_styles_l,all_ID_l = prediction.predict_dataset(DIR_PATHS[d_idx],model,
+                all_mask_l,all_flow_l,all_styles_l,all_ID_l = prediction.predict_dataset(DIR_PATHS[d_idx],model,
                 image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,TAR_DIR=TAR_DIR,
                 return_results=return_results,save_masks=save_masks,mute=mute,do_subfolders=do_subfolders,mID=mID)
                 if return_results == True:
-                    dataset_res = {'masks':all_mask,'flows':all_flow_l,'styles':all_styles_l,'id':all_ID_l}
+                    dataset_res = {'masks':all_mask_l,'flows':all_flow_l,'styles':all_styles_l,'id':all_ID_l}
                     all_results[str(mID)+'_'+str(d_idx)]=dataset_res
         return(all_results)
 
