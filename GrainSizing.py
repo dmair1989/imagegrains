@@ -178,21 +178,21 @@ class measure:
         return(contours)
 
     def get_axes(outline,counter=0,OT=0.05,_idx=0):
-            """"
-            Takes outline as series of X,Y points.
-            """
-            a_ax, a_points = measure.get_a_axis(outline)
-            a_norm = (a_points[1]-a_points[0]) / a_ax
+        """"
+        Takes outline as series of X,Y points.
+        """
+        a_ax, a_points = measure.get_a_axis(outline)
+        a_norm = (a_points[1]-a_points[0]) / a_ax
+        b_ax,b_points = measure.iterate_b(outline,a_norm,OT)
+        if b_ax == 0:
+            counter += 1
+        while b_ax == 0:
+            OT = OT+.5
             b_ax,b_points = measure.iterate_b(outline,a_norm,OT)
-            if b_ax == 0:
-                counter += 1
-            while b_ax == 0:
-                OT = OT+.5
-                b_ax,b_points = measure.iterate_b(outline,a_norm,OT)
-                if b_ax == 0 and OT > 5:
-                    print('! Irregular grain skipped - check shape of grain @index:',_idx)
-                    break
-            return(a_ax, a_points,b_ax,b_points,counter)
+            if b_ax == 0 and OT > 5:
+                print('! Irregular grain skipped - check shape of grain @index:',_idx)
+                break
+        return(a_ax, a_points,b_ax,b_points,counter)
 
     def get_a_axis(outline):
         """"
