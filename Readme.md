@@ -16,9 +16,6 @@ If you use ImageGrains to calculate percentile uncertainties please also cite:
 - Mair, D., Henrique, A., Prado, D., Garefalakis, P., Lechmann, A., Whittaker, A., and Schlunegger, F.: Grain size of fluvial gravel bars from close-range UAV imagery-uncertainty in segmentation-based data, Earth Surf. Dyn. Discuss., 1–33, https://doi.org/10.5194/esurf-2022-19, 2022.
 
 ## Installation 
-
-### Dependancies  
-
     
 ### Local installation  
 
