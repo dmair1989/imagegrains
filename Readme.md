@@ -31,11 +31,14 @@ conda create --name imagegrains python=3.8
 and activate it with 
 ```
 conda activate imagegrains
-```.
+```
 
-First install cellpose and its GUI ```python -m pip install cellpose[gui]```
+First install cellpose and its GUI 
+```
+python -m pip install cellpose[gui]
+```
 
-Additional dependancies:  
+Then, install the additional dependancies:  
 
 - jupyter
 - matplotlib
