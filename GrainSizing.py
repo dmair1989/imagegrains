@@ -14,29 +14,29 @@ class measure:
     def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
     properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
     return_results=False,save_results=True,do_subfolders=False):
-        """ Measures grainsizes in a dataset; can contain subfolders `train`,`test`. If do_subfolders is True, the function will also measure grainsizes in subfolders of INP_DIR. 
+        """ Measures grainsizes in a dataset; can contain subfolders `train`,`test`. If do_subfolders is True, the function will also measure grainsizes in any subfolders of INP_DIR. 
 
         Parameters
         ----------
         INP_DIR (str) - path to the dataset
-        mask_format (str) - format of the mask images
-        mask_str (str) - string that is contained in the mask images
-        TAR_DIR (str) - path to the target directory
-        filters (dict) - dictionary of filters to apply to the grains
-        mute (bool) - mute the output
-        OT (float) - Angular tolerance threshold for b-axis detection during outline fitting in °. Default is 0.5°
-        properties (list) - list of properties to be extracted from the masks
-        fit_method (str) - method to fit the grain outlines. Options are 'ellipse','circle','line','poly','spline','none'. Default is 'ellipse'
-        return_results (bool) - return the results as a list of pandas dataframes
-        save_results (bool) - save the results as csv files
-        do_subfolders (bool) - measure grainsizes in subfolders of INP_DIR
+        mask_format (str (optional, default ='tif')) - format of the mask images
+        mask_str (str (optional, default ='')) - string that is contained in the mask images
+        TAR_DIR (str (optional, default ='')) - path to the target directory
+        filters (dict (optional, default =None)) - dictionary of filters to apply to the grains
+        mute (bool (optional, default =False)) - mute the output
+        OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+        properties (list (optional, default =['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'])) - list of properties to be extracted from the masks
+        fit_method (str (optional, default ='')) - method to fit the grain outlines. Options are 'ellipse','convex_hull','mask_outline'. Default is 'ellipse'
+        return_results (bool (optional, default =False)) - return the results as a list of pandas dataframes
+        save_results (bool (optional, default =True)) - save the results as csv files
+        do_subfolders (bool (optional, default =False)) - if True, the function will also measure grainsizes in any subfolders of INP_DIR
+        
 
         Returns     
         -------
         res_grains_l (list) - list of pandas dataframes containing the results
         res_props_l (list) - list of dictionaries containing the results
         IDs_l (list) - list of IDs
-        
 
         """
         dirs = next(os.walk(INP_DIR))[1]
@@ -71,17 +71,18 @@ class measure:
         Parameters
         ----------
         INP_DIR (str) - path to the dataset
-        mask_format (str) - format of the mask images
-        mask_str (str) - string that is contained in the mask images
-        TAR_DIR (str) - path to the target directory
-        filters (dict) - dictionary of filters to apply to the grains
-        mute (bool) - mute the output
-        OT (float) - Angular tolerance threshold for b-axis detection during outline fitting in °. Default is 0.5°
-        properties (list) - list of properties to be extracted from the masks
-        fit_method (str) - method to fit the grain outlines. Options are 'ellipse','convex_hull','mask_outline'. Default is 'ellipse'
-        return_results (bool) - return the results as a list of pandas dataframes
-        save_results (bool) - save the results as csv files
-        image_res (list) - list of image resolutions
+        mask_format (str (optional, default ='tif')) - format of the mask images
+        mask_str (str (optional, default ='')) - string that is contained in the mask images
+        TAR_DIR (str (optional, default ='')) - path to the target directory
+        filters (dict (optional, default =None)) - dictionary of filters to apply to the grains
+        mute (bool (optional, default =False)) - mute the output
+        OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+        properties (list (optional, default =['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'])) - list of properties to be extracted from the masks
+        fit_method (str (optional, default ='')) - method to fit the grain outlines. Options are 'ellipse','convex_hull','mask_outline'. Default is 'ellipse'
+        return_results (bool (optional, default =False)) - return the results as a list of pandas dataframes
+        save_results (bool (optional, default =True)) - save the results as csv files
+        image_res (list (optional, default =None)) - list of image resolutions in µm/pixel
+
         
         Returns
         -------
@@ -120,14 +121,14 @@ class measure:
         
         Parameters
         ----------
-        masks (array) - array of masks
-        filters (dict) - dictionary of filters to apply to the grains
-        mute (bool) - mute the output
-        OT (float) - Angular tolerance threshold for b-axis detection during outline fitting in °. Default is 0.5°
-        fit_method (str) - method to fit the grain outlines. Options are 'ellipse','convex_hull','mask_outline'. Default is 'ellipse'
-        image_res (list) - list of image resolutions
-        ID (str) - ID of the image
-        properties (list) - list of properties to be extracted from the masks
+        masks (numpy array) - numpy array containing the masks
+        filters (dict (optional, default =None)) - dictionary of filters to apply to the grains
+        mute (bool (optional, default =False)) - mute the output
+        OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+        fit_method (str (optional, default ='')) - method to fit the grain outlines. Options are 'ellipse','convex_hull','mask_outline'. Default is 'ellipse'
+        image_res (list (optional, default =None)) - list of image resolutions in µm/pixel
+        ID (str (optional, default ='')) - ID of the image
+        properties (list (optional, default =['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'])) - list of properties to be extracted from the masks
         
         Returns
         -------
@@ -189,15 +190,15 @@ class measure:
 
         Parameters
         ----------
-        grains (array) - array of masks
-        props (list) - list of regionprops dictionaries	
-        fit_res (list) - list of results from the grain axes fit
-        fit_method (str) - method to fit the grain outlines. Options are 'ellipse','convex_hull','mask_outline'. Default is 'ellipse'
-        padding_size (int) - padding size for the mask outline fit
-        OT (float) - Angular tolerance threshold for b-axis detection during outline fitting in °. Default is 0.5°
-        export_results (bool) - export the results to a pandas dataframe
-        mute (bool) - mute the output
-        properties (list) - list of properties to be extracted from the masks
+        grains (numpy array) - numpy array containing the grains
+        props (list (optional, default =None)) - list of dictionaries containing the results
+        fit_res (list (optional, default =None)) - list of results from the grain axes fit
+        fit_method (str (optional, default ='convex_hull')) - method to fit the grain outlines. Options are 'ellipse','convex_hull','mask_outline'. Default is 'ellipse'
+        padding_size (int (optional, default =2)) - padding size for the grain axes fit
+        OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+        export_results (bool (optional, default =True)) - export the results to a pandas dataframe
+        mute (bool (optional, default =False)) - mute the output
+        properties (list (optional, default =['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'])) - list of properties to be extracted from the masks
 
         Returns
         -------
@@ -237,9 +238,9 @@ class measure:
 
         Parameters
         ----------
-        masks (array) - array of masks
-        export_results (bool) - export the results to a pandas dataframe
-        properties (list) - list of properties to be extracted from the masks
+        masks (list) - list of masks
+        export_results (bool (optional, default =True)) - export the results to a pandas dataframe
+        properties (list (optional, default =['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'])) - list of properties to be extracted from the masks
 
         Returns
         -------
@@ -260,13 +261,14 @@ class measure:
 
         Parameters
         ----------
-        props (list) - list of regionprops dictionaries
-        method (str) - method to fit the grain outlines. Options are 'convex_hull','mask_outline'. Default is 'convex_hull'
-        padding (bool) - pad the mask outline with zeros. Default is True
-        padding_size (int) - padding size for the mask outline fit
-        OT (float) - Angular tolerance threshold for b-axis detection during outline fitting in °. Default is 0.5°
-        c_threshold (float) - threshold for the outline fitting. Default is 0.5
-        mute (bool) - mute the output
+        props (list) - list of dictionaries containing the results
+        method (str (optional, default ='convex_hull')) - method to fit the grain outlines. Options are 'ellipse','convex_hull','mask_outline'. Default is 'ellipse'
+        padding (bool (optional, default =True)) - pad the grain outlines
+        padding_size (int (optional, default =2)) - padding size for each region during the grain axes fit
+        OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+        c_threshold (float (optional, default =.5)) - threshold for the b-axis detection during outline fitting
+        mute (bool (optional, default =False)) - mute the output
+
 
         Returns
         -------
@@ -347,9 +349,9 @@ class measure:
 
         Parameters
         ----------
-        outline (list) - list of X,Y points
+        outline (list) - list of X,Y coordinates
         a_norm (list) - normalized a-axis vector
-        OT (float) - Angular tolerance threshold for b-axis detection during outline fitting in °. Default is 0.5°
+        OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
 
         Returns
         -------
@@ -386,9 +388,10 @@ class filter:
         ----------
         labels (array) - labeled image
         properties (list) - list of properties to be extracted from the labeled image
-        filters (dict) - dictionary of filters to be applied to the grains
-        mask (array) - mask of the grains
-        mute (bool) - mute print statements. Default is True
+        filters (dict) - dictionary with filter settings
+        mask (array) - mask image
+        mute (bool (optional, default = True)) - mute print statements
+
 
         Returns
         -------
@@ -428,11 +431,11 @@ class filter:
         Parameters
         ----------
         masks (array) - array of masks
-        filters (dict) - dictionary of filters to be applied to the grains
-        method (str) - method to be used for resampling. Default is 'wolman'
-        grid_size (int) - size of the grid in pixels. Default is None
-        edge_offset (float) - offset from the edge of the image in %. Default is None
-        n_rand (int) - number of random points to be used for resampling. Default is 100
+        filters (dict (optional, default = None)) - dictionary with filter settings
+        method (str (optional, default = 'wolman')) - method
+        grid_size (int (optional, default = None)) - grid size
+        edge_offset (float (optional, default = None)) - edge offset
+        n_rand (int (optional, default = 100)) - number of random samples
 
         Returns
         -------
@@ -512,14 +515,15 @@ class scale:
         
         Parameters
         ----------
-        DIR (str) - directory of the dataset
-        resolution (list) - list of resolutions in microns per pixel
-        camera_parameters (list) - list of camera parameters
-        gsd_format (str) - format of the grain size distributions. Default is 'csv'
-        gsd_str (str) - string to be used to identify the grain size distributions. Default is 'grains'
-        return_results (bool) - if True, returns the rescaled grain size distributions. Default is False
-        save_gsds (bool) - if True, saves the rescaled grain size distributions. Default is True
-        TAR_DIR (str) - directory to save the rescaled grain size distributions. Default is ''
+        DIR (str) - directory containing the grain size distributions
+        resolution (list (optional, default = None)) - list of resolutions
+        camera_parameters (list (optional, default = None)) - list of camera parameters
+        gsd_format (str (optional, default = 'csv')) - format of the grain size distributions
+        gsd_str (str (optional, default = 'grains')) - string to identify the grain size distributions
+        return_results (bool (optional, default = False)) - returns the rescaled grain size distributions
+        save_gsds (bool (optional, default = True)) - saves the rescaled grain size distributions
+        TAR_DIR (str (optional, default = '')) - directory to save the rescaled grain size distributions
+
 
         Returns
         -------
@@ -557,14 +561,21 @@ class scale:
         
         Parameters
         ----------
-        df (dataframe) - dataframe of the grain size distribution
-        resolution (float) - resolution in microns per pixel
-        ID (str) - ID of the grain size distribution    
-        GSD_DIR (str) - directory of the grain size distribution
-        camera_parameters (list) - list of camera parameters
-        return_results (bool) - if True, returns the rescaled grain size distribution. Default is False
-        save_gsds (bool) - if True, saves the rescaled grain size distribution. Default is True
-        TAR_DIR (str) - directory to save the rescaled grain size distribution. Default is ''
+        df (dataframe) - grain size distribution
+        resolution (float (optional, default = '')) - resolution in microns
+        ID (str (optional, default = '')) - ID of the grain size distribution
+        GSD_DIR (str (optional, default = '')) - directory of the grain size distribution
+        camera_parameters (list (optional, default = {
+                            'image_distance_m': None,
+                            'focal_length_mm': None,
+                            'sensorH_mm': None,
+                            'sensorW_mm': None,
+                            'pixelsW':None,
+                            'pixelsH':None})) - list of camera parameters
+        return_results (bool (optional, default = False)) - returns the rescaled grain size distributions
+        save_gsds (bool (optional, default = True)) - saves the rescaled grain size distributions
+        TAR_DIR (str (optional, default = '')) - directory to save the rescaled grain size distributions
+        
 
         Returns
         -------
@@ -641,6 +652,21 @@ class scale:
 class load:
 
     def load_grain_set(DIR,gsd_format='csv',gsd_str='grains',filter_str='re_scaled'):
+        """
+        Loads a grain size distributions from a directory.
+
+        Parameters
+        ----------
+        DIR (str) - directory of the grain size distributions
+        gsd_format (str (optional, default = 'csv')) - format of the grain size distributions
+        gsd_str (str (optional, default = 'grains')) - string to filter the grain size distributions
+        filter_str (str (optional, default = 're_scaled')) - string to filter the grain size distributions
+
+        Returns
+        -------
+        gsds (list) - list of grain size distributions
+                
+        """
         dirs = next(os.walk(DIR[0]))[1]
         G_DIR = []
         if 'test' in dirs:
@@ -675,10 +701,10 @@ class compile:
         
         Parameters
         ----------
-        gsds (list) - list of paths to GSDs
-        TAR_DIR (str) - path to directory where results should be saved
-        save_results (bool) - whether to save the results
-
+        gsds (list) - list of grain size distributions
+        TAR_DIR (str (optional, default = '')) - directory to save the results
+        save_results (bool (optional, default = True)) - save the results
+        
         Returns
         -------
         res_df (pandas dataframe) - dataframe containing the object size of all grains in a dataset
