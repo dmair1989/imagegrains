@@ -189,9 +189,11 @@ class prediction:
                                 else:
                                     i_str=f',{key}={val}'
                                 eval_str+=i_str
-                            exec(f'masks, flows, styles = model.eval(img, {eval_str})')
+                            exec(f'masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels, {eval_str})')
                         except AttributeError:
                             print('Config file is not formatted correctly. Please check the documentation for more information.')
+                        except SyntaxError:
+                            print('Diameter,rescale,min_size,channels are not allowed to be overwritten.')
                     else:
                         masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels) 
                     if save_masks == False and return_results == False:
@@ -336,7 +338,9 @@ class prediction:
                         if mute == False:
                             print('... with custom configuration.')
                     except AttributeError:
-                        pass 
+                        pass
+            else:
+                config = None 
             for d_idx in range(len(DIR_PATHS)):
                 all_mask_l,all_flow_l,all_styles_l,all_ID_l = prediction.predict_dataset(DIR_PATHS[d_idx],model,
                 image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,config=config,TAR_DIR=TAR_DIR,

@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import cv2 as cv
 import matplotlib.pyplot as plt
 from skimage.measure import label, regionprops
 from skimage.segmentation import mark_boundaries 
@@ -28,7 +27,6 @@ class training:
 class segmentation:
 
     def eval_plot(img,y_pred,y_true,j_score,f1,ap,_print=False,ID =''):
-     fig = plt.figure(figsize=(15, 15))
      plt.imshow(mark_boundaries(img, y_pred,mode='thick'))
      plt.imshow(np.ma.masked_where(y_true==0,y_true),alpha=.5)
 
@@ -49,7 +47,7 @@ class segmentation:
           print('AP @50 IoU: ',np.round(ap[0],decimals=2))
           print('AP @80 IoU: ',np.round(ap[5],decimals=2))
      plt.axis('off')
-     return(fig)
+     return()
     
     def AP_IoU_plot(eval_results,thresholds=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],title=''):    
         res_l= [[] for x in range(len(thresholds))]
@@ -80,7 +78,6 @@ class segmentation:
         return()
     
     def AP_IoU_summary_plot(eval_results_list,elements,thresholds=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):    
-        fig = plt.figure(figsize=(3, 5))
         for ds in range(len(eval_results_list)):
             res_l= [[] for x in range(len(thresholds))]
             for i  in range(len(eval_results_list[ds])):
@@ -112,7 +109,7 @@ class segmentation:
         plt.xlabel('IoU threshold')
         plt.legend()
         plt.tight_layout()
-        return(fig)
+        return()
     
     def inspect_predictions(imgs,lbls,preds,PATH=''):
         fig = plt.figure(figsize=(len(imgs)*2,7), dpi=300)
