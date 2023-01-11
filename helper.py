@@ -177,7 +177,7 @@ class prediction:
             for j in tqdm(range(len(Z)), desc=INP_DIR,unit='image',colour='CYAN'):
                 img= io.imread(Z[j])
                 ID = Z[j].split('\\')[len(Z[j].split('\\'))-1].split('.')[0]
-                if any(x in ID for x in ['flow','flows','masks','mask']):
+                if any(x in ID for x in ['flow','flows','masks','mask','pred']):
                     continue
                 else:
                     if config:

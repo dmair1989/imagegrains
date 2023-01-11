@@ -111,7 +111,7 @@ class segmentation:
         plt.tight_layout()
         return()
     
-    def inspect_predictions(imgs,lbls,preds,PATH=''):
+    def inspect_predictions(imgs,lbls,preds,title='',PATH=''):
         fig = plt.figure(figsize=(len(imgs)*2,7), dpi=300)
         for k in range(len(imgs)):
             img = io.imread(imgs[k])
@@ -144,7 +144,7 @@ class segmentation:
             i_ID = imgs[k].split('\\')[len(imgs[k].split('\\'))-1].split('.')[0]
             plt.xlabel(i_ID)
             plt.tight_layout()
-        plt.suptitle(str(PATH))
+        plt.suptitle(str(title))
         return(fig)
     
 class grains:
