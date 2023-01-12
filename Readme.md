@@ -44,11 +44,11 @@ Then, install the additional dependancies:
 - scikit-image
 - pandas
 
-***TO DO: ***
-***- ship as package***
-***- environment file (maybe?)***
-***- make it run in google colab***
-***- create command-line executable***
+***TO DO: ***  
+***- ship as package***  
+***- environment file (maybe?)***  
+***- make it run in google colab***  
+***- create command-line executable***  
 ***- do short manual***
 
 
