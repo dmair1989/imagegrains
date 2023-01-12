@@ -30,10 +30,12 @@ and activate it with
 conda activate imagegrains
 ```
 
-First install cellpose and its GUI 
+First install cellpose, its GUI and dependancies (which includes [pytorch](https://pytorch.org/), [pyqtgrapgh](https://www.pyqtgraph.org/), [PyQt5](https://www.riverbankcomputing.com/static/Docs/PyQt5/), [numpy](https://numpy.org/), [numba](http://numba.pydata.org/numba-doc/latest/user/5minguide.html), [scipy](https://scipy.org/), [natsort](https://natsort.readthedocs.io/en/master/)) 
 ```
 python -m pip install cellpose[gui]
 ```
+
+Details and more installation options of cellpose (including GPU versions for Windows and Linux) are found [here](https://github.com/mouseland/cellpose#installation).
 
 Then, install the additional dependancies:  
 
@@ -41,6 +43,13 @@ Then, install the additional dependancies:
 - matplotlib
 - scikit-image
 - pandas
+
+***TO DO: ***
+***- ship as package***
+***- environment file (maybe?)***
+***- make it run in google colab***
+***- create command-line executable***
+***- do short manual***
 
 
 
