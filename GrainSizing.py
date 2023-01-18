@@ -699,7 +699,7 @@ class load:
             gsds += load.gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str,filter_str=filter_str)
         return(gsds)
     
-    def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains',filter_str='re_scaled'):
+    def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains',filter_str=''):
         gsds_raw = natsorted(glob(PATH+'/*'+gsd_str+'*.'+gsd_format))
         gsds = []
         for gsd in gsds_raw:
