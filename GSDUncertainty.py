@@ -1,6 +1,8 @@
 import os, csv
 import numpy as np
 import pandas as pd
+
+from pathlib import Path
 from scipy import interpolate as interp
 from scipy import stats
 from glob import glob
@@ -140,7 +142,7 @@ class random:
         """
         rand = np.random.choice(gsd, (len(gsd), num_it))
         med_list, upper_CI, lower_CI = [],[],[]
-        for p in range(0,100,1):
+        for p in range(100):
             perc_dist = np.percentile(rand, p, axis=0)
             perc_dist.sort()
             lower, upper = np.percentile(perc_dist, CI_bounds)
@@ -168,7 +170,7 @@ class random:
 
         """
         if not scale_err or not length_err:
-            print('Errors missing!')
+            print('No errors specified, returning original GSD')
         gsd = np.delete(gsd, np.where(gsd <= cutoff))
         res_list = []
         if mute == False:
@@ -415,21 +417,21 @@ class random:
         """                                                   
         # get percentiles in 1% steps (shape = [n[100]])
         D_list = []
-        for k in range(0,len(res_list),1):
-            if len(res_list[k]) == 0:
+        for _,res in enumerate(res_list):
+            if len(res) == 0:
                     print('empty GSD skipped')
                     continue
-            pc = [np.percentile(res_list[k],pi) for pi in range(0,100,1)]
+            pc = [np.percentile(res,pi) for pi in range(100)]
             D_list.append(pc)
         # map list to transposed array (i.e., each line = one D-value, each column = one GSD; shape = 100 x n)
         per_array = np.array(D_list)
         a = per_array.transpose()
         # get estimates for upperCI,lowerCI and median & the percentiles for the input
         med_list, upper_CI, lower_CI = [],[],[]
-        for j in range(0,len(a),1):
-            lower_CI.append(np.percentile(a[j],CI_bounds[0]))
-            upper_CI.append(np.percentile(a[j],CI_bounds[1]))
-            med_list.append(np.percentile(a[j],50))                                                             
+        for _,a_i in enumerate(a):
+            lower_CI.append(np.percentile(a_i ,CI_bounds[0]))
+            upper_CI.append(np.percentile(a_i ,CI_bounds[1]))
+            med_list.append(np.percentile(a_i ,50))                                                             
         return(med_list, upper_CI, lower_CI)
 
 class calculate:
@@ -473,36 +475,36 @@ class calculate:
         if not gsds:
             print('No GSD(s) provided!')
             return
-        for i in tqdm(range(len(gsds)),desc=str(method),unit='gsd',colour='YELLOW',position=0,leave=True):
+        for idx in tqdm(range(len(gsds)),desc=str(method),unit='gsd',colour='YELLOW',position=0,leave=True):
             if scale_err:
                 if len(scale_err) >1: 
-                    scale_err_i=scale_err[i]
+                    scale_err_i=scale_err[idx]
                 else:
                     scale_err_i=scale_err[0]
             else:
                 scale_err_i = []
             if length_err:
                 if len(length_err) >1: 
-                    length_err_i=length_err[i]
+                    length_err_i=length_err[idx]
                 else:
                     length_err_i = length_err[0]
             else:
                 length_err_i = []
             if sfm_error:
                 if len(sfm_error)>1:
-                    sfm_error_i = sfm_error[i]
+                    sfm_error_i = sfm_error[idx]
                 else:
                     sfm_error_i = sfm_error[0]
             else:   
                 sfm_error_i = {}
             if avg_res:
                 if len(avg_res)>1:
-                    avg_res_i = avg_res[i]
+                    avg_res_i = avg_res[idx]
                 else: 
                     avg_res_i = avg_res[0]
             else:
                 avg_res_i = 1
-            med_list, upper_CI, lower_CI, gsd_list, ID = calculate.gsd_uncertainty(INP_PATH=gsds[i],sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
+            med_list, upper_CI, lower_CI, gsd_list, ID = calculate.gsd_uncertainty(INP_PATH=gsds[idx],sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
             sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,TAR_DIR=TAR_DIR,return_results=True,sfm_type=sfm_type)
             if return_results==True:
                 res_dict[ID]=[med_list, upper_CI, lower_CI, gsd_list]
@@ -555,7 +557,8 @@ class calculate:
                     print('No valid column found!')
                     return
             gsd = np.sort(df[column_name].to_numpy())*conv_factor
-            ID = INP_PATH.split('\\')[len(INP_PATH.split('\\'))-1].split('.')[0]
+            ID = Path(INP_PATH).stem
+            #ID = INP_PATH.split('\\')[len(INP_PATH.split('\\'))-1].split('.')[0]
         if not avg_res:
             avg_res=1
         med_list, upper_CI, lower_CI, gsd_list = calculate.uncertainty(gsd,method=method,scale_err=scale_err,length_err=length_err,
@@ -568,7 +571,8 @@ class calculate:
                     pass
                 OUT_DIR = TAR_DIR
             elif INP_PATH:
-                OUT_DIR = INP_PATH.split('\\')[0]+'/'
+                OUT_DIR = str(Path(INP_PATH).parent)
+                #OUT_DIR = INP_PATH.split('\\')[0]+'/'
             with open(OUT_DIR + '/' + ID + str(method) +'_perc_uncert.txt', 'w') as f:
                 fwriter = csv.writer(f,delimiter=';')
                 fwriter.writerow(gsd_list)
@@ -600,7 +604,7 @@ class calculate:
                 med_list, upper_CI, lower_CI = random.get_MC_percentiles(res_list,CI_bounds=CI_bounds)
         #do perc_uncert with one of the available methods
         gsd_list=[]
-        for p in range(0,100,1):    
+        for p in range(100):    
             inp = np.percentile(gsd,p)
             gsd_list.append(inp)
         return(med_list, upper_CI, lower_CI, gsd_list)
@@ -636,7 +640,8 @@ class load:
         for path in G_DIR:
             mc= natsorted(glob(path+'/*'+mc_str+'*.txt'))
             im= natsorted(glob(path+'/*'+'*.jpg'))
-            id_i = [im[i].split('\\')[1].split('.')[0] for i in range(len(im))]
+            id_i = [Path(im[idx]).stem for idx in range(len(im))]
+            #id_i = [im[i].split('\\')[1].split('.')[0] for i in range(len(im))]
             mcs+=mc
             ids+=id_i
         return(mcs,ids) 
