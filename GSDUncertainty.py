@@ -179,7 +179,7 @@ class random:
             res_list=pool.map(partial(random.MC_loop, gsd=gsd,length_err=length_err,scale_err=scale_err,method=method,cutoff=cutoff), range(num_it))
         return(res_list)
     
-    def MC_loop(arg,gsd=None,length_err=0,scale_err=1,method ='truncnorm',cutoff=0):
+    def MC_loop(arg,gsd=None,length_err=0,scale_err=.1,method ='truncnorm',cutoff=0):
         """
         Monte Carlo loop for percentile uncertainty with length and scale error
         """
