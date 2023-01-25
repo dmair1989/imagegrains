@@ -45,11 +45,18 @@ Then, install the additional dependancies:
 - pandas
 
 ***TO DO: ***  
-***- ship as package***  
-***- environment file (maybe?)***  
-***- make it run in google colab***  
-***- create command-line executable***  
-***- do short manual***
+   
+***-code:***   
+***-- ship as package***  
+***-- make it run in google colab***  
+***-- create command-line executable***  
+***-- do short manual***  
+   
+***-data:***   
+***--change rescale range an evaluate effect***   
+***--assess effect of image specific diam during eval()***   
+***--improve set with 'human-in-the-loop' approach***
+
 
 
 
