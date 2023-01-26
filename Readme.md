@@ -42,7 +42,8 @@ Then, install the additional dependancies:
 - jupyter
 - matplotlib
 - scikit-image
-- pandas
+- pandas  
+(- for tsne: scanpy)
 
 ***TO DO: ***  
    
@@ -57,6 +58,10 @@ Then, install the additional dependancies:
 ***--assess effect of image specific diam during eval()***   
 ***--improve set with 'human-in-the-loop' approach***
 
+-------
+Planned future modules:  
+--> classifier model(s) for masks
+--> shape analysis (angularity, )
 
 
 

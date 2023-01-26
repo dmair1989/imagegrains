@@ -11,6 +11,8 @@ from skimage.measure import label, find_contours, regionprops_table, regionprops
 from natsort import natsorted
 from glob import glob
 
+import data_loader
+
 def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
 properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
 return_results=False,save_results=True,do_subfolders=False):
@@ -539,7 +541,7 @@ def re_scale_dataset(DIR,resolution= None, camera_parameters= None, gsd_format='
     rescaled_l (list) - list of rescaled grain size distributions
 
     """
-    gsds = load_grain_set(DIR, gsd_format = gsd_format, gsd_str=gsd_str)
+    gsds = data_loader.load_grain_set(DIR, gsd_format = gsd_format, gsd_str=gsd_str)
     rescaled_l = []
     for idx,gsd in enumerate(gsds):
         try:
@@ -662,47 +664,6 @@ def calculate_camera_res(focal_length_mm, height_m, sensorH_mm, sensorW_mm, pixe
     average_res = np.round(np.mean([X_res, Y_res]), 4)
     return average_res
 
-def load_grain_set(DIR,gsd_format='csv',gsd_str='grains',filter_str='re_scaled'):
-        """
-        Loads a grain size distributions from a directory.
-
-        Parameters
-        ----------
-        DIR (str) - directory of the grain size distributions
-        gsd_format (str (optional, default = 'csv')) - format of the grain size distributions
-        gsd_str (str (optional, default = 'grains')) - string to filter the grain size distributions
-        filter_str (str (optional, default = 're_scaled')) - string to filter the grain size distributions
-
-        Returns
-        -------
-        gsds (list) - list of grain size distributions
-                
-        """
-        dirs = next(os.walk(DIR[0]))[1]
-        G_DIR = []
-        if 'test' in dirs:
-                G_DIR = [str(DIR[0]+'/test/')]
-        if 'train' in dirs:
-                G_DIR += [str(DIR[0]+'/train/')]
-        if not G_DIR:
-            G_DIR = DIR
-        gsds=[]
-        for path in G_DIR:
-            gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str,filter_str=filter_str)
-        return gsds
-    
-def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains',filter_str=''):
-    gsds_raw = natsorted(glob(PATH+'/*'+gsd_str+'*.'+gsd_format))
-    gsds = []
-    for gsd in gsds_raw:
-        if filter_str== '0':
-            gsds.append(gsd)
-        else:
-            if filter_str not in gsd:
-                gsds.append(gsd)
-    if not any(gsds):
-        print('Could not load GSDs.')
-    return gsds
 
 def dataset_object_size(gsds,TAR_DIR='',save_results=True):
     """
