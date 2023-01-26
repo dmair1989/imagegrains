@@ -417,9 +417,9 @@ def get_MC_percentiles(res_list,CI_bounds=[2.5,97.5]):
     # get percentiles in 1% steps (shape = [n[100]])
     D_list = []
     for _,res in enumerate(res_list):
-        if not res:
-                print('empty GSD skipped')
-                continue
+        if len(res) <1:
+            print('Empty GSD!')
+            continue
         pc = [np.percentile(res,pi) for pi in range(100)]
         D_list.append(pc)
     # map list to transposed array (i.e., each line = one D-value, each column = one GSD; shape = 100 x n)
@@ -647,9 +647,8 @@ def read_unc(path,sep=';'):
     """
     Reads uncertainty file and returns a dataframe.
     """
-    df = pd.read_csv(path,sep=sep,)
+    df = pd.read_csv(path,sep=sep, header=None)
     df = df.T
-    df.reset_index(inplace=True)
     df.columns = ['data','med','uci','lci']
-    df = np.round(df.astype('float64'),decimals=1)
+    df = df.round(decimals=2)
     return df
