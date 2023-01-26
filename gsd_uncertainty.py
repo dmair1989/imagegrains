@@ -620,35 +620,3 @@ def compile_sfm_error(from_file=''):
             sfm_err_l.append(sfm_error_i)
     return sfm_err_l
 
-
-def read_set_unc(PATH,mc_str=''):
-    """
-    Reads all files in a directory and returns a list of all files and a list of all IDs.
-    """
-    dirs = next(os.walk(PATH))[1]
-    G_DIR = []
-    if 'test' in dirs:
-        G_DIR = [str(PATH+'/test/')]
-    if 'train' in dirs:
-        G_DIR += [str(PATH+'/train/')]
-    if not G_DIR:
-        G_DIR = PATH
-    mcs,ids=[],[]
-    for path in G_DIR:
-        mc= natsorted(glob(path+'/*'+mc_str+'*.txt'))
-        im= natsorted(glob(path+'/*'+'*.jpg'))
-        id_i = [Path(im[idx]).stem for idx in range(len(im))]
-        #id_i = [im[i].split('\\')[1].split('.')[0] for i in range(len(im))]
-        mcs+=mc
-        ids+=id_i
-    return mcs,ids 
-
-def read_unc(path,sep=';'):
-    """
-    Reads uncertainty file and returns a dataframe.
-    """
-    df = pd.read_csv(path,sep=sep, header=None)
-    df = df.T
-    df.columns = ['data','med','uci','lci']
-    df = df.round(decimals=2)
-    return df
