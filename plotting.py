@@ -6,7 +6,7 @@ from skimage.segmentation import mark_boundaries
 from skimage.color import label2rgb
 from cellpose import io
 
-import grainsizing
+import grain_sizing
 from pathlib import Path
 
 
@@ -181,7 +181,7 @@ def all_grains_plot(masks,elements,props=None, image =None,
         props = regionprops(label(masks))
     if not fit_res and do_fit == True:
         print('Fitted axes not found: Attempting axes fit for',fit_method,'...')
-        _,_,a_coords,b_coords = grainsizing.fit_grain_axes(props,method=fit_method,padding_size=padding_size)
+        _,_,a_coords,b_coords = grain_sizing.fit_grain_axes(props,method=fit_method,padding_size=padding_size)
     if fit_res:
         _,_,a_coords,b_coords = fit_res[0],fit_res[1],fit_res[2],fit_res[3]
         fit_res=[_,_,a_coords,b_coords]
@@ -193,15 +193,15 @@ def all_grains_plot(masks,elements,props=None, image =None,
             mask = props[_idx].image
             plt.imshow(np.ma.masked_where(mask==0,mask),extent=[minx,maxx,maxy,miny],alpha= .5)
         if 'masks_outline' in elements:
-            img_pad = grainsizing.image_padding(props[_idx].image,padding_size=padding_size)
-            contours = grainsizing.contour_grain(img_pad)
+            img_pad = grain_sizing.image_padding(props[_idx].image,padding_size=padding_size)
+            contours = grain_sizing.contour_grain(img_pad)
             for contour in contours:
                 plt.plot(contour[:, 1]-(padding_size-.5)+minx, contour[:, 0]-(padding_size-.5)+miny,'-c',linewidth=1.5)
         if 'convex_hull' in elements:
             convex_image = props[_idx].convex_image
-            conv_pad = grainsizing.image_padding(convex_image,padding_size=padding_size)
+            conv_pad = grain_sizing.image_padding(convex_image,padding_size=padding_size)
             #conv_pad = cv.copyMakeBorder(convex_image.astype(int), padding_size, padding_size, padding_size, padding_size, cv.BORDER_CONSTANT, (0,0,0))
-            contours = grainsizing.contour_grain(conv_pad)
+            contours = grain_sizing.contour_grain(conv_pad)
             for contour in contours:
                 plt.plot(contour[:, 1]-(padding_size-.5)+minx, contour[:, 0]-(padding_size-.5)+miny,'-m',linewidth=1.5)
         if 'fit_a' in elements and a_coords:
@@ -250,7 +250,7 @@ def single_grain_plot(mask,elements,props=None, image =None, fit_res =None,
         plt.imshow(label2rgb(label(mask), bg_label=0),alpha=0.3)
     if not fit_res and do_fit == True:
         print('Fitted axes not found: Attempting axes fit for',fit_method,'...')
-        _,_,a_coords,b_coords = grainsizing.fit_grain_axes(props,method=fit_method,padding_size=padding_size)
+        _,_,a_coords,b_coords = grain_sizing.fit_grain_axes(props,method=fit_method,padding_size=padding_size)
         fit_res=[_,_,a_coords,b_coords]
     if fit_res:
         _,_,a_coords,b_coords = fit_res[0],fit_res[1],fit_res[2],fit_res[3]
@@ -259,15 +259,15 @@ def single_grain_plot(mask,elements,props=None, image =None, fit_res =None,
     if 'mask' in elements:
         plt.imshow(np.ma.masked_where(mask==0,mask),extent=[minx-padding_size,maxx+padding_size,maxy+padding_size,miny-padding_size],alpha= .5)
     if 'masks_outline' in elements:
-        img_pad = grainsizing.image_padding(props[0].image,padding_size=padding_size)
-        contours = grainsizing.contour_grain(img_pad)
+        img_pad = grain_sizing.image_padding(props[0].image,padding_size=padding_size)
+        contours = grain_sizing.contour_grain(img_pad)
         for contour in contours:
                 plt.plot(contour[:, 1]-(padding_size-.5)+minx, contour[:, 0]-(padding_size-.5)+miny,'-c',linewidth=1.5)
     if 'convex_hull' in elements:
         convex_image = props[0].convex_image
-        conv_pad = grainsizing.image_padding(convex_image,padding_size=padding_size)
+        conv_pad = grain_sizing.image_padding(convex_image,padding_size=padding_size)
             #conv_pad = cv.copyMakeBorder(convex_image.astype(int), padding_size, padding_size, padding_size, padding_size, cv.BORDER_CONSTANT, (0,0,0))
-        contours = grainsizing.contour_grain(conv_pad)
+        contours = grain_sizing.contour_grain(conv_pad)
         for contour in contours:
             plt.plot(contour[:, 1]-(padding_size-.5)+minx, contour[:, 0]-(padding_size-.5)+miny,'-m',linewidth=1.5)
     if 'fit_a' in elements and a_coords:

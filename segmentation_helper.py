@@ -9,7 +9,7 @@ from skimage.measure import label
 from cellpose import metrics
 from cellpose import models
 
-import grainsizing
+import grain_sizing
 
 def load_data(PATH,mask_str='mask',im_str='',im_format='jpg',mask_format='tif'):
     """
@@ -481,8 +481,8 @@ def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.6, 0.65, 
         y_pred = io.imread(preds[idx])
 
         if filters:
-            _, y_true = grainsizing.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
-            _, y_pred = grainsizing.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
+            _, y_true = grain_sizing.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
+            _, y_pred = grain_sizing.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
         ap,_,_,_,iout,_ =  eval_image(y_true,y_pred, thresholds=thresholds)
 
         eval_results[idx] = {'img':img, 'ap':ap, 'iout':iout,}
