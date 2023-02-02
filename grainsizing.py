@@ -411,31 +411,34 @@ def filter_grains(labels,properties,filters,mask,mute=True):
     filtered (dataframe) - dataframe with filtered grains
 
     """
-    grains = regionprops_table(labels,properties=properties)
-    grains_df = pd.DataFrame(grains)
-    if mute==False:
-        print(len(grains_df),' grains found')
-    if filters['edge'][0] == True:
-        """Filter edges based on centroid location"""
-        w,l = labels.shape
-        edge = filters['edge'][1]
-        filtered = grains_df[grains_df['centroid-0']>w*edge]
-        filtered = filtered[filtered['centroid-0']<w*(1-edge)]
-        filtered = filtered[filtered['centroid-1']>l*edge]
-        filtered = filtered[filtered['centroid-1']<l*(1-edge)]
+    if not labels.any():
+        filtered = []
     else:
-        filtered = grains_df
-    if filters['px_cutoff'][0] == True:
-        """Filter by b-axis length """
-        filtered = filtered[filtered['minor_axis_length']>filters['px_cutoff'][1]]
-    else:
-        filtered = filtered
-    bad_grains = [x for x in grains_df['label'].values if x not in filtered['label'].values]
-    if mute==False:
-        print(len(filtered),' grains after filtering')
-    for label in bad_grains:
-        mask[labels == label]=0
-    return filtered,mask
+        grains = regionprops_table(labels,properties=properties)
+        grains_df = pd.DataFrame(grains)
+        if mute==False:
+            print(len(grains_df),' grains found')
+        if filters['edge'][0] == True:
+            """Filter edges based on centroid location"""
+            w,l = labels.shape
+            edge = filters['edge'][1]
+            filtered = grains_df[grains_df['centroid-0']>w*edge]
+            filtered = filtered[filtered['centroid-0']<w*(1-edge)]
+            filtered = filtered[filtered['centroid-1']>l*edge]
+            filtered = filtered[filtered['centroid-1']<l*(1-edge)]
+        else:
+            filtered = grains_df
+        if filters['px_cutoff'][0] == True:
+            """Filter by b-axis length """
+            filtered = filtered[filtered['minor_axis_length']>filters['px_cutoff'][1]]
+        else:
+            filtered = filtered
+        bad_grains = [x for x in grains_df['label'].values if x not in filtered['label'].values]
+        if mute==False:
+            print(len(filtered),' grains after filtering')
+        for label in bad_grains:
+            mask[labels == label]=0
+        return filtered,mask
 
 def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset=None,n_rand=100):
     """

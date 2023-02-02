@@ -301,7 +301,7 @@ rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfo
     return all_results
 
 
-def eval_image(y_true,y_pred,thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):
+def eval_image(y_true,y_pred,thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):
     """
     Evaluates a single image. Uses cellpose.metrics (https://cellpose.readthedocs.io/en/latest/api.html#module-cellpose.metrics).
     
@@ -327,7 +327,7 @@ def eval_image(y_true,y_pred,thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85,
     #f1 = f1_score(y_true,y_pred,average="macro")
     return ap, tp, fp, fn, iout, preds
 
-def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],
+def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],
     filters={'edge':[False,.05],'px_cutoff':[False,10]},filter_props=['label','area','centroid','major_axis_length','minor_axis_length'],
     save_results=True,return_results=True):
     """
@@ -353,6 +353,7 @@ def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.6, 0.65, 
     """
     eval_results={}
     for idx,im in enumerate(imgs):
+        ID = Path(im).stem
         img = io.imread(im)
         y_true = io.imread(lbls[idx])
         y_pred = io.imread(preds[idx])
@@ -362,7 +363,7 @@ def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.6, 0.65, 
             _, y_pred = grainsizing.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
         ap,_,_,_,iout,_ =  eval_image(y_true,y_pred, thresholds=thresholds)
 
-        eval_results[idx] = {'img':img, 'ap':ap, 'iout':iout,}
+        eval_results[idx] = {'id':ID,'img':img, 'ap':ap, 'iout':iout,}
     if save_results==True:
         if TAR_DIR:
             try:
