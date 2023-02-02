@@ -1,6 +1,6 @@
 __pycache__
 test.py
-test/test2.ipynb
+test/*.*
 *.eps
 *.pkl
 *.csv
