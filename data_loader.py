@@ -81,17 +81,18 @@ def dataset_loader(IM_DIRs,image_format='jpg',label_format='tif',pred_format='ti
     """
     imgs,lbls,preds = [],[],[]
     if type(IM_DIRs) == list:
+        dirs = []
         for x in range(len(IM_DIRs)):
-            dirs = next(os.walk(IM_DIRs[x]))[1]
+            dirs += next(os.walk(IM_DIRs[x]))[1]
     else:
         dirs = next(os.walk(IM_DIRs))[1]
     IM_DIR = []
     if dirs:
         for dir in dirs:
             if 'test' in dir:
-                IM_DIR += [str(dir+'/test/')]
+                IM_DIR += [str(IM_DIRs+'/test/')]
             if 'train' in dir:
-                IM_DIR += [str(dir+'/train/')]
+                IM_DIR += [str(IM_DIRs+'/train/')]
         for dir in IM_DIR:
             imgs1,lbls1,preds1 = load_from_folders(dir,image_format=image_format,label_format=label_format,pred_format=pred_format,label_str=label_str,pred_str=pred_str)
             imgs += imgs1
