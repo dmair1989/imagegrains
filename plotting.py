@@ -22,7 +22,7 @@ def show_training_set(inp_list,mask_str='_mask'):
         #masks= seg['masks'].squeeze()
         plt.imshow(seg)
         plt.axis('off')
-    return()
+    return
 
 def eval_plot(img,y_pred,y_true,j_score,f1,ap,_print=False,ID =''):
     plt.imshow(mark_boundaries(img, y_pred,mode='thick'))
@@ -45,27 +45,37 @@ def eval_plot(img,y_pred,y_true,j_score,f1,ap,_print=False,ID =''):
         print('AP @50 IoU: ',np.round(ap[0],decimals=2))
         print('AP @80 IoU: ',np.round(ap[5],decimals=2))
     plt.axis('off')
-    return()
+    return
 
-def AP_IoU_plot(eval_results,thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],title=''):    
+def AP_IoU_plot(eval_results,thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],title='',test_idxs=None):    
     res_l= [[] for x in range(len(thresholds))]
     for i  in range(len(eval_results)):
         for j in range(len(thresholds)):
             o = eval_results[i]['ap'][j]
             res_l[j].append(o)
     avg_l,std_ul,std_ll =[],[],[]
-    plt.figure(figsize=(3, 5))
     for m in range(len(res_l)):
         avg_l.append(np.mean(res_l[m]))
         std_ul.append(np.mean(res_l[m])+np.std(res_l[m]))
         std_ll.append(np.mean(res_l[m])-np.std(res_l[m]))
-    plt.fill_between(thresholds,std_ul,std_ll,color='r',alpha=0.2,label='SD of dataset')
+    
     for i  in range(len(eval_results)):
-        if i ==0:
-            plt.plot(thresholds,eval_results[i]['ap'],'k',alpha=.5,label='Single image')
+        if test_idxs:
+            if i in test_idxs and i == 0:
+                plt.plot(thresholds,eval_results[i]['ap'],'b',label='Test image')
+            elif i in test_idxs:
+                plt.plot(thresholds,eval_results[i]['ap'],'b')
+            elif i == len(eval_results)-1:
+                plt.plot(thresholds,eval_results[i]['ap'],'c',alpha=.4,label='Training image')
+            else:
+                plt.plot(thresholds,eval_results[i]['ap'],'c',alpha=.4)
+        elif not test_idxs and i ==0:
+            plt.plot(thresholds,eval_results[i]['ap'],'c',alpha=.4,label='Single image')
         else:
-            plt.plot(thresholds,eval_results[i]['ap'],'k',alpha=.5)
-    plt.plot(thresholds,avg_l,'r',lw=2,label='Dataset mean')
+            plt.plot(thresholds,eval_results[i]['ap'],'c',alpha=.4)
+    
+    plt.plot(thresholds,avg_l,'r',lw=2,label='Dataset avg.')
+    plt.fill_between(thresholds,std_ul,std_ll,color='r',alpha=0.2,label='1 Std. dev.')
     plt.xlim(np.min(thresholds),np.max(thresholds))
     plt.ylim(0,1)
     plt.ylabel('Average precision (AP)')
@@ -73,7 +83,7 @@ def AP_IoU_plot(eval_results,thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0
     plt.title(title)
     plt.legend()
     plt.tight_layout()
-    return()
+    return
 
 def AP_IoU_summary_plot(eval_results_list,elements,thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):    
     for ds in range(len(eval_results_list)):
@@ -107,7 +117,7 @@ def AP_IoU_summary_plot(eval_results_list,elements,thresholds=[0.5, 0.55, 0.6, 0
     plt.xlabel('IoU threshold')
     plt.legend()
     plt.tight_layout()
-    return()
+    return
     
 def inspect_predictions(imgs,lbls,preds,title='',PATH=''):
     fig = plt.figure(figsize=(len(imgs)*2,7), dpi=300)
@@ -164,6 +174,26 @@ def inspect_dataset_grains(imgs,masks,res_props=None,elements=['image','mask','e
         all_grains_plot(io.imread(masks[k]),elements,props=res_props[k],image=io.imread(imgs[k]),title=m_ID)
         plt.tight_layout()
     return fig
+
+def show_masks_set(labels,images):
+    plt.figure(figsize=(20,20))
+    for k in range(len(images)):
+        img = io.imread(images[k])
+        lbl = io.imread(labels[k])
+        values = np.unique(label(lbl))
+        colors = plt.cm.get_cmap('winter',len(values))
+        colors=[colors(i) for i in range(len(values))]
+        np.random.shuffle(colors) 
+        
+        plt.subplot(9,9,k+1)
+        
+        masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
+        plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
+        #plt.imshow(im2)
+        #plt.imshow(im,alpha=0.5)
+        plt.axis('off')
+    plt.tight_layout()
+    return
 
 def all_grains_plot(masks,elements,props=None, image =None, 
                     fit_res =None,fit_method ='convex_hull',do_fit= False,
@@ -233,7 +263,7 @@ def all_grains_plot(masks,elements,props=None, image =None,
     plt.gca().invert_yaxis()
     plt.axis('off')
     plt.tight_layout()
-    return()
+    return
 
 def single_grain_plot(mask,elements,props=None, image =None, fit_res =None,
                         fit_method ='convex_hull',do_fit= False,
