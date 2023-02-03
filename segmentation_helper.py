@@ -377,3 +377,37 @@ def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.55, 0.6, 
             pickle.dump(eval_results, f)
     if return_results == True:
         return eval_results
+    
+def filter_preds(preds,lbls,p_string='',m_string='_mask'):
+     count = 0
+     while len(preds) > len(lbls):        #shaky hotfix --> no idea why several loops are needed
+         for x in preds:
+             name = Path(x).stem.split(p_string)[0]
+             ids = [Path(x).stem.split(m_string)[0] for x in lbls]
+             if name not in ids:
+                 preds.remove(x)
+             count += 1
+             if count > 100: #catch infinite loop
+                 continue 
+     return preds
+
+def sort_preds(preds_fil,lbls,p_string='',m_string='_mask',get_idxs=False):
+    id_list, l1, l2 = [],[],[]
+    for _,(val,val2) in enumerate(zip(preds_fil,lbls)):
+        e1 = Path(val).stem.split(p_string)[0]
+        e2 = Path(val2).stem.split(m_string)[0]
+        l1.append(e1)
+        l2.append(e2)
+    id_list = [l2.index(i) for i in l1]
+    preds_fil_sort = [y for _, y in sorted(zip(id_list, preds_fil))]
+    if get_idxs==True:
+        return preds_fil_sort, id_list
+    else:
+        return preds_fil_sort
+
+def find_test_idxs(lbls):
+    test_idxs = []
+    for idx, x in enumerate(lbls):
+        if 'test' in x:
+            test_idxs.append(idx)
+    return test_idxs
