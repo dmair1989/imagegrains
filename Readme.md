@@ -39,11 +39,11 @@ Details and more installation options of cellpose (including GPU versions for Wi
 
 Then, install the additional dependancies:  
 
-- jupyter
-- matplotlib
-- scikit-image
-- pandas  
-(- for tsne: scanpy)
+- jupyter (```pip install jupyterlab```)
+- matplotlib (```pip install matplotlib```
+- scikit-image (```python -m pip install -U scikit-image```)
+- pandas (```pip install pandas```)  
+- for tsne: scanpy (```pip install scanpy```) 
 
 ***TO DO: ***  
    
