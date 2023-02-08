@@ -378,32 +378,40 @@ def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.55, 0.6, 
     if return_results == True:
         return eval_results
     
-def filter_preds(preds,lbls,p_string='',m_string='_mask'):
-     count = 0
-     while len(preds) > len(lbls):        #shaky hotfix --> no idea why several loops are needed
-         for x in preds:
-             name = Path(x).stem.split(p_string)[0]
-             ids = [Path(x).stem.split(m_string)[0] for x in lbls]
-             if name not in ids:
-                 preds.remove(x)
-             count += 1
-             if count > 100: #catch infinite loop
-                 continue 
-     return preds
-
-def sort_preds(preds_fil,lbls,p_string='',m_string='_mask',get_idxs=False):
-    id_list, l1, l2 = [],[],[]
-    for _,(val,val2) in enumerate(zip(preds_fil,lbls)):
-        e1 = Path(val).stem.split(p_string)[0]
-        e2 = Path(val2).stem.split(m_string)[0]
-        l1.append(e1)
-        l2.append(e2)
-    id_list = [l2.index(i) for i in l1]
-    preds_fil_sort = [y for _, y in sorted(zip(id_list, preds_fil))]
-    if get_idxs==True:
-        return preds_fil_sort, id_list
-    else:
-        return preds_fil_sort
+def eval_wrapper(pred_list,imgs,filterstrings,taglist,filters=None,save_results=True,m_string='_mask',dataset='',out_path=''):
+    """ 
+    Wrapper for eval_set to evaluate multiple predictions on the same dataset
+    """
+    res_list, tt_list = [],[]
+    for i in range(len(pred_list)):
+        preds_fil_sort = map_preds_to_imgs(pred_list[i],imgs,p_string=filterstrings[i],m_string=m_string)
+        test_idxs = find_test_idxs(imgs)
+        i_res = eval_set(imgs,imgs,preds_fil_sort,
+                                            dataID=str(out_path+taglist[i])+'_on'+str(dataset),filters=filters, save_results=save_results)
+        res_list.append(i_res)
+        tt_list.append(test_idxs)
+    return res_list, tt_list, preds_fil_sort
+    
+def map_preds_to_imgs(preds,imgs,p_string='',m_string=''):
+    """ 
+    Match predictions to images/labels based on the file name.
+    """
+    new_preds = []
+    for kk in range(len(imgs)):
+        if m_string:
+            ID = Path(imgs[kk]).stem.split(m_string)[0]
+        else:
+            ID = Path(imgs[kk]).stem
+        for k in range(len(preds)):
+            if p_string:
+                ID2 = Path(preds[k]).stem.split(p_string)[0]
+            else:
+                ID2 = Path(preds[k]).stem
+            if ID == ID2:
+                new_preds.append(preds[k])
+    if not new_preds:
+        print('Could not match prediction to images!')
+    return new_preds
 
 def find_test_idxs(lbls):
     test_idxs = []
@@ -411,3 +419,15 @@ def find_test_idxs(lbls):
         if 'test' in x:
             test_idxs.append(idx)
     return test_idxs
+
+def map_res_to_imgs(res_dict,imgs):
+    """
+    Match results to images based on the file name.
+    """
+    new_res = {}
+    for kk in range(len(imgs)):
+        ID = Path(imgs[kk]).stem
+        for k in range(len(res_dict)):
+            if ID == res_dict[k]['id']:
+                new_res[kk] = res_dict[k]
+    return new_res

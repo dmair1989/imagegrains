@@ -47,7 +47,8 @@ def eval_plot(img,y_pred,y_true,j_score,f1,ap,_print=False,ID =''):
     plt.axis('off')
     return
 
-def AP_IoU_plot(eval_results,thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],title='',test_idxs=None):    
+def AP_IoU_plot(eval_results,labels=True,
+                thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],title='',test_idxs=None):    
     res_l= [[] for x in range(len(thresholds))]
     for i  in range(len(eval_results)):
         for j in range(len(thresholds)):
@@ -58,7 +59,7 @@ def AP_IoU_plot(eval_results,thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0
         avg_l.append(np.mean(res_l[m]))
         std_ul.append(np.mean(res_l[m])+np.std(res_l[m]))
         std_ll.append(np.mean(res_l[m])-np.std(res_l[m]))
-    
+        
     for i  in range(len(eval_results)):
         if test_idxs:
             if i in test_idxs and i == 0:
@@ -73,19 +74,21 @@ def AP_IoU_plot(eval_results,thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0
             plt.plot(thresholds,eval_results[i]['ap'],'c',alpha=.4,label='Single image')
         else:
             plt.plot(thresholds,eval_results[i]['ap'],'c',alpha=.4)
-    
+
     plt.plot(thresholds,avg_l,'r',lw=2,label='Dataset avg.')
     plt.fill_between(thresholds,std_ul,std_ll,color='r',alpha=0.2,label='1 Std. dev.')
     plt.xlim(np.min(thresholds),np.max(thresholds))
     plt.ylim(0,1)
-    plt.ylabel('Average precision (AP)')
-    plt.xlabel('IoU threshold')
+    if labels == True:
+        plt.ylabel('Average precision (AP)')
+        plt.xlabel('IoU threshold')
     plt.title(title)
     plt.legend()
     plt.tight_layout()
     return
 
-def AP_IoU_summary_plot(eval_results_list,elements,thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):    
+def AP_IoU_summary_plot(eval_results_list,elements, labels=True,
+                        thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):    
     for ds in range(len(eval_results_list)):
         res_l= [[] for x in range(len(thresholds))]
         for i  in range(len(eval_results_list[ds])):
@@ -109,12 +112,13 @@ def AP_IoU_summary_plot(eval_results_list,elements,thresholds=[0.5, 0.55, 0.6, 0
         if elements['SD']==True:
             plt.fill_between(thresholds,std_ul,std_ll,color=elements['colors'][ds],alpha=0.2)
         if elements['avg_model']==True:
-            plt.plot(thresholds,avg_l,color=elements['colors'][ds],lw=2,label=str(elements['model_ID'][ds]))
+            plt.plot(thresholds,avg_l,color=elements['colors'][ds],lw=1.5,label=str(elements['model_ID'][ds]))
     plt.xlim(np.min(thresholds),np.max(thresholds))
     plt.ylim(0,1)
     plt.title(str(elements['dataset']))
-    plt.ylabel('Average precision (AP)')
-    plt.xlabel('IoU threshold')
+    if labels == True:
+        plt.ylabel('Average precision (AP)')
+        plt.xlabel('IoU threshold')
     plt.legend()
     plt.tight_layout()
     return
@@ -175,7 +179,7 @@ def inspect_dataset_grains(imgs,masks,res_props=None,elements=['image','mask','e
         plt.tight_layout()
     return fig
 
-def show_masks_set(labels,images):
+def show_masks_set(labels,images,show_ap50=False,showmap=False,res_dict=None,showID=False):
     plt.figure(figsize=(20,20))
     for k in range(len(images)):
         img = io.imread(images[k])
@@ -189,9 +193,17 @@ def show_masks_set(labels,images):
         
         masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
         plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
-        #plt.imshow(im2)
-        #plt.imshow(im,alpha=0.5)
         plt.axis('off')
+        if res_dict != None:
+            ap50 = str(np.round(res_dict[k]['ap'][0],decimals=2))
+            mAP50_90 = np.mean(res_dict[k]['ap'][0:9])
+        if show_ap50 == True:
+            plt.title('AP@50: '+str(ap50))
+        elif showmap == True:
+            plt.title('mAP@50-90: '+str(np.round(mAP50_90,decimals=2)))
+        elif showID == True:
+            ID = Path(images[k]).stem
+            plt.title(ID)
     plt.tight_layout()
     return
 
