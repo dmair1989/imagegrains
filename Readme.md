@@ -1,19 +1,19 @@
 # ImageGrains  
    
-A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the *cellpose* algorithm  (https://github.com/mouseland/cellpose), designed cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the algorithm with images of sediment particles (from our data (**link to repo**) or custom; **link to preprint**).
+A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the *Cellpose* algorithm  (https://github.com/mouseland/cellpose), designed cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the algorithm with images of sediment particles (from our data (**link to repo**) or custom; **link to preprint**).
 
 ## Citation  
    
 If you use this software in your research, please cite the following works:  
 - **bibtex here**  
 
-- Stringer, C.A., Pachitariu, M., 2020. Cellpose: a generalist algorithm for cellular segmentation. bioRxiv. https://doi.org/10.1101/2020.01.28.925462 
+- Stringer, C.A., Pachitariu, M., (2021). Cellpose: a generalist algorithm for cellular segmentation. Nat Methods 18, 100–106. https://doi.org/10.1038/s41592-020-01018-x.
 
 If you use the human-in-the-loop approach for training custom models (see below), please also cite:  
-- Pachitariu, M. & Stringer, C. (2022). Cellpose 2.0: how to train your own model. Nature methods.
+- Pachitariu, M. & Stringer, C. (2022): Cellpose 2.0: how to train your own model. Nat Methods 19, 1634–1641. https://doi.org/10.1038/s41592-022-01663-4.
 
 If you use ImageGrains to calculate percentile uncertainties please also cite:
-- Mair, D., Henrique, A., Prado, D., Garefalakis, P., Lechmann, A., Whittaker, A., and Schlunegger, F.: Grain size of fluvial gravel bars from close-range UAV imagery-uncertainty in segmentation-based data, Earth Surf. Dyn. Discuss., 1–33, https://doi.org/10.5194/esurf-2022-19, 2022.
+- Mair, D., Henrique, A., Prado, D., Garefalakis, P., Lechmann, A., Whittaker, A., and Schlunegger, F. (2022): Grain size of fluvial gravel bars from close-range UAV imagery-uncertainty in segmentation-based data, Earth Surf. Dyn., 10,953-973. https://doi.org/10.5194/esurf-10-953-2022.
 
 ## Installation 
     
@@ -39,11 +39,11 @@ Details and more installation options of cellpose (including GPU versions for Wi
 
 Then, install the additional dependancies:  
 
-- jupyter
-- matplotlib
-- scikit-image
-- pandas  
-(- for tsne: scanpy)
+- jupyter (```pip install jupyterlab```)
+- matplotlib (```pip install matplotlib```
+- scikit-image (```python -m pip install -U scikit-image```)
+- pandas (```pip install pandas```)  
+- for tsne: scanpy (```pip install scanpy```) 
 
 ***TO DO: ***  
    
