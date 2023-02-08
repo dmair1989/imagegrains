@@ -4,7 +4,9 @@ from cellpose import io
 from tqdm import tqdm
 from glob import glob
 from natsort import natsorted
-from skimage.measure import label
+from skimage.measure import label, regionprops_table
+import numpy as np
+import pandas as pd
 
 from cellpose import metrics
 from cellpose import models
@@ -431,3 +433,32 @@ def map_res_to_imgs(res_dict,imgs):
             if ID == res_dict[k]['id']:
                 new_res[kk] = res_dict[k]
     return new_res
+
+def get_stats_for_res(preds,res_dict,test_idxs):
+    tpreds, taps50, tamaps = [],[],[]
+    ttpreds, ttaps50, ttamaps = [],[],[]
+    for i in range(len(preds)):
+        a = regionprops_table((label(io.imread(preds[i]))))
+        napred = len(a['label'])
+        aap50 = res_dict[i]['ap'][0]
+        amap = res_dict[i]['ap'][0:9].mean()
+        if i < len(test_idxs):
+            tpreds.append(napred)
+            taps50.append(aap50)
+            tamaps.append(amap)
+        else:
+            ttpreds.append(napred)
+            ttaps50.append(aap50)
+            ttamaps.append(amap)
+    res_stats = [np.sum(tpreds),np.mean(taps50),np.std(taps50),np.mean(tamaps),np.std(tamaps),
+                  np.sum(ttpreds),np.mean(ttaps50),np.std(ttaps50),np.mean(ttamaps),np.std(ttamaps)]
+    return res_stats
+
+def get_stats_for_run(pred_list,res_list,titles,p_string_list,test_idxs_list,labels):
+    cols = ['model','n_pred_test','mAP50_test','std','mAP50_90_test','std','n_pred_train','mAP50_train','std','mAP50_90_train','std']
+    res_stats = pd.DataFrame(columns=cols)
+    for j in range(len(pred_list)):
+        sorted = map_preds_to_imgs(pred_list[j],labels,p_string=p_string_list[j],m_string='_mask')
+        entry = get_stats_for_res(sorted,res_list[j],test_idxs_list[j])
+        res_stats.loc[j] = [titles[j]]+entry
+    return res_stats
