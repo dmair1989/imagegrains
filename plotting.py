@@ -87,14 +87,22 @@ def AP_IoU_plot(eval_results,labels=True,
     plt.tight_layout()
     return
 
-def AP_IoU_summary_plot(eval_results_list,elements, labels=True,
+def AP_IoU_summary_plot(eval_results_list,elements,test_idx_list =None ,labels=True,
                         thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):    
     for ds in range(len(eval_results_list)):
         res_l= [[] for x in range(len(thresholds))]
         for i  in range(len(eval_results_list[ds])):
-            for j in range(len(thresholds)):
-                o = eval_results_list[ds][i]['ap'][j]
-                res_l[j].append(o)
+            if test_idx_list:
+                if i in test_idx_list:
+                    for j in range(len(thresholds)):
+                        o = eval_results_list[ds][i]['ap'][j]
+                        res_l[j].append(o)
+                else:
+                    continue
+            else:
+                for j in range(len(thresholds)):
+                        o = eval_results_list[ds][i]['ap'][j]
+                        res_l[j].append(o)
         avg_l,std_ul,std_ll =[],[],[]
         for m in range(len(res_l)):
             avg_l.append(np.mean(res_l[m]))
