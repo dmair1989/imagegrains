@@ -112,10 +112,7 @@ return_results=False,save_results=True,image_res=None):
             props_df,props = grains_from_masks(masks,filters=filters,OT=OT,mute=mute,properties=properties,ID=ID,image_res=image_res_i,fit_method=fit_method)
             if save_results == True:
                 if TAR_DIR:
-                    try:
-                        os.makedirs(TAR_DIR)
-                    except FileExistsError:
-                        pass
+                    os.makedirs(TAR_DIR, exist_ok=True)
                     props_df.to_csv(TAR_DIR+'/'+str(ID)+'_grains.csv')
                 else:
                     props_df.to_csv(INP_DIR+'/'+str(ID)+'_grains.csv')
@@ -631,10 +628,7 @@ def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
         pass
     if save_gsds == True:
         if TAR_DIR:
-            try:
-                os.makedirs(TAR_DIR)
-            except FileExistsError:
-                pass
+            os.makedirs(TAR_DIR, exist_ok=True)
             df.to_csv(TAR_DIR+'/'+str(ID)+'_grains_re_scaled.csv')
         else:
             df.to_csv(T_DIR+str(ID)+'_grains_re_scaled.csv')
@@ -694,5 +688,6 @@ def dataset_object_size(gsds,TAR_DIR='',save_results=True):
         mean_l.append(np.mean(dfi['ell: b-axis (px)']))
     res_df = pd.DataFrame(list(zip(ID_l,min_l,max_l,med_l,mean_l)),columns=['ID','min','max','med','mean'])
     if save_results ==True:
+        os.makedirs(TAR_DIR, exist_ok=True)
         res_df.to_csv(TAR_DIR+'dataset_object_size.csv')
     return res_df

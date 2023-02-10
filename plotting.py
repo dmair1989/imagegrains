@@ -187,7 +187,7 @@ def inspect_dataset_grains(imgs,masks,res_props=None,elements=['image','mask','e
         plt.tight_layout()
     return fig
 
-def show_masks_set(labels,images,show_ap50=False,showmap=False,res_dict=None,showID=False):
+def show_masks_set(labels,images,show_ap50=False,showmap=False,res_dict=None,showID=False,title_str=''):
     plt.figure(figsize=(20,20))
     for k in range(len(images)):
         img = io.imread(images[k])
@@ -206,12 +206,17 @@ def show_masks_set(labels,images,show_ap50=False,showmap=False,res_dict=None,sho
             ap50 = str(np.round(res_dict[k]['ap'][0],decimals=2))
             mAP50_90 = np.mean(res_dict[k]['ap'][0:9])
         if show_ap50 == True:
-            plt.title('AP@50: '+str(ap50))
+            plt.title('AP: '+str(ap50))
         elif showmap == True:
-            plt.title('mAP@50-90: '+str(np.round(mAP50_90,decimals=2)))
+            plt.title('mAP: '+str(np.round(mAP50_90,decimals=2)))
         elif showID == True:
             ID = Path(images[k]).stem
             plt.title(ID)
+        elif title_str != '':
+            if isinstance(title_str, list):
+                plt.title(title_str[k])
+            else:
+                plt.title(title_str)
     plt.tight_layout()
     return
 

@@ -32,6 +32,8 @@ def check_labels(labels,TAR_DIR='',lbl_str='_mask',mask_format='tif'):
     track_l (list) - List of image IDs for which the labels were renamed
     
     """
+    if TAR_DIR:
+        os.makedirs(TAR_DIR, exist_ok=True)
     track_l = []
     for label in labels:
         if lbl_str in label:
@@ -152,10 +154,7 @@ return_results=False,save_masks=True,mute=False,mID=''):
                     save_masks = True
                 if save_masks == True:
                     if TAR_DIR:
-                        try:
-                            os.makedirs(TAR_DIR)
-                        except FileExistsError:
-                            pass
+                        os.makedirs(TAR_DIR, exist_ok=True)
                         io.imsave(TAR_DIR+'/'+ID+'_'+mID+'_pred.tif',masks)
                     else:
                         io.imsave(INP_DIR+'/'+ID+'_'+mID+'_pred.tif',masks)
@@ -368,10 +367,7 @@ def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.55, 0.6, 
         eval_results[idx] = {'id':ID,'img':img, 'ap':ap, 'iout':iout,}
     if save_results==True:
         if TAR_DIR:
-            try:
-                os.makedirs(TAR_DIR)
-            except FileExistsError:
-                pass
+            os.makedirs(TAR_DIR, exist_ok=True)
             export = TAR_DIR+'/'+dataID+'_eval_res.pkl'
         else:
             export = dataID+'_eval_res.pkl'

@@ -563,10 +563,7 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,TAR_DI
     sfm_error=sfm_error,num_it=num_it,CI_bounds=CI_bounds,MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res,mute=mute,sfm_type=sfm_type)
     if save_results == True:
         if TAR_DIR:
-            try:
-                os.makedirs(TAR_DIR)    
-            except FileExistsError:
-                pass
+            os.makedirs(TAR_DIR, exist_ok=True)
             OUT_DIR = TAR_DIR
         elif INP_PATH:
             OUT_DIR = str(Path(INP_PATH).parent)
