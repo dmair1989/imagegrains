@@ -10,6 +10,7 @@ import pandas as pd
 
 from cellpose import metrics
 from cellpose import models
+from cellpose.io import logger_setup
 
 import grainsizing
 import data_loader
@@ -76,10 +77,10 @@ def check_im_label_pairs(img_list,lbl_list):
         print('All images have labels.')
     return error_list
 
-def batch_train(PATH, pretrained_model = None,
+def custom_train(PATH, pretrained_model = None,
                 lr = 0.2,nepochs = 500,chan1 = 0, chan2= 0, gpu = True,
                 mask_filter = '_mask', rescale = False, save_each = True, save_every = 100,model_name = None):
-
+    logger, log_file = logger_setup()
     train_images,train_masks,test_images,test_masks = data_loader.find_data(PATH,mask_str=mask_filter)
     
     check_labels(train_masks);
