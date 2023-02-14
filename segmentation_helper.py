@@ -392,8 +392,13 @@ def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.55, 0.6, 
 
         if filters:
             _, y_true = grainsizing.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
-            _, y_pred = grainsizing.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
-        ap,_,_,_,iout,_ =  eval_image(y_true,y_pred, thresholds=thresholds)
+            if np.unique(label(y_pred)).any() > 0: #check if prediction is empty
+                _, y_pred = grainsizing.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
+                ap,_,_,_,iout,_ =  eval_image(y_true,y_pred, thresholds=thresholds)
+            else:
+                print('! Empty prediction for image: ',preds[idx],' !')
+                iout = []
+                ap = np.zeros(len(thresholds))
 
         eval_results[idx] = {'id':ID,'img':img, 'ap':ap, 'iout':iout,}
     if save_results==True:
