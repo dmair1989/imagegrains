@@ -77,16 +77,17 @@ def check_im_label_pairs(img_list,lbl_list):
         print('All images have labels.')
     return error_list
 
-def custom_train(PATH, pretrained_model = None,
-                lr = 0.2,nepochs = 500,chan1 = 0, chan2= 0, gpu = True,
-                mask_filter = '_mask', rescale = False, save_each = True, save_every = 100,model_name = None):
+def custom_train(PATH, pretrained_model = None,datstring = None,
+                lr = 0.2, nepochs = 1000,chan1 = 0, chan2= 0, gpu = True,
+                mask_filter = '_mask', rescale = False, save_each = False, save_every = 100,model_name = None, label_check = True):
+    
     logger, log_file = logger_setup()
     train_images,train_masks,test_images,test_masks = data_loader.find_data(PATH,mask_str=mask_filter)
-    
-    check_labels(train_masks);
-    check_labels(test_masks);
-    check_im_label_pairs(train_images,train_masks);
-    check_im_label_pairs(test_images,test_masks);
+    if label_check == True:
+        check_labels(train_masks);
+        check_labels(test_masks);
+        check_im_label_pairs(train_images,train_masks);
+        check_im_label_pairs(test_images,test_masks);
 
     train_data,train_labels,test_data,test_labels = [],[],[],[]
     for x1,y1 in zip(train_images,train_masks):
@@ -101,12 +102,13 @@ def custom_train(PATH, pretrained_model = None,
         model = models.CellposeModel(gpu=gpu,pretrained_model=None)
     elif pretrained_model == 'nuclei':
         model = models.CellposeModel(gpu=gpu,model_type='nuclei')
+    elif pretrained_model == 'cyto':
+        model = models.CellposeModel(gpu=gpu,model_type='cyto')
     else:
         model = models.CellposeModel(gpu=gpu,pretrained_model=pretrained_model)
-
     model.train(train_data,train_labels,train_images,test_data,test_labels,test_images,channels =[chan1,chan2],
             rescale=rescale,learning_rate=lr,save_path=PATH,
-            n_epochs=nepochs,save_each=save_each,save_every=save_every,model_name=model_name)
+            n_epochs=nepochs,save_each=save_each,save_every=save_every,model_name=model_name + '.' + datstring)
   
 def predict_folder(INP_DIR,model,image_format='jpg',filter_str='',channels=[0,0],diameter=None,min_size=15,rescale=None,config=None,TAR_DIR='',
 return_results=False,save_masks=True,mute=False,mID=''):
@@ -444,7 +446,7 @@ def map_preds_to_imgs(preds,imgs,p_string='',m_string=''):
             if ID == ID2:
                 new_preds.append(preds[k])
     if not new_preds:
-        print('Could not match prediction to images!')
+        print(p_string,' - Could not match prediction to images!')
     return new_preds
 
 def find_test_idxs(lbls):
