@@ -231,7 +231,12 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,mID=''):
 
     """
     mask_ll,flow_ll,styles_ll,ID_ll,=[],[],[],[]
-    dirs = next(os.walk(INP_DIR))[1]
+    try:
+        dirs = next(os.walk(INP_DIR))[1]
+    except StopIteration:
+        dirs=[]
+        W_DIR = INP_DIR+'/'
+        pass
     for dir in dirs:
         if dir=='train':
             W_DIR = INP_DIR+'/'+str(dir)+'/'

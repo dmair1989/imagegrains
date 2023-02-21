@@ -41,10 +41,10 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
     IDs_l (list) - list of IDs
 
     """
-    dirs = next(os.walk(INP_DIR))[1]
-    W_DIR = None
-    if len(dirs)==0:
-        dirs=['']
+    try:
+        dirs = next(os.walk(INP_DIR))[1]
+    except StopIteration:
+        dirs=[]
         W_DIR = INP_DIR+'/'
     res_grains_l,res_props_l,IDs_l = [],[],[]
     for idx in range(len(dirs)+1):
@@ -62,7 +62,7 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
         elif idx == len(dirs) and not res_grains_l:
             W_DIR = INP_DIR+'/'
         if W_DIR:
-            res_grains_i,res_props_i,IDs_i= grains_in_dataset(W_DIR,mask_format=mask_format,mask_str=mask_str,
+            res_grains_i,res_props_i,IDs_i= grains_in_dataset(INP_DIR=W_DIR,mask_format=mask_format,mask_str=mask_str,
             TAR_DIR=TAR_DIR,filters=filters,mute=mute,OT=OT,properties=properties,fit_method=fit_method,
             return_results=return_results,save_results=save_results)
             if return_results==True:
@@ -73,9 +73,9 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
             W_DIR = None
     return res_grains_l,res_props_l,IDs_l
 
-def grains_in_dataset(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
+def grains_in_dataset(inp_list=None,INP_DIR=None,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
 properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
-return_results=False,save_results=True,image_res=None):
+return_results=False,save_results=True,image_res=None,set_id=None):
     """
     Measures grainsizes in a dataset.
 
@@ -102,10 +102,19 @@ return_results=False,save_results=True,image_res=None):
     IDs (list) - list of IDs
 
     """
-    X = natsorted(glob(INP_DIR+'/*'+mask_str+'*.'+mask_format))
+    if not inp_list:
+        X = natsorted(glob(INP_DIR+'/*'+mask_str+'*.'+mask_format))
+    else:
+        X = inp_list
+    if not set_id and not inp_list:
+        set_id = str(INP_DIR)
+    elif set_id:
+        set_id = set_id
+    else:
+        set_id = 'Unknown dataset'
     res_grains,res_props,IDs = [],[],[]
     #for idx,X_i in tqdm(enumerate(X),desc=str(INP_DIR),unit='file',colour='MAGENTA',position=0,leave=True):
-    for idx in tqdm(range(len(X)),desc=str(INP_DIR),unit='file',colour='MAGENTA',position=0,leave=True):
+    for idx in tqdm(range(len(X)),desc=str(set_id),unit='file',colour='MAGENTA',position=0,leave=True):
         ID = Path(X[idx]).stem
         if 'flow' in ID: #catch flow representation files frpm cp
             if idx==0:
@@ -300,12 +309,12 @@ def fit_grain_axes(props,method='convex_hull',padding=True,padding_size=2,OT=.5,
     """
     a_list,a_coords,b_list, b_coords = [],[],[],[]
     counter_l = 0
-    ##TODO: loop to parallelize for each grain; will need refactoring
-    for _idx in range(len(props)):
+    ##TODO: loop to parallize for each grain; will need refactoring
+    for _idx,props in enumerate(props):
         if method == 'convex_hull':
-            mask = props[_idx].convex_image
+            mask = props.convex_image
         if method == 'mask_outline':
-            mask = props[_idx].image
+            mask = props.image
         if padding==True:
             mask = image_padding(mask,padding_size)
         outline = contour_grain(mask,c_threshold)
