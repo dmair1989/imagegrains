@@ -1,4 +1,4 @@
-# ImageGrains  <img src="https://github.com/dmair1989/ImageGrains/blob/main/logo_2.png?raw=true" width="250" title="logo" alt="logo" align="left" vspace = "35">
+# ImageGrains  <img src="https://github.com/dmair1989/ImageGrains/blob/main/logo_2.png?raw=true" width="100" title="logo" alt="logo" align="left" vspace = "20">
    
 A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the *Cellpose* algorithm  (https://github.com/mouseland/cellpose), designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the algorithm with images of sediment particles (from our data (**link to repo**) or custom; **link to preprint**).
 
