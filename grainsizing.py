@@ -2,6 +2,7 @@ import itertools, os, math
 import numpy as np
 import pandas as pd
 import cv2 as cv
+import matplotlib.pyplot as plt
 
 from scipy.spatial import distance
 from pathlib import Path
@@ -41,6 +42,7 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
     IDs_l (list) - list of IDs
 
     """
+    W_DIR = None
     try:
         dirs = next(os.walk(INP_DIR))[1]
     except StopIteration:
@@ -406,6 +408,78 @@ def iterate_b(outline,a_norm,OT=0.05):
                             b_ax = current_distance
                             b_points = [a,b]
     return b_ax,b_points
+
+def batch_outline(labels,imgs,TAR_DIR='',prop_l=None,filters= None,
+                         padding=True,padding_size=2,mute=True,ID='',
+                         elements=['binary_mask','image_slice','image_masked','mask_outline']):
+    for id_x,(lbl,img) in enumerate(zip(labels,imgs)):
+        ID = Path(img).stem
+        img = io.imread(img)
+        lbl = io.imread(lbl)
+        if not prop_l:
+           props =None
+        export_grain_outline(lbl,img=img,props=None,TAR_DIR=TAR_DIR,filters= filters,
+                         padding=padding,padding_size=padding_size,mute=mute,ID=ID,
+                         elements=elements)
+    
+
+def export_grain_outline(masks,img=None,props=None,method='mask_outline', TAR_DIR='',filters= None,
+                         padding=True,padding_size=2,mute=False,ID='',plot_summary=False,
+                         elements=['binary_mask','image_slice','image_masked','mask_outline']):
+    if not ID:
+        if mute == False:
+            print('No ID given: Generating random ID...')
+        ID = str(np.random.randint(1000,2000))
+    TAR_DIR = TAR_DIR+'/'+ID+'/'
+    os.makedirs(TAR_DIR, exist_ok=True)
+    if not props:
+        if mute == False:
+            print('No regionprops found: Finding grains...') 
+        props = regionprops(label(masks))
+    for _idx,props_i in enumerate(props):
+        if method == 'convex_hull':
+            mask = props_i.convex_image
+        if method == 'mask_outline':
+            mask = props_i.image
+        if padding==True:
+            mask = image_padding(mask,padding_size)
+            contours = contour_grain(mask)
+        else:
+            contours = contour_grain(mask)
+        miny, minx, maxy, maxx = props_i.bbox
+        image_slice= img[props_i.slice].copy()
+        if 'binary_mask' in elements:
+            io.imsave(TAR_DIR+'/'+ID+'_'+str(props_i.label)+'_mask_outline.tif',mask)
+        if 'image_slice' in elements:
+            io.imsave(TAR_DIR+'/'+ID+'_'+str(props_i.label)+'_image_slice.png',image_slice)
+        if 'image_masked' in elements:
+            image_slice[props_i.image==0] = 255
+            io.imsave(TAR_DIR+'/'+ID+'_'+str(props_i.label)+'_image_masked.png',image_slice)
+        if 'mask_outline' in elements:
+            x,y = [],[]
+            for contour in contours:
+                x.append(contour[:, 1])
+                y.append(contour[:, 0])
+            x_arr,y_arr= [],[]
+            for xi,yi in zip(x[0],y[0]):
+                x_arr.append(xi)
+                y_arr.append(yi)
+            df = pd.DataFrame({'x':x_arr,'y':y_arr})
+            df.to_csv(TAR_DIR+'/'+ID+'_'+str(props_i.label)+'_mask_outline.csv',index=False)
+        #plt.imshow(image_slice,extent=[minx,maxx,maxy,miny])
+        if plot_summary == True:
+            plt.imshow(image_slice,extent=[minx,maxx,maxy,miny])
+            mask_image = np.ma.masked_where(mask==0,mask)
+            plt.imshow(mask_image,extent=[minx,maxx,maxy,miny],alpha= .5) 
+        #notice the different coordinate systems
+        # coordinates returned by skimage.find_contours()  always lie at array center (.5!) https://scikit-image.org/docs/0.16.x/api/skimage.measure.html#skimage.measure.find_contours    
+            if padding == False:
+                for contour in contours:
+                    plt.plot(contour[:, 1]-.5+minx, contour[:, 0]-.5+miny,'-c',linewidth=1.5)
+            else:
+                for contour in contours:
+                    plt.plot(contour[:, 1]-(padding_size-.5)+minx, contour[:, 0]-(padding_size-.5)+miny,'-c',linewidth=1.5) 
+ 
 
 def filter_grains(labels,properties,filters,mask,mute=True):
     """
