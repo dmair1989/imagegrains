@@ -1,10 +1,13 @@
-# ImageGrains  <img src="https://github.com/dmair1989/ImageGrains/blob/main/logo_2.png?raw=true" width="250" title="logo" alt="logo" align="right" vspace = "35">
+# ImageGrains  <img src="https://github.com/dmair1989/ImageGrains/blob/main/logo_2.png?raw=true" width="100" title="logo" alt="logo" align="left" vspace = "5">
    
-A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the *Cellpose* algorithm  (https://github.com/mouseland/cellpose), designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the algorithm with images of sediment particles (from our data (**link to repo**) or custom; **link to preprint**).
+    
+    
+       
+A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the *Cellpose* algorithm  (https://github.com/mouseland/cellpose), designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained models from our data (**link to repo**) are available or custom models can be trained (**link to preprint**).
 
 ## Citation  
    
-If you use this software in your research, please cite the following works:  
+If you use software and/or data from here in your research, please cite the following works:  
 - **bibtex here**  
 
 - Stringer, C.A., Pachitariu, M., (2021). Cellpose: a generalist algorithm for cellular segmentation. Nat Methods 18, 100–106. https://doi.org/10.1038/s41592-020-01018-x.
@@ -28,9 +31,9 @@ conda create --name imagegrains python=3.8
 and activate it with 
 ```
 conda activate imagegrains
-```
+``` 
 
-First install cellpose, its GUI and dependancies (which includes [pytorch](https://pytorch.org/), [pyqtgrapgh](https://www.pyqtgraph.org/), [PyQt5](https://www.riverbankcomputing.com/static/Docs/PyQt5/), [numpy](https://numpy.org/), [numba](http://numba.pydata.org/numba-doc/latest/user/5minguide.html), [scipy](https://scipy.org/), [natsort](https://natsort.readthedocs.io/en/master/)) 
+First, install cellpose, its GUI and dependancies (which includes [pytorch](https://pytorch.org/), [pyqtgrapgh](https://www.pyqtgraph.org/), [PyQt5](https://www.riverbankcomputing.com/static/Docs/PyQt5/), [numpy](https://numpy.org/), [numba](http://numba.pydata.org/numba-doc/latest/user/5minguide.html), [scipy](https://scipy.org/), [natsort](https://natsort.readthedocs.io/en/master/)) 
 ```
 python -m pip install cellpose[gui]
 ```
