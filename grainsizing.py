@@ -15,14 +15,14 @@ import data_loader
 
 def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
 properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
-return_results=False,save_results=True,do_subfolders=False):
+return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_predictions=False):
     """ Measures grainsizes in a dataset; can contain subfolders `train`,`test`. If do_subfolders is True, the function will also measure grainsizes in any subfolders of INP_DIR. 
 
     Parameters
     ----------
     INP_DIR (str) - path to the dataset
     mask_format (str (optional, default ='tif')) - format of the mask images
-    mask_str (str (optional, default ='')) - string that is contained in the mask images
+    mask_str (str (optional, default ='')) - string that is contained in the mask images; e.g., '_mask' for lables, '_pred' for predictions
     TAR_DIR (str (optional, default ='')) - path to the target directory
     filters (dict (optional, default =None)) - dictionary of filters to apply to the grains
     mute (bool (optional, default =False)) - mute the output
@@ -42,28 +42,35 @@ return_results=False,save_results=True,do_subfolders=False):
 
     """
     dirs = next(os.walk(INP_DIR))[1]
+    W_DIR = None
     if len(dirs)==0:
         dirs=['']
+        W_DIR = INP_DIR+'/'
     res_grains_l,res_props_l,IDs_l = [],[],[]
-    for dir in dirs:
-        if 'train' in dir:
-            W_DIR = INP_DIR+'/'+str(dir)
-        elif 'test' in dir:
-            W_DIR = INP_DIR+'/'+str(dir)
-        elif 'pred' in dir:
-            W_DIR = INP_DIR+'/'+str(dir)
-        elif do_subfolders == True:
-            W_DIR = INP_DIR+'/'+str(dir)
-        else:
+    for idx in range(len(dirs)+1):
+        if idx < len(dirs):
+            if 'train' in dirs[idx] and do_labels==True:
+                W_DIR = INP_DIR+'/'+str(dirs[idx])
+            elif 'test' in dirs[idx] and do_labels==True:
+                W_DIR = INP_DIR+'/'+str(dirs[idx])
+            elif 'pred' in dirs[idx] and do_predictions==True:
+                W_DIR = INP_DIR+'/'+str(dirs[idx])
+            elif do_subfolders == True:
+                W_DIR = INP_DIR+'/'+str(dirs[idx])
+            elif not W_DIR:
+                continue
+        elif idx == len(dirs) and not res_grains_l:
             W_DIR = INP_DIR+'/'
-        res_grains_i,res_props_i,IDs_i= grains_in_dataset(W_DIR,mask_format=mask_format,mask_str=mask_str,
-        TAR_DIR=TAR_DIR,filters=filters,mute=mute,OT=OT,properties=properties,fit_method=fit_method,
-        return_results=return_results,save_results=save_results)
-        if return_results==True:
-            for grains, props, id in zip(res_grains_i,res_props_i,IDs_i):
-                res_grains_l.append(grains)
-                res_props_l.append(props)
-                IDs_l.append(id)
+        if W_DIR:
+            res_grains_i,res_props_i,IDs_i= grains_in_dataset(W_DIR,mask_format=mask_format,mask_str=mask_str,
+            TAR_DIR=TAR_DIR,filters=filters,mute=mute,OT=OT,properties=properties,fit_method=fit_method,
+            return_results=return_results,save_results=save_results)
+            if return_results==True:
+                for grains, props, id in zip(res_grains_i,res_props_i,IDs_i):
+                    res_grains_l.append(grains)
+                    res_props_l.append(props)
+                    IDs_l.append(id)
+            W_DIR = None
     return res_grains_l,res_props_l,IDs_l
 
 def grains_in_dataset(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
@@ -100,7 +107,9 @@ return_results=False,save_results=True,image_res=None):
     #for idx,X_i in tqdm(enumerate(X),desc=str(INP_DIR),unit='file',colour='MAGENTA',position=0,leave=True):
     for idx in tqdm(range(len(X)),desc=str(INP_DIR),unit='file',colour='MAGENTA',position=0,leave=True):
         ID = Path(X[idx]).stem
-        if 'flow' in ID: #catch flow reprentation files frpm cp
+        if 'flow' in ID: #catch flow representation files frpm cp
+            if idx==0:
+                print('Skipping flow representation files - use mask_str to filter files')
             continue
         else:
             #ID = X_i.split('\\')[len(X_i.split('\\'))-1].split('.')[0]
@@ -691,3 +700,21 @@ def dataset_object_size(gsds,TAR_DIR='',save_results=True):
         os.makedirs(TAR_DIR, exist_ok=True)
         res_df.to_csv(TAR_DIR+'dataset_object_size.csv')
     return res_df
+
+def map_grain_res_to_img(imgs,pred_grains,pred_res_props,pred_IDs,m_string=None,p_string=None):
+    new_preds,new_res,new_id = [],[],[]
+    for kk in range(len(imgs)):
+        if m_string:
+            ID = Path(imgs[kk]).stem.split(m_string)[0]
+        else:
+            ID = Path(imgs[kk]).stem
+        for pred, res, id in zip(pred_grains,pred_res_props,pred_IDs):
+                if p_string:
+                    ID2 = id.split(p_string)[0]
+                else:
+                    ID2 = id
+                if ID == ID2:
+                    new_preds.append(pred)
+                    new_res.append(res)
+                    new_id.append(id)
+    return new_preds,new_res,new_id
