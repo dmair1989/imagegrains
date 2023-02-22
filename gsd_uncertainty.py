@@ -434,7 +434,7 @@ def get_MC_percentiles(res_list,CI_bounds=[2.5,97.5]):
     return med_list, upper_CI, lower_CI
 
 
-def dataset_uncertainty(gsds=None,INP_DIR='',grain_str='_grains',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=None,length_err=None,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
+def dataset_uncertainty(gsds=None,INP_DIR=None,gsd_id=None,grain_str='_grains',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=None,length_err=None,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
 MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,TAR_DIR='',return_results=False,res_dict=None,sfm_type=''):
     """
     Calculate uncertainty of a dataset of GSDs
@@ -473,6 +473,8 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,TAR_
     if not gsds:
         print('No GSD(s) provided!')
         return
+    if not res_dict:
+        res_dict = {}
     for idx in tqdm(range(len(gsds)),desc=str(method),unit='gsd',colour='YELLOW',position=0,leave=True):
         if scale_err:
             if len(scale_err) >1: 
@@ -502,10 +504,21 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,TAR_
                 avg_res_i = avg_res[0]
         else:
             avg_res_i = 1
-        med_list, upper_CI, lower_CI, gsd_list, ID = gsd_uncertainty(INP_PATH=gsds[idx],sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
-        sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,TAR_DIR=TAR_DIR,return_results=True,sfm_type=sfm_type)
-        if return_results==True:
-            res_dict[ID]=[med_list, upper_CI, lower_CI, gsd_list]
+        if INP_DIR:
+            med_list, upper_CI, lower_CI, gsd_list, ID = gsd_uncertainty(INP_PATH=gsds[idx],sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
+            sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,TAR_DIR=TAR_DIR,return_results=True,sfm_type=sfm_type)
+        else:
+            ID = gsd_id[idx]
+            if np.unique(gsds[idx]).all() == 0:
+                if mute == False:
+                    print('Empty GSD')
+                    if return_results==True:
+                        res_dict[str(ID)]=[[], [], [], []]
+            else:
+                med_list, upper_CI, lower_CI, gsd_list, _ = gsd_uncertainty(gsd=gsds[idx],ID=ID,sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
+                sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,TAR_DIR=TAR_DIR,return_results=True,sfm_type=sfm_type)
+                if return_results==True:
+                    res_dict[str(ID)]=[med_list, upper_CI, lower_CI, gsd_list]
     return res_dict
 
 def gsd_uncertainty(gsd=None,ID='',INP_PATH='',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=None,length_err=None,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
@@ -545,40 +558,47 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,TAR_DI
     ID (str): ID of GSD
 
     """
-    if not gsd:
-        df = pd.read_csv(INP_PATH , sep=sep)
-        if not column_name:
-            try:
-                df['ell: b-axis (mm)']
-                column_name = 'ell: b-axis (mm)'
-            except:
-                print('No valid column found!')
-                return
-        gsd = np.sort(df[column_name].to_numpy())*conv_factor
-        ID = Path(INP_PATH).stem
-        #ID = INP_PATH.split('\\')[len(INP_PATH.split('\\'))-1].split('.')[0]
-    if not avg_res:
-        avg_res=1
-    med_list, upper_CI, lower_CI, gsd_list = uncertainty(gsd,method=method,scale_err=scale_err,length_err=length_err,
-    sfm_error=sfm_error,num_it=num_it,CI_bounds=CI_bounds,MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res,mute=mute,sfm_type=sfm_type)
-    if save_results == True:
-        if TAR_DIR:
-            os.makedirs(TAR_DIR, exist_ok=True)
-            OUT_DIR = TAR_DIR
-        elif INP_PATH:
-            OUT_DIR = str(Path(INP_PATH).parent)
-            #OUT_DIR = INP_PATH.split('\\')[0]+'/'
-        with open(OUT_DIR + '/' + ID + str(method) +'_perc_uncert.txt', 'w') as f:
-            fwriter = csv.writer(f,delimiter=';')
-            fwriter.writerow(gsd_list)
-            fwriter.writerow(med_list)
-            fwriter.writerow(upper_CI)
-            fwriter.writerow(lower_CI)
-            f.close()
-            if mute == False:
-                print('Results for',ID+'_perc_uncert','successfully saved.') 
-    if return_results == True:
-        return med_list, upper_CI, lower_CI, gsd_list, ID
+    if np.unique(gsd).all() == 0:
+        if mute == False:
+            print('Empty GSD')
+            if return_results == True:
+                return [], [], [], [], ID
+    else:
+        if not gsd:
+            df = pd.read_csv(INP_PATH , sep=sep)
+            if not column_name:
+                try:
+                    df['ell: b-axis (mm)']
+                    column_name = 'ell: b-axis (mm)'
+                except:
+                    print('No valid column found!')
+                    return
+            gsd = np.sort(df[column_name].to_numpy())*conv_factor
+            ID = Path(INP_PATH).stem
+            #ID = INP_PATH.split('\\')[len(INP_PATH.split('\\'))-1].split('.')[0]
+        if not avg_res:
+            avg_res=1
+
+        med_list, upper_CI, lower_CI, gsd_list = uncertainty(gsd,method=method,scale_err=scale_err,length_err=length_err,
+        sfm_error=sfm_error,num_it=num_it,CI_bounds=CI_bounds,MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res,mute=mute,sfm_type=sfm_type)
+        if save_results == True:
+            if TAR_DIR:
+                os.makedirs(TAR_DIR, exist_ok=True)
+                OUT_DIR = TAR_DIR
+            elif INP_PATH:
+                OUT_DIR = str(Path(INP_PATH).parent)
+                #OUT_DIR = INP_PATH.split('\\')[0]+'/'
+            with open(OUT_DIR + '/' + ID + str(method) +'_perc_uncert.txt', 'w') as f:
+                fwriter = csv.writer(f,delimiter=';')
+                fwriter.writerow(gsd_list)
+                fwriter.writerow(med_list)
+                fwriter.writerow(upper_CI)
+                fwriter.writerow(lower_CI)
+                f.close()
+                if mute == False:
+                    print('Results for',ID+'_perc_uncert','successfully saved.') 
+        if return_results == True:
+            return med_list, upper_CI, lower_CI, gsd_list, ID
 
 def uncertainty(gsd,method='bootstrapping',scale_err=None,length_err=None,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
 MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,sfm_type=''):
