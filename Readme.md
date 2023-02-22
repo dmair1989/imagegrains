@@ -53,10 +53,12 @@ Then, install the additional dependancies:
 ImageGRains is organised in 3 main modules for *Segmentation*,*Grain size measurements* and *Grain size distribution (GSD) uncertainty estimation* (see below). Currently, the most convenient way to use its functionality is, by executing downloading the code and the running the jupyter notebooks in ```/notebooks``` in their order (A command-line executable version and complete online notebooks will follow soon). Of course, any functions can be combined in custom scripts or notebooks.
    
 ### Workflow  
-<img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/workflow.png?raw=true" width="900" title="wf" alt="wf" align="center">  
+<img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/workflow.png?raw=true" width="550" title="wf" alt="wf" align="center">  
 The main concept of ImageGrains is to first segment grains in images, then to measure and scale them with the respective image resolution before finally estimating the uncertainty on an image base. The whole workflow is designed to use individual images or a set of images in specific folder. During the processing steps, all intermediate outputs can be stored.
-
    
+   
+    
+    
 ***TO DO: ***  
    
 ***-code:***   
