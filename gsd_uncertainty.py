@@ -512,8 +512,8 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,TAR_
             if np.unique(gsds[idx]).all() == 0:
                 if mute == False:
                     print('Empty GSD')
-                    if return_results==True:
-                        res_dict[str(ID)]=[[], [], [], []]
+                if return_results==True:
+                    res_dict[str(ID)]=[[], [], [], []]
             else:
                 med_list, upper_CI, lower_CI, gsd_list, _ = gsd_uncertainty(gsd=gsds[idx],ID=ID,sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
                 sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,TAR_DIR=TAR_DIR,return_results=True,sfm_type=sfm_type)
@@ -561,8 +561,8 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,TAR_DI
     if np.unique(gsd).all() == 0:
         if mute == False:
             print('Empty GSD')
-            if return_results == True:
-                return [], [], [], [], ID
+        if return_results == True:
+            return [], [], [], [], ID
     else:
         if not gsd:
             df = pd.read_csv(INP_PATH , sep=sep)
