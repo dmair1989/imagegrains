@@ -1,4 +1,4 @@
-# ImageGrains  <img src="https://github.com/dmair1989/ImageGrains/blob/main/logo_2.png?raw=true" width="75" title="logo" alt="logo" align="left" vspace = "1">
+# ImageGrains  <img src="https://github.com/dmair1989/ImageGrains/blob/main/logo_2.png?raw=true" width="60" title="logo" alt="logo" align="left" vspace = "10">
    
     
     
