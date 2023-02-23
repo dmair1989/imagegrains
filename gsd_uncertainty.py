@@ -168,7 +168,7 @@ def MC_with_length_scale(gsd,scale_err,length_err,method='truncnorm',num_it=1000
     res_list (list) - list of percentile distributions
 
     """
-    gsd = np.delete(gsd, np.where(gsd <= cutoff))
+    gsd = np.delete(np.array(gsd), np.where(np.array(gsd) <= cutoff))
     res_list = []
     if mute == False:
         print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))     
