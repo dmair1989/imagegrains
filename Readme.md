@@ -85,8 +85,6 @@ If you want to train your own models, you can use the jupyter notebook ```notebo
 ***-- create command-line executable***  
 
 ***-data:***
-***--change rescale range an evaluate effect***
-***--assess effect of image specific diam during eval()***
 ***--improve set with 'human-in-the-loop' approach***
 
 -------
