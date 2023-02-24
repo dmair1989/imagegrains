@@ -50,14 +50,19 @@ Then, install the additional dependancies:
    
 ## How does it work?
    
-ImageGRains is organised in 3 main modules for *Segmentation*,*Grain size measurements* and *Grain size distribution (GSD) uncertainty estimation* (see below). Currently, the most convenient way to use its functionality is, by executing downloading the code and the running the jupyter notebooks in ```/notebooks``` in their order (A command-line executable version and complete online notebooks will follow soon). Of course, any functions can be combined in custom scripts or notebooks.
+ImageGRains is organised in 3 main modules for *Segmentation*, *Grain size measurements* and *Grain size distribution (GSD) uncertainty* (see below). Currently, the most convenient way to use its functionality is, by downloading the code and running the jupyter notebooks in ```/notebooks``` in their order (A command-line executable version and complete online notebooks will follow soon). Of course, functions can be combined in custom scripts or notebooks.
    
 ### Workflow  
 <img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/workflow.png?raw=true" width="550" title="wf" alt="wf" align="center">  
 The main concept of ImageGrains is to first segment grains in images, then to measure and scale them with the respective image resolution before finally estimating the uncertainty on an image base. The whole workflow is designed to use individual images or a set of images in specific folder. During the processing steps, all intermediate outputs can be stored.
    
-   
-    
+### Segmentation of own images     
+If you want to segment own images with pre-trained models, simply use corresponding jupyter notebook ```notebooks/2_image_segmentation.ipynb```. To do so locally, open
+the console and activate the environment (``conda activate imagegrains```) and start your jupyter instance (e.g., via ```jupyter lab```). 
+
+
+
+
     
 ***TO DO: ***  
    
