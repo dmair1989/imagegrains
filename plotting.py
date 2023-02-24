@@ -131,11 +131,25 @@ def AP_IoU_summary_plot(eval_results_list,elements,test_idx_list =None ,labels=T
     plt.tight_layout()
     return
     
-def inspect_predictions(imgs,lbls,preds,title='',PATH=''):
-    fig = plt.figure(figsize=(len(imgs)*2,7), dpi=300)
+def inspect_predictions(imgs,preds,lbls=None,title='',PATH=''):
+    """
+    Plot images and predictions side by side.  
+    `imgs` list of image paths  
+    `preds` list of prediction paths
+    `lbls` list of label paths (optional)
+    `title` title of plot (optional)
+    `PATH` path to save plot (optional)
+    """
+    
+    if lbls:
+        fig = plt.figure(figsize=(len(imgs)*2,len(imgs)), dpi=300)
+        rows = 3
+    else:
+        fig = plt.figure(figsize=(len(imgs),int(len(imgs)/2.5)), dpi=300)
+        rows = 2
     for k in range(len(imgs)):
         img = io.imread(imgs[k])
-        plt.subplot(3,len(imgs),k+1)
+        plt.subplot(rows,len(imgs),k+1)
         plt.imshow(img)
         
         if k == 0:
@@ -145,27 +159,27 @@ def inspect_predictions(imgs,lbls,preds,title='',PATH=''):
         plt.tight_layout()
         
 
-        plt.subplot(3,len(imgs),len(imgs) + k+1)
-        lbl = io.imread(lbls[k])
-        plt.imshow(label2rgb(lbl, image=img, bg_label=0))
-        if k == 0:
-            plt.ylabel('Ground truth')
-        plt.xticks([],[])
-        plt.yticks([],[])
-        plt.tight_layout()
-
-        plt.subplot(3,len(imgs),(len(imgs)*2)+ k+1)
-        prd = io.imread(preds[k])
-        plt.imshow(label2rgb(prd, image=img, bg_label=0))
+        plt.subplot(rows,len(imgs),len(imgs) + k+1)
+        pred = io.imread(preds[k])
+        plt.imshow(label2rgb(pred, image=img, bg_label=0))
         if k == 0:
             plt.ylabel('Predictions')
         plt.xticks([],[])
         plt.yticks([],[])
-        i_ID = Path(imgs[k]).stem
-        #i_ID = imgs[k].split('\\')[len(imgs[k].split('\\'))-1].split('.')[0]
-        plt.xlabel(i_ID)
         plt.tight_layout()
-    plt.suptitle(str(title))
+
+        if lbls:
+            plt.subplot(rows,len(imgs),(len(imgs)*2)+ k+1)
+            lbl = io.imread(lbls[k])
+            plt.imshow(label2rgb(lbl, image=img, bg_label=0))
+            if k == 0:
+                plt.ylabel('Predictions')
+            plt.xticks([],[])
+            plt.yticks([],[])
+            i_ID = Path(imgs[k]).stem
+            #i_ID = imgs[k].split('\\')[len(imgs[k].split('\\'))-1].split('.')[0]
+            plt.xlabel(i_ID)
+            plt.tight_layout()
     return fig
 
 def inspect_dataset_grains(imgs,masks,res_props=None,elements=['image','mask','ellipse_b','ellipse_a','ellipse']):

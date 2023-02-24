@@ -329,7 +329,9 @@ rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfo
                 except AttributeError:
                     pass
         else:
-            config = None 
+            config = None
+        if type(DIR_PATHS) != list:
+            DIR_PATHS = [DIR_PATHS] 
         for d_idx in range(len(DIR_PATHS)):
             all_mask_l,all_flow_l,all_styles_l,all_ID_l = predict_dataset(DIR_PATHS[d_idx],model,
             image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,config=config,TAR_DIR=TAR_DIR,
