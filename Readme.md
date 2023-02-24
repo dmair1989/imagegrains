@@ -75,7 +75,7 @@ To calculate the GSD, use the jupyter notebook ```notebooks/4_gsd_uncertainty.ip
 
 ### Training of custom models
 
-If you want to train your own models, you can use the jupyter notebook ```notebooks/1_model_training.ipynb```, you can use the cellpose GUI (<https://www.cellpose.org/>; open it with ```python -m cellpose```) or train via console (<https://cellpose.readthedocs.io/en/latest/train.html>) with the full funcitionality of cellpose. To train custom models, you will first need manually annotated ground truth data ("labels"). This can be done either with the cellpose GUI or with any dedicated annotation tool. We used the labkit plugion for ImageJ (<https://imagej.net/Labkit>). Please note, that each grain has to have a unique class value.
+If you want to train your own models, you can use the jupyter notebook ```notebooks/1_model_training.ipynb```, you can use the cellpose GUI (<https://www.cellpose.org/>; open it with ```python -m cellpose```) or train via console (<https://cellpose.readthedocs.io/en/latest/train.html>) with the full funcitionality of cellpose. To train custom models, you will first need manually annotated ground truth data ("labels"). This can be done either with the cellpose GUI or with any dedicated annotation tool. We used the labkit plugin for ImageJ (<https://imagej.net/Labkit>). Please note, that each grain has to have a unique class value.
 
 ***TO DO:***  
 
