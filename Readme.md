@@ -24,19 +24,19 @@ If you use ImageGrains to calculate percentile uncertainties please also cite:
 
 The easiest way to install the software is by using the conda package manager. If you do not have conda installed, please follow the instructions on the [conda website](https://docs.conda.io/en/latest/miniconda.html).  
 
-To install the software, open an anaconda prompt / command prompt, then create a new environment with
+To install the software, open an anaconda prompt / command prompt, then create a new environment with:
 
 ```text
 conda create --name imagegrains python=3.8
 ```
 
-and activate it with
+and activate it with:
 
 ```text
 conda activate imagegrains
 ```
 
-First, install cellpose, its GUI and dependancies (which includes [pytorch](https://pytorch.org/), [pyqtgrapgh](https://www.pyqtgraph.org/), [PyQt5](https://www.riverbankcomputing.com/static/Docs/PyQt5/), [numpy](https://numpy.org/), [numba](http://numba.pydata.org/numba-doc/latest/user/5minguide.html), [scipy](https://scipy.org/), [natsort](https://natsort.readthedocs.io/en/master/))
+First, install cellpose, its GUI and dependancies (which includes [pytorch](https://pytorch.org/), [pyqtgrapgh](https://www.pyqtgraph.org/), [PyQt5](https://www.riverbankcomputing.com/static/Docs/PyQt5/), [numpy](https://numpy.org/), [numba](http://numba.pydata.org/numba-doc/latest/user/5minguide.html), [scipy](https://scipy.org/), [natsort](https://natsort.readthedocs.io/en/master/)):
 
 ```text
 python -m pip install cellpose[gui]
@@ -63,8 +63,19 @@ The main concept of ImageGrains is to first segment grains in images, then to me
 
 ### Segmentation of own images
 
-If you want to segment own images with pre-trained models, simply use corresponding jupyter notebook ```notebooks/2_image_segmentation.ipynb```. To do so locally, open
-the console and activate the environment (``conda activate imagegrains```) and start your jupyter instance (e.g., via```jupyter lab```).
+If you want to segment own images with pre-trained models, simply use corresponding jupyter notebook ```notebooks/2_image_segmentation.ipynb```. To do so locally, open the console and activate the environment (```conda activate imagegrains```) and start your jupyter instance (e.g., via```jupyter lab```). Then, open the notebook and follow the instructions. You can use any model provied in ```/models``` or train a custom model (see below).
+
+### Grain size measurements
+
+To measure grain sizes, use the jupyter notebook ```notebooks/3_grain_sizes.ipynb```. It will load the segmented images and calculate the grain size for each grain on an image-by-image basis. Several options for outline fitting are available. The grain size is then scaled with the image resolution and stored in an output file. It is also possible to export individual grain outlines for further analysis.
+
+### Grain size distribution (GSD) and uncertainty
+
+To calculate the GSD, use the jupyter notebook ```notebooks/4_gsd_uncertainty.ipynb```. It will load the grain size measurements and calculate the GSD. Several for the uncertainty estimation are available. The uncertainty is by default for each perecentile as 95% confidence interval. The GSD is then stored in an output file.
+
+### Training of custom models
+
+If you want to train your own models, you can use the jupyter notebook ```notebooks/1_model_training.ipynb```, you can use the cellpose GUI (<https://www.cellpose.org/>; open it with ```python -m cellpose```) or train via console (<https://cellpose.readthedocs.io/en/latest/train.html>) with the full funcitionality of cellpose. To train custom models, you will first need manually annotated ground truth data ("labels"). This can be done either with the cellpose GUI or with any dedicated annotation tool. We used the labkit plugion for ImageJ (<https://imagej.net/Labkit>). Please note, that each grain has to have a unique class value.
 
 ***TO DO:***  
 
@@ -72,7 +83,6 @@ the console and activate the environment (``conda activate imagegrains```) and s
 ***-- ship as package***  
 ***-- make it run in google colab***  
 ***-- create command-line executable***  
-***-- do short manual***  
 
 ***-data:***
 ***--change rescale range an evaluate effect***
