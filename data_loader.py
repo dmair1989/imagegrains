@@ -189,7 +189,7 @@ def load_grain_set(DIR,gsd_format='csv',gsd_str='grains',filter_str='re_scaled')
             gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str,filter_str=filter_str)
         return gsds
     
-def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains',filter_str=''):
+def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains',filter_str='0'):
     gsds_raw = natsorted(glob(PATH+'/*'+gsd_str+'*.'+gsd_format))
     gsds = []
     for gsd in gsds_raw:
@@ -213,7 +213,7 @@ def read_set_unc(PATH,mc_str=''):
     if 'train' in dirs:
         G_DIR += [str(PATH+'/train/')]
     if not G_DIR:
-        G_DIR = PATH
+        G_DIR = [PATH]
     mcs,ids=[],[]
     for path in G_DIR:
         mc= natsorted(glob(path+'/*'+mc_str+'*.txt'))
