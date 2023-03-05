@@ -1,10 +1,12 @@
 __pycache__
 test.py
+test/*/*/*/*/*/*.*
 test/*/*/*/*/*.*
 test/*/*/*/*.*
 test/*/*/*.*
 test/*/*.*
 test/*.*
+test/_1_best/grains/*.*
 *.eps
 *.pkl
 *.csv
