@@ -176,17 +176,26 @@ def load_grain_set(DIR,gsd_format='csv',gsd_str='grains',filter_str='re_scaled')
         gsds (list) - list of grain size distributions
                 
         """
-        dirs = next(os.walk(DIR[0]))[1]
+        if type(DIR) == list:
+            dirs = []
+            for x in range(len(DIR)):
+                dirs += next(os.walk(DIR[x]))[1]
+        else:
+            dirs = next(os.walk(DIR))[1]
         G_DIR = []
-        if 'test' in dirs:
-                G_DIR = [str(DIR[0]+'/test/')]
-        if 'train' in dirs:
-                G_DIR += [str(DIR[0]+'/train/')]
+        if dirs:
+            for dir in dirs:
+                if 'test' in dir:
+                        G_DIR += [str(DIR+'/test/')]
+                if 'train' in dirs:
+                        G_DIR += [str(DIR+'/train/')]
+            for dir in G_DIR:
+                gsds = gsds_from_folder(dir,gsd_format=gsd_format,gsd_str=gsd_str,filter_str=filter_str) 
         if not G_DIR:
             G_DIR = DIR
-        gsds=[]
-        for path in G_DIR:
-            gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str,filter_str=filter_str)
+            gsds=[]
+            for path in G_DIR:
+                gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str,filter_str=filter_str)
         return gsds
     
 def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains',filter_str='0'):

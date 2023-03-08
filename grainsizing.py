@@ -9,6 +9,7 @@ from pathlib import Path
 from tqdm import tqdm
 from skimage import io
 from skimage.measure import label, find_contours, regionprops_table, regionprops
+from scipy import stats
 from natsort import natsorted
 from glob import glob
 
@@ -471,6 +472,7 @@ def export_grain_outline(masks,img=None,props=None,method='mask_outline', TAR_DI
             plt.imshow(image_slice,extent=[minx,maxx,maxy,miny])
             mask_image = np.ma.masked_where(mask==0,mask)
             plt.imshow(mask_image,extent=[minx,maxx,maxy,miny],alpha= .5) 
+            plt.axis('off')
         #notice the different coordinate systems
         # coordinates returned by skimage.find_contours()  always lie at array center (.5!) https://scikit-image.org/docs/0.16.x/api/skimage.measure.html#skimage.measure.find_contours    
             if padding == False:
@@ -640,15 +642,15 @@ def re_scale_dataset(DIR,resolution= None, camera_parameters= None, gsd_format='
             df = pd.read_csv(gsd,index_col='Unnamed: 0')
         except:
             df = pd.read_csv(gsd)
-        if len(resolution)> 1:
+        if type(resolution) == list:
             resolution_i = resolution[idx]
         else:
-            resolution_i = resolution[0]
+            resolution_i = resolution
         if camera_parameters:
             camera_parameters_i=camera_parameters[idx]
         else:
             camera_parameters_i = []
-        rescaled_df = scale_grains(df,resolution=resolution_i,camera_parameters=camera_parameters_i,GSD_DIR=gsd,return_results=return_results,save_gsds=save_gsds,TAR_DIR=TAR_DIR)
+        rescaled_df = scale_grains(df,resolution=resolution_i,camera_parameters=camera_parameters_i,GSD_PTH=gsd,return_results=return_results,save_gsds=save_gsds,TAR_DIR=TAR_DIR)
         rescaled_l.append(rescaled_df)
     return rescaled_l
 
@@ -801,3 +803,109 @@ def map_grain_res_to_img(imgs,pred_grains,pred_res_props,pred_IDs,m_string=None,
                     new_res.append(res)
                     new_id.append(id)
     return new_preds,new_res,new_id
+
+def do_gsd(gsd):
+    if not any(gsd):
+        return np.zeros(100)
+    else:
+        perc_dist = [np.percentile(gsd, p, axis=0) for p in range(100)]
+        perc_dist.sort()
+    return perc_dist
+
+def gsd_for_set(gsds,column='ell: b-axis (mm)'):
+    gsd_l,id_l = [],[]
+    for grains in gsds:
+        ID = Path(grains).stem
+        raw = pd.read_csv(grains)[column]
+        gsd = do_gsd(raw)
+        gsd_l.append(gsd)
+        id_l.append(ID)
+    return gsd_l,id_l
+
+# Statistics
+def get_key_percs(gsd,perc=[15,50,84,96]):
+    return np.round([gsd[perc[i]]for i in range(len(perc))],decimals=1) 
+
+def gsd_test_statistics(gsd1,gsd2,mehtod='ks2amp'):
+    if mehtod == 'ks2samp':
+        a = stats.ks_2samp(gsd1,gsd2)
+        return a.statistic,a.pvalue
+    elif mehtod == 'wilcoxon':
+        if all(np.array(gsd1)-np.array(gsd2))==0:
+            return 0,0
+        else:
+            a = stats.wilcoxon(gsd1,gsd2)
+        return a.statistic,a.pvalue
+
+def get_avg_perc_delta(gsd1,gsd2,metric='mean'):
+    if metric == 'mean':
+        return np.mean(np.mean((np.array(gsd1)-np.array(gsd2))))
+    elif metric == 'median':
+        return np.mean(np.median((np.array(gsd1)-np.array(gsd2))))
+    
+def get_avg_perc_std(gsd1,gsd2,metric='mean'):
+    if metric == 'mean':
+        return np.mean(np.std((np.array(gsd1)-np.array(gsd2))))
+    elif metric == 'median':
+        return np.median(np.std((np.array(gsd1)-np.array(gsd2))))
+
+def gsds_analysis(gsds):
+    d16s, d50s, d84s, d96s = [],[],[],[]
+    for gsd in gsds:
+        d16, d50, d84, d96 = get_key_percs(gsd)
+        d16s.append(d16), d50s.append(d50), d84s.append(d84), d96s.append(d96)
+    return d16s, d50s, d84s, d96s
+    
+def compare_gsds_to_gts(gsds,lbls,units='px',CI=0.05,mute=False,return_std=False):
+    counter = 0
+    dds,ps,stds = [],[],[]
+    if len(gsds) != len(lbls):
+        print('Number of gsds and lbls do not match')
+        return
+    for lbl,gsd in zip(lbls,gsds):
+        dd = get_avg_perc_delta(lbl,gsd,metric='mean')
+        dds.append(dd)
+        a,p = gsd_test_statistics(lbl,gsd,mehtod='ks2samp')
+        ps.append(p)
+        if return_std == True:
+            std = get_avg_perc_std(lbl,gsd,metric='mean')
+            stds.append(std)
+        counter += 1 if p < CI else 0 
+    if mute == False:
+        print('For '+str(np.round(((len(lbls)-counter)/(len(lbls))*100),
+                                decimals=1))+'% ('+ str(len(lbls)-counter) + '/' 
+                                + str(len(lbls)) + ') of tiles grains the size distribution is the same (within a confidence interval of ' + str(1-CI) + ').')
+        print('The average percentile difference is',np.round(np.mean(dds),decimals=1),'(+/-',str(np.round(np.std(dds),decimals=1))+')',str(units)+'.')
+    if return_std == True:
+        return dds,ps,stds
+    else:
+        return dds,ps
+
+def gsd_uncer_analysis(gsd_res_l):
+    CId16s, CId50s, CId84s, CId96s = [],[],[],[]
+    for gsd_res in gsd_res_l:
+        d16, d50, d84, d96 = get_key_CIs(gsd_res_l[gsd_res])
+        CId16s.append(d16), CId50s.append(d50), CId84s.append(d84), CId96s.append(d96)
+    return CId16s, CId50s, CId84s, CId96s
+
+def get_key_CIs(gsd_res,perc=[15,50,84,96]):
+    if not any(gsd_res[0]):
+        ci_dists = np.zeros(4)
+    else:
+        ci_dists = np.round([gsd_res[1][perc[i]]-gsd_res[2][perc[i]] for i in range(len(perc))],decimals=1)
+    return ci_dists[0], ci_dists[1], ci_dists[2], ci_dists[3]
+
+def count_ks_hits(df, CI=0.05):
+    counter = 0
+    for i in range(len(df)):
+        counter += 1 if df['ks_p'][i] < CI else 0
+    if counter <1:
+        return len(df), 100
+    else:
+        return len(df)-counter, np.round((1-counter/len(df))*100,decimals=1)
+
+def avg_delta(df):
+    return np.round(np.mean(df['delta_avg']),decimals=2)
+
+def avg_std(df):
+    return np.round(np.mean(df['delta_std']),decimals=2)

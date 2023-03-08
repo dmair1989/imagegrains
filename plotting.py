@@ -262,6 +262,16 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
     plt.tight_layout()
     return
 
+def plot_single_img_pred(img, pred,ID):
+    ID = Path(img).stem
+    img = io.imread(img)
+    lbl = io.imread(pred)
+    colors = mask_cmap(lbl)
+    masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
+    plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
+    plt.axis('off')
+    plt.title(ID)
+
 def all_grains_plot(masks,elements,props=None, image =None, 
                     fit_res =None,fit_method ='convex_hull',do_fit= False,
                     padding_size=2,title='',plot_padding=15):
@@ -412,20 +422,94 @@ def ell_from_props(props,_idx=0):
     y = y0 + a/2 * np.cos(phi) * np.sin(-orientation) + b/2 * np.sin(phi) * np.cos(-orientation)
     return(x0,x1,x2,x3,x4,y0,y1,y2,y3,y4,x,y)
         
-def plot_gsd(df,data_ID='',elem='',cix=0):
-    y = np.arange(0.01,1.01,0.01)
-    if 'colors' in elem:
-        colors = elem['colors']
+def plot_gsd(gsd,color='c', perc_range=np.arange(0.01,1.01,0.01),length_max=300,ID=None,title=None,label_axes=False,lw=.75,orientation='vertical',units='px'):
+        if orientation == 'vertical':
+            xmax = length_max
+            xmin = 0
+            ymax= np.max(perc_range)
+            ymin = np.min(perc_range)
+            y = perc_range
+            x = gsd
+            if label_axes != False:
+                plt.xlabel('Grain Size ( '+str(units)+')')
+                plt.ylabel('Fraction smaller')
+        elif orientation == 'horizontal':
+            ymax = length_max
+            ymin = 0
+            xmax = np.max(perc_range)
+            xmin = np.min(perc_range)
+            x = perc_range
+            y = gsd 
+            if label_axes != False:
+                plt.xlabel('Grain Size ( '+str(units)+')')
+                plt.ylabel('Fraction smaller')
+        if not any(ID):
+                plt.plot(x,y,color=color,linewidth=lw)
+        else:
+                plt.plot(x,y,color=color,label=ID,linewidth=lw)
+        plt.ylim(ymin,ymax)
+        plt.xlim(xmin,xmax)
+
+        if title:
+                plt.title(title,fontsize=8)
+
+        plt.tight_layout()
+
+def plot_gsd_uncert(uncert_res,perc_range=np.arange(0,1,0.01),color='k',uncert_area=True,uncert_bounds=False,uncert_median=False,orientation='vertical'):
+    uci,lci,med = uncert_res[1],uncert_res[2],uncert_res[0]
+    if not any(uci):
+         pass
     else:
-        colors = [plt.cm.get_cmap('tab20')(i) for i in range(20)]
-    if 'input' in elem:
-        plt.plot(df['data'],y, color=colors[cix], label = data_ID)
-    if 'median' in elem:
-        plt.plot(df['med'],y, color=colors[cix], linestyle = 'dashed',label = 'Percentile median')
-    if 'CI_bounds' in elem:
-        plt.plot(df['uci'],y, color=colors[cix+1], alpha=.5 ,label = '95% CI')
-        plt.plot(df['lci'],y, color=colors[cix+1], alpha=.5 )
-    if 'CI_area' in elem:    
-        plt.fill_betweenx(y,df['lci'],df['uci'],color=colors[cix+1],alpha=0.5,label='95% CI')
-    plt.xlim(0)
-    plt.ylim(0.05,1)
+        if orientation == 'vertical':
+            if uncert_area == True:
+                plt.fill_betweenx(perc_range,uci,lci,alpha=0.2,color=color)
+            if uncert_median == True:
+                plt.plot(med,perc_range,color=color,linewidth=1)
+            if uncert_bounds == True:
+                plt.plot(uci,perc_range,color=color,linewidth=1,linestyle='--')
+                plt.plot(lci,color=color,linewidth=1,linestyle='--')
+
+        elif orientation == 'horizontal':
+            if uncert_area == True:
+                plt.fill_between(perc_range,uci,lci,alpha=0.2,color=color)
+            if uncert_median == True:
+                plt.plot(perc_range,med,color=color,linewidth=1)
+            if uncert_bounds == True:
+                plt.plot(perc_range,uci,color=color,linewidth=1,linestyle='--')
+                plt.plot(perc_range,lci,color=color,linewidth=1,linestyle='--')
+
+def plot_gsd_deltas(uncert_res,gsd,baseline,perc_range=np.arange(0,1,0.01),color='k',label_axes=True
+                    ,uncert_area=True,uncert_bounds=False,uncert_median=False,orientation='horizontal'):
+    uci,lci,med = uncert_res[1],uncert_res[2],uncert_res[0]
+    if not any(uci):
+         pass
+    else:
+        gsd_norm = [((baseline[j]-gsd[j])/baseline[j])*100 for j in range(len(baseline))]
+        ub = [gsd_norm[j]+(((uci[j]-lci[j])/baseline[j])*100)/2 for j in range(len(gsd_norm))]
+        lb = [gsd_norm[j]-(((uci[j]-lci[j])/baseline[j])*100)/2 for j in range(len(gsd_norm))]
+        med_norm = [med[j]-baseline[j] for j in range(len(baseline))]
+        if orientation == 'vertical':
+            x = gsd_norm
+            y = perc_range
+            xmed = med_norm
+            ymed = perc_range
+            
+            if uncert_area == True:
+                plt.fill_betweenx(y,ub,lb,alpha=0.2,color=color)
+            if uncert_bounds == True:
+                plt.plot(x,ub,color=color,linewidth=1,linestyle='--')
+                plt.plot(x,lb,color=color,linewidth=1,linestyle='--')
+        elif orientation == 'horizontal':
+            x = perc_range
+            y = gsd_norm
+            xmed = perc_range
+            ymed = med_norm
+
+            if uncert_area == True:
+                plt.fill_between(x,ub,lb,alpha=0.2,color=color)
+            if uncert_bounds == True:
+                plt.plot(ub,y,color=color,linewidth=1,linestyle='--')
+                plt.plot(lb,y,color=color,linewidth=1,linestyle='--')
+        plt.plot(x,y,color=color,linewidth=1)
+        if uncert_median == True:
+            plt.plot(xmed,ymed,color=color,linewidth=1)
