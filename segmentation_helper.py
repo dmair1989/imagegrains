@@ -78,9 +78,31 @@ def check_im_label_pairs(img_list,lbl_list):
     return error_list
 
 def custom_train(PATH, pretrained_model = None,datstring = None,
-                lr = 0.2, nepochs = 1000,chan1 = 0, chan2= 0, gpu = True,
-                mask_filter = '_mask', rescale = False, save_each = False, save_every = 100,model_name = None, label_check = True):
+                lr = 0.2, nepochs = 1000,chan1 = 0, chan2= 0, gpu = True, batch_size = 8,
+                mask_filter = '_mask', rescale = False, save_each = False, return_model = False,
+                save_every = 100,model_name = None, label_check = True):
     
+    """
+    This function trains a model on the images and labels in the specified directory. The images and labels should be in the same directory. The labels should be in the format: <image_ID>_mask.<mask_format>
+    
+    Parameters:
+    ------------
+    PATH (str) - Path to the directory containing the images and labels
+    pretrained_model (str(optional, default None)) - Path to the pretrained model. If not specified, the model is trained from scratch.
+    datstring (str(optional, default None)) - String to be added to the model name. 
+    return_model (bool(optional, default False)) - If True, the model is returned
+    model_name (str(optional, default None)) - Name of the model.
+    label_check (bool(optional, default True)) - If True, the labels are checked for the correct format and the images and labels are checked for correct pairing. If the labels are not in the correct format, they are renamed to the correct format. If the images and labels are not paired correctly, a list of images for which the labels are missing is returned.
+
+    more parameters:
+    https://cellpose.readthedocs.io/en/latest/api.html#cellpose.models.CellposeModel.train 
+
+    Returns:
+    ------------
+    model (CellposeModel, optional) - Trained model
+    
+    """
+
     logger, log_file = logger_setup()
     train_images,train_masks,test_images,test_masks = data_loader.find_data(PATH,mask_str=mask_filter)
     if label_check == True:
@@ -97,7 +119,12 @@ def custom_train(PATH, pretrained_model = None,datstring = None,
     for x2,y2 in zip(test_images,test_masks):
         test_data.append(io.imread(x2))
         test_labels.append(io.imread(y2))
-
+    if not model_name:
+        model_name = model_name
+    else: 
+        if not datstring:
+            datstring = ''
+        model_name = model_name + '.' + datstring
     if not pretrained_model:
         model = models.CellposeModel(gpu=gpu,pretrained_model=None)
     elif pretrained_model == 'nuclei':
@@ -106,10 +133,15 @@ def custom_train(PATH, pretrained_model = None,datstring = None,
         model = models.CellposeModel(gpu=gpu,model_type='cyto')
     else:
         model = models.CellposeModel(gpu=gpu,pretrained_model=pretrained_model)
-    model.train(train_data,train_labels,train_images,test_data,test_labels,test_images,channels =[chan1,chan2],
-            rescale=rescale,learning_rate=lr,save_path=PATH,
-            n_epochs=nepochs,save_each=save_each,save_every=save_every,model_name=model_name + '.' + datstring)
-  
+    try:
+        model.train(train_data,train_labels,train_images,test_data,test_labels,test_images,channels =[chan1,chan2],
+                rescale=rescale,learning_rate=lr,save_path=PATH, batch_size=batch_size,
+                n_epochs=nepochs,save_each=save_each,save_every=save_every,model_name=model_name)
+    except KeyboardInterrupt:
+            print('Training interrupted.')
+    if return_model == True:
+        return model 
+
 def predict_folder(INP_DIR,model,image_format='jpg',filter_str='',channels=[0,0],diameter=None,min_size=15,rescale=None,config=None,TAR_DIR='',
 return_results=False,save_masks=True,mute=False,mID=''):
     """
@@ -183,7 +215,7 @@ return_results=False,save_masks=True,mute=False,mID=''):
                 else:
                     masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels) 
                 if save_masks == False and return_results == False:
-                    print('Saving and returning of results weres switched of - therefore mask saving was turned on!')
+                    print('Saving and returning of results were switched of - therefore mask saving was turned on!')
                     save_masks = True
                 if save_masks == True:
                     if TAR_DIR:
@@ -370,7 +402,7 @@ def eval_image(y_true,y_pred,thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8,
 
 def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],
     filters={'edge':[False,.05],'px_cutoff':[False,10]},filter_props=['label','area','centroid','major_axis_length','minor_axis_length'],
-    save_results=True,return_results=True):
+    save_results=True,return_results=True,return_test_idx=False):
     """
     Evaluates a set of images with eval_image. Saves results to a pkl file.
 

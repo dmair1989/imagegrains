@@ -59,7 +59,7 @@ def AP_IoU_plot(eval_results,labels=True,
         avg_l.append(np.mean(res_l[m]))
         std_ul.append(np.mean(res_l[m])+np.std(res_l[m]))
         std_ll.append(np.mean(res_l[m])-np.std(res_l[m]))
-        
+    
     for i  in range(len(eval_results)):
         if test_idxs:
             if i in test_idxs and i == 0:
@@ -89,6 +89,17 @@ def AP_IoU_plot(eval_results,labels=True,
 
 def AP_IoU_summary_plot(eval_results_list,elements,test_idx_list =None ,labels=True,
                         thresholds=[0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):    
+    """
+    eval_results_list: list of eval_results from eval_results_list
+    elements: dict with the elements to be plotted: 
+        dataset = str with the name of the dataset
+        model_ID = list with the identifier string for predictions from different models        
+        colors = list of colors for the different models
+        images = bool, if True, plots the AP for each image
+        SD = bool, if True, plots the standard deviation of the AP for each image
+        avg = bool, if True, plots the average AP for the dataset 
+    """
+    
     for ds in range(len(eval_results_list)):
         res_l= [[] for x in range(len(thresholds))]
         for i  in range(len(eval_results_list[ds])):
@@ -160,7 +171,8 @@ def inspect_predictions(imgs,preds,lbls=None,title='',PATH='',save_fig=False):
 
         plt.subplot(rows,len(imgs),len(imgs) + k+1)
         pred = io.imread(preds[k])
-        plt.imshow(label2rgb(pred, image=img, bg_label=0))
+        colors = mask_cmap(pred)
+        plt.imshow(label2rgb(pred, image=img, colors=colors, bg_label=0))
         if k == 0:
             plt.ylabel('Predictions')
         plt.xticks([],[])
@@ -169,7 +181,8 @@ def inspect_predictions(imgs,preds,lbls=None,title='',PATH='',save_fig=False):
         if lbls:
             plt.subplot(rows,len(imgs),(len(imgs)*2)+ k+1)
             lbl = io.imread(lbls[k])
-            plt.imshow(label2rgb(lbl, image=img, bg_label=0))
+            colors = mask_cmap(lbl)
+            plt.imshow(label2rgb(lbl, image=img, colors=colors, bg_label=0))
             if k == 0:
                 plt.ylabel('Ground truth')
             plt.xticks([],[])
@@ -207,17 +220,26 @@ def inspect_dataset_grains(imgs,masks,res_props=None,elements=['image','mask','e
         plt.tight_layout()
     return fig
 
-def show_masks_set(labels,images,show_ap50=False,showmap=False,res_dict=None,showID=False,title_str=''):
-    plt.figure(figsize=(20,20))
+def mask_cmap(masks):
+    values = np.unique(masks)
+    colors = plt.cm.get_cmap('winter',len(values))
+    colors=[colors(i) for i in range(len(values))]
+    np.random.shuffle(colors)
+    return colors
+
+def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,showID=False,title_str=''):
+    plt.figure(figsize=(20,2.222*(len(images)/9)))
+    if len(images) > 81:
+        print('Too many images to show. Showing first 81.')
+        images = images[0:80]
+        masks = masks[0:80]
     for k in range(len(images)):
         img = io.imread(images[k])
-        lbl = io.imread(labels[k])
-        values = np.unique(label(lbl))
-        colors = plt.cm.get_cmap('winter',len(values))
-        colors=[colors(i) for i in range(len(values))]
-        np.random.shuffle(colors) 
-        
-        plt.subplot(9,9,k+1)
+        lbl = io.imread(masks[k])
+        colors = mask_cmap(lbl)
+        rows = int(len(images)/9)
+        rows = 1 if rows == 0 else rows
+        plt.subplot(int(len(images)/9),9,k+1)
         
         masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
         plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
@@ -225,10 +247,10 @@ def show_masks_set(labels,images,show_ap50=False,showmap=False,res_dict=None,sho
         if res_dict != None:
             ap50 = str(np.round(res_dict[k]['ap'][0],decimals=2))
             mAP50_90 = np.mean(res_dict[k]['ap'][0:9])
-        if show_ap50 == True:
-            plt.title('AP: '+str(ap50))
-        elif showmap == True:
-            plt.title('mAP: '+str(np.round(mAP50_90,decimals=2)))
+            if show_ap50 == True:
+                plt.title('AP: '+str(ap50))
+            elif showmap == True:
+                plt.title('mAP: '+str(np.round(mAP50_90,decimals=2)))
         elif showID == True:
             ID = Path(images[k]).stem
             plt.title(ID)
