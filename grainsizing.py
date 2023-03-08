@@ -630,7 +630,7 @@ def re_scale_dataset(DIR,resolution= None, camera_parameters= None, gsd_format='
 
     Returns
     -------
-    rescaled_l (list) - list of rescaled grain size distributions
+    rescaled_l (list) - grain size distributions to rescale
 
     """
     gsds = data_loader.load_grain_set(DIR, gsd_format = gsd_format, gsd_str=gsd_str)
@@ -704,10 +704,10 @@ def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
         pixelsH = camera_parameters['pixelsH']
         resolution = calculate_camera_res(focal_length_mm, height_m, sensorH_mm, sensorW_mm, pixelsH, pixelsW)
     try: 
-        df['ell: b-axis (mm)']
-    except:
         df['ell: a-axis (mm)'] = df['ell: a-axis (px)']*resolution
         df['ell: b-axis (mm)'] = df['ell: b-axis (px)']*resolution
+    except KeyError:
+        pass    
     try:
         df['mask outline: a axis (mm)'] = df['mask outline: a axis (px)']*resolution
         df['mask outline: b axis (mm)'] = df['mask outline: b axis (px)']*resolution
