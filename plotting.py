@@ -131,7 +131,7 @@ def AP_IoU_summary_plot(eval_results_list,elements,test_idx_list =None ,labels=T
     plt.tight_layout()
     return
     
-def inspect_predictions(imgs,preds,lbls=None,title='',PATH=''):
+def inspect_predictions(imgs,preds,lbls=None,title='',PATH='',save_fig=False):
     """
     Plot images and predictions side by side.  
     `imgs` list of image paths  
@@ -145,7 +145,7 @@ def inspect_predictions(imgs,preds,lbls=None,title='',PATH=''):
         fig = plt.figure(figsize=(len(imgs)*2,len(imgs)), dpi=300)
         rows = 3
     else:
-        fig = plt.figure(figsize=(len(imgs),int(len(imgs)/2.5)), dpi=300)
+        fig = plt.figure(figsize=(len(imgs)*2,len(imgs)*0.66), dpi=300)
         rows = 2
     for k in range(len(imgs)):
         img = io.imread(imgs[k])
@@ -156,7 +156,6 @@ def inspect_predictions(imgs,preds,lbls=None,title='',PATH=''):
             plt.ylabel('Image')
         plt.xticks([],[])
         plt.yticks([],[])
-        plt.tight_layout()
         
 
         plt.subplot(rows,len(imgs),len(imgs) + k+1)
@@ -166,20 +165,27 @@ def inspect_predictions(imgs,preds,lbls=None,title='',PATH=''):
             plt.ylabel('Predictions')
         plt.xticks([],[])
         plt.yticks([],[])
-        plt.tight_layout()
 
         if lbls:
             plt.subplot(rows,len(imgs),(len(imgs)*2)+ k+1)
             lbl = io.imread(lbls[k])
             plt.imshow(label2rgb(lbl, image=img, bg_label=0))
             if k == 0:
-                plt.ylabel('Predictions')
+                plt.ylabel('Ground truth')
             plt.xticks([],[])
             plt.yticks([],[])
             i_ID = Path(imgs[k]).stem
             #i_ID = imgs[k].split('\\')[len(imgs[k].split('\\'))-1].split('.')[0]
             plt.xlabel(i_ID)
-            plt.tight_layout()
+            
+    if title != '':
+        if isinstance(title, list):
+            plt.title(title[k])
+        else:
+            plt.suptitle(title)
+    if PATH != '' and save_fig == True:
+        plt.savefig(PATH+'pred_overview.pdf',dpi=300)
+    plt.tight_layout()
     return fig
 
 def inspect_dataset_grains(imgs,masks,res_props=None,elements=['image','mask','ellipse_b','ellipse_a','ellipse']):
@@ -337,7 +343,7 @@ def single_grain_plot(mask,elements,props=None, image =None, fit_res =None,
             #conv_pad = cv.copyMakeBorder(convex_image.astype(int), padding_size, padding_size, padding_size, padding_size, cv.BORDER_CONSTANT, (0,0,0))
         contours = grainsizing.contour_grain(conv_pad)
         for contour in contours:
-            plt.plot(contour[:, 1]-(padding_size-.5)+minx, contour[:, 0]-(padding_size-.5)+miny,'-m',linewidth=1.5)
+            plt.plot(contour[:, 1]-(padding_size-.5)+minx, contour[:, 0]-(padding_size-.5)+miny,'-m',linewidth=1)
     if 'fit_a' in elements and a_coords:
         x = [a_coords[0][0][1]-(padding_size-.5)+minx,a_coords[0][1][1]-(padding_size-.5)+minx]
         y = [a_coords[0][0][0]-(padding_size-.5)+miny,a_coords[0][1][0]-(padding_size-.5)+miny]
@@ -351,7 +357,7 @@ def single_grain_plot(mask,elements,props=None, image =None, fit_res =None,
         plt.plot(x1,y1,'b',label='b_axis[convex hull]',)   
     if 'ellipse' in elements:    
         x0,x1,x2,x3,x4,y0,y1,y2,y3,y4,x,y= ell_from_props(props)
-        plt.plot(x, y, 'r--', linewidth=1.5)
+        plt.plot(x, y, 'r--', linewidth=1)
     if 'ellipse_b' in elements:
         x0,x1,x2,x3,x4,y0,y1,y2,y3,y4,x,y= ell_from_props(props)
         plt.plot((x1, x4), (y1, y4), '-b', linewidth=1)
