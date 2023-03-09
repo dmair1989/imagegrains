@@ -340,7 +340,11 @@ rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfo
     all_results (dict (optional, default = {})) - dict containing output from helper.prediction.predict_dataset().
     
     """
-    model_list,M_ID = models_from_zoo(MOD_DIR)
+    if '.' in MOD_DIR:
+        model_list = [MOD_DIR]
+        M_ID = [Path(MOD_DIR).stem]
+    else:
+        model_list,M_ID = models_from_zoo(MOD_DIR)
     all_results= {}
     for m_idx in range(len(model_list)):
         model = models.CellposeModel(gpu=use_GPU,pretrained_model=model_list[m_idx])
