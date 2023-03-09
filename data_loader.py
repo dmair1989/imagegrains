@@ -213,6 +213,11 @@ def load_grain_set(DIR,gsd_format='csv',gsd_str='grains'):
             for path in G_DIR:
                 gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str)
         return gsds
+
+def read_grains(PATH,sep=';',column_name='ell: b-axis (mm)'):
+    df = pd.read_csv(PATH,sep=sep)
+    grains = df[column_name].values
+    return grains
     
 def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains'):
     gsds_raw = natsorted(glob(PATH+'/*'+gsd_str+'*.'+gsd_format))
