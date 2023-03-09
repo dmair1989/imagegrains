@@ -24,16 +24,20 @@ def find_data(PATH,mask_str='mask',im_str='',im_format='jpg',mask_format='tif'):
     test_masks (list) - List of paths to the test masks
 
     """
-    dirs = next(os.walk(PATH))[1]
+    try:
+        dirs = next(os.walk(PATH))[1]
+    except StopIteration:
+        dirs=[]
     W_PATH = []
-    if 'test' in dirs:
-        W_PATH = str(PATH+'/test/')
-        test_images = find_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
-        test_masks = find_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
-    if 'train' in dirs:
-        W_PATH = str(PATH+'/train/')
-        train_images = find_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
-        train_masks = find_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
+    if not dirs:
+        if 'test' in dirs:
+            W_PATH = str(PATH+'/test/')
+            test_images = find_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
+            test_masks = find_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
+        if 'train' in dirs:
+            W_PATH = str(PATH+'/train/')
+            train_images = find_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
+            train_masks = find_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
     if not W_PATH:
         W_PATH = PATH
         train_images = find_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
@@ -83,9 +87,15 @@ def dataset_loader(IM_DIRs,image_format='jpg',label_format='tif',pred_format='ti
     if type(IM_DIRs) == list:
         dirs = []
         for x in range(len(IM_DIRs)):
-            dirs += next(os.walk(IM_DIRs[x]))[1]
+            try:
+                dirs += next(os.walk(IM_DIRs[x]))[1]
+            except StopIteration:
+                continue
     else:
-        dirs = next(os.walk(IM_DIRs))[1]
+        try:
+            dirs = next(os.walk(IM_DIRs))[1]
+        except StopIteration:
+            dirs=[]
     IM_DIR = []
     if dirs:
         for dir in dirs:
@@ -160,7 +170,7 @@ def load_eval_res(name,PATH=''):
         eval_results = pickle.load(f)
     return eval_results
 
-def load_grain_set(DIR,gsd_format='csv',gsd_str='grains',filter_str='re_scaled'):
+def load_grain_set(DIR,gsd_format='csv',gsd_str='grains'):
         """
         Loads a grain size distributions from a directory.
 
@@ -169,7 +179,6 @@ def load_grain_set(DIR,gsd_format='csv',gsd_str='grains',filter_str='re_scaled')
         DIR (str) - directory of the grain size distributions
         gsd_format (str (optional, default = 'csv')) - format of the grain size distributions
         gsd_str (str (optional, default = 'grains')) - string to filter the grain size distributions
-        filter_str (str (optional, default = 're_scaled')) - string to filter the grain size distributions
 
         Returns
         -------
@@ -179,48 +188,54 @@ def load_grain_set(DIR,gsd_format='csv',gsd_str='grains',filter_str='re_scaled')
         if type(DIR) == list:
             dirs = []
             for x in range(len(DIR)):
-                dirs += next(os.walk(DIR[x]))[1]
+                try:
+                    dirs += next(os.walk(DIR[x]))[1]
+                except StopIteration:
+                    continue
         else:
-            dirs = next(os.walk(DIR))[1]
+            try:
+                dirs = next(os.walk(DIR))[1]
+            except StopIteration:
+                dirs=[]
         G_DIR = []
         if dirs:
+            gsds=[]
             for dir in dirs:
                 if 'test' in dir:
                         G_DIR += [str(DIR+'/test/')]
-                if 'train' in dirs:
+                if 'train' in dir:
                         G_DIR += [str(DIR+'/train/')]
-            for dir in G_DIR:
-                gsds = gsds_from_folder(dir,gsd_format=gsd_format,gsd_str=gsd_str,filter_str=filter_str) 
-        if not G_DIR:
-            G_DIR = DIR
-            gsds=[]
             for path in G_DIR:
-                gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str,filter_str=filter_str)
+                gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str) 
+        if not G_DIR:
+            gsds=[]
+            G_DIR = DIR
+            for path in G_DIR:
+                gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str)
         return gsds
     
-def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains',filter_str='0'):
+def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains'):
     gsds_raw = natsorted(glob(PATH+'/*'+gsd_str+'*.'+gsd_format))
     gsds = []
-    for gsd in gsds_raw:
-        if filter_str== '0':
-            gsds.append(gsd)
-        else:
-            if filter_str not in gsd:
-                gsds.append(gsd)
+    [gsds.append(gsd) for gsd in gsds_raw]
     if not any(gsds):
         print('Could not load GSDs.')
     return gsds
 
-def read_set_unc(PATH,mc_str=''):
+def read_set_unc(PATH,mc_str='uncert'):
     """
-    Reads all files in a directory and returns a list of all files and a list of all IDs.
+    Returns a filtered list of all uncertainty files and a list of all IDs.
     """
-    dirs = next(os.walk(PATH))[1]
+    try:
+        dirs = next(os.walk(PATH))[1]
+    except StopIteration:
+        dirs = []
     G_DIR = []
-    if 'test' in dirs:
-        G_DIR = [str(PATH+'/test/')]
-    if 'train' in dirs:
-        G_DIR += [str(PATH+'/train/')]
+    if dirs:
+        if 'test' in dirs:
+            G_DIR = [str(PATH+'/test/')]
+        if 'train' in dirs:
+            G_DIR += [str(PATH+'/train/')]
     if not G_DIR:
         G_DIR = [PATH]
     mcs,ids=[],[]
@@ -231,7 +246,7 @@ def read_set_unc(PATH,mc_str=''):
         #id_i = [im[i].split('\\')[1].split('.')[0] for i in range(len(im))]
         mcs+=mc
         ids+=id_i
-    return mcs,ids 
+    return mcs,ids
 
 def read_unc(path,sep=';'):
     """

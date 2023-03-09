@@ -422,7 +422,7 @@ def ell_from_props(props,_idx=0):
     y = y0 + a/2 * np.cos(phi) * np.sin(-orientation) + b/2 * np.sin(phi) * np.cos(-orientation)
     return(x0,x1,x2,x3,x4,y0,y1,y2,y3,y4,x,y)
         
-def plot_gsd(gsd,color='c', perc_range=np.arange(0.01,1.01,0.01),length_max=300,ID=None,title=None,label_axes=False,lw=.75,orientation='vertical',units='px'):
+def plot_gsd(gsd,color='c', perc_range=np.arange(0.01,1.01,0.01),length_max=300,ID=None,title=None,label_axes=False,lw=.75,orientation='vertical',units='px',alpha=1):
         if orientation == 'vertical':
             xmax = length_max
             xmin = 0
@@ -443,7 +443,7 @@ def plot_gsd(gsd,color='c', perc_range=np.arange(0.01,1.01,0.01),length_max=300,
             if label_axes != False:
                 plt.xlabel('Grain Size ( '+str(units)+')')
                 plt.ylabel('Fraction smaller')
-        if not any(ID):
+        if not ID:
                 plt.plot(x,y,color=color,linewidth=lw)
         else:
                 plt.plot(x,y,color=color,label=ID,linewidth=lw)
