@@ -34,8 +34,9 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
     return_results (bool (optional, default =False)) - return the results as a list of pandas dataframes
     save_results (bool (optional, default =True)) - save the results as csv files
     do_subfolders (bool (optional, default =False)) - if True, the function will also measure grainsizes in any subfolders of INP_DIR
+    do_labels (bool (optional, default =False)) - if False files in a train and test sub-folder will be skipped
+    do_predictions (bool (optional, default =False)) - if False files in a `pred` sub-folder will be skipped
     
-
     Returns     
     -------
     res_grains_l (list) - list of pandas dataframes containing the results

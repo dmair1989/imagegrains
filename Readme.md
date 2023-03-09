@@ -47,14 +47,14 @@ Details and more installation options of cellpose (including GPU versions for Wi
 Then, install the additional dependancies:  
 
 - jupyter (```pip install jupyterlab```)
-- matplotlib (```pip install matplotlib```
+- matplotlib (```pip install matplotlib```)
 - scikit-image (```python -m pip install -U scikit-image```)
 - pandas (```pip install pandas```)  
 - for tsne: scanpy (```pip install scanpy```)
 
 ## How does it work?
 
-ImageGRains is organised in 3 main modules for *Segmentation*, *Grain size measurements* and *Grain size distribution (GSD) uncertainty* (see below). Currently, the most convenient way to use its functionality is, by downloading the code and running the jupyter notebooks in ```/notebooks``` in their order (A command-line executable version and complete online notebooks will follow soon). Of course, functions can be combined in custom scripts or notebooks.
+ImageGRains is organised in 3 main modules for *Segmentation*, *Grain size measurements* and *Grain size distribution (GSD) analysis* (see below). Currently, the most convenient way to use its functionality is, by downloading the code and running the jupyter notebooks in ```/notebooks``` in their order (A command-line executable version and complete online notebooks will follow soon). Of course, functions can be combined in custom scripts or notebooks.
 
 ### Workflow  
 
@@ -63,7 +63,7 @@ The main concept of ImageGrains is to first segment grains in images, then to me
 
 ### Segmentation of own images
 
-If you want to segment own images with pre-trained models, simply use corresponding jupyter notebook ```notebooks/2_image_segmentation.ipynb```. To do so locally, open the console and activate the environment (```conda activate imagegrains```) and start your jupyter instance (e.g., via```jupyter lab```). Then, open the notebook and follow the instructions. You can use any model provied in ```/models``` or train a custom model (see below).
+If you want to segment own images with pre-trained models, simply use the corresponding jupyter notebook ```notebooks/2_image_segmentation.ipynb```. To do so locally, open the console and activate the environment (```conda activate imagegrains```) and start your jupyter instance (e.g., via```jupyter lab```). Then, open the notebook and follow the instructions. You can use any model provied in ```/models``` or train a custom model (see below).
 
 ### Grain size measurements
 
@@ -71,7 +71,7 @@ To measure grain sizes, use the jupyter notebook ```notebooks/3_grain_sizes.ipyn
 
 ### Grain size distribution (GSD) and uncertainty
 
-To calculate the GSD, use the jupyter notebook ```notebooks/4_gsd_uncertainty.ipynb```. It will load the grain size measurements and calculate the GSD. Several for the uncertainty estimation are available. The uncertainty is by default for each perecentile as 95% confidence interval. The GSD is then stored in an output file.
+To analyze the GSD, use the jupyter notebook ```notebooks/4_gsd_analysis.ipynb```. It will load the grain size measurements and calculate the GSD. Several for the uncertainty estimation are available. The uncertainty by default is calculated for each perecentile as 95% confidence interval. The GSD is then stored in an output file.
 
 ### Training of custom models
 
