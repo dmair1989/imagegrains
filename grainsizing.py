@@ -34,9 +34,7 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
     return_results (bool (optional, default =False)) - return the results as a list of pandas dataframes
     save_results (bool (optional, default =True)) - save the results as csv files
     do_subfolders (bool (optional, default =False)) - if True, the function will also measure grainsizes in any subfolders of INP_DIR
-    do_labels (bool (optional, default =False)) - if False files in a train and test sub-folder will be skipped
-    do_predictions (bool (optional, default =False)) - if False files in a `pred` sub-folder will be skipped
-    
+
     Returns     
     -------
     res_grains_l (list) - list of pandas dataframes containing the results
@@ -53,11 +51,11 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
     res_grains_l,res_props_l,IDs_l = [],[],[]
     for idx in range(len(dirs)+1):
         if idx < len(dirs):
-            if 'train' in dirs[idx] and do_labels==True:
+            if 'train' in dirs[idx]:
                 W_DIR = INP_DIR+'/'+str(dirs[idx])
-            elif 'test' in dirs[idx] and do_labels==True:
+            elif 'test' in dirs[idx]:
                 W_DIR = INP_DIR+'/'+str(dirs[idx])
-            elif 'pred' in dirs[idx] and do_predictions==True:
+            elif 'pred' in dirs[idx]:
                 W_DIR = INP_DIR+'/'+str(dirs[idx])
             elif do_subfolders == True:
                 W_DIR = INP_DIR+'/'+str(dirs[idx])
@@ -532,7 +530,7 @@ def filter_grains(labels,properties,filters,mask,mute=True):
             mask[labels == label]=0
         return filtered,mask
 
-def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset=None,n_rand=100):
+def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset=None,n_rand=100,mute=False):
     """
     Resamples masks to a regular grid.
 
@@ -541,7 +539,7 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
     masks (array) - array of masks
     filters (dict (optional, default = None)) - dictionary with filter settings
     method (str (optional, default = 'wolman')) - method
-    grid_size (int (optional, default = None)) - grid size
+    grid_size (int (optional, default = None)) - grid size in px
     edge_offset (float (optional, default = None)) - edge offset
     n_rand (int (optional, default = 100)) - number of random samples
 
@@ -556,7 +554,8 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
     
     """
     w,h = masks.shape[0],masks.shape[1]
-    print('image shape:',h,'x',w)
+    if mute==False:
+        print('image shape:',h,'x',w)
     lbs = label(masks)
     if filters:
         edge_offset = filters['edge'][1]
@@ -572,7 +571,8 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
             grid_size = np.round(h/12)
         x_coords = np.round(np.arange((0+w*edge_offset),(w-w*edge_offset),grid_size))
         y_coords = np.round(np.arange((0+h*edge_offset),(h-h*edge_offset),(grid_size)))
-        print('number of Wolman nodes:',len(y_coords ),'x',len(x_coords))        
+        if mute==False:
+            print('number of Wolman nodes:',len(y_coords ),'x',len(x_coords))        
         xx,yy = np.meshgrid(x_coords,y_coords)
         for ii in range(len(yy)):
             for ki in range(len(xx[0])):
@@ -583,7 +583,8 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
     if method == 'random':
         xx = np.random.randint((0+w*edge_offset),(w-w*edge_offset),n_rand)
         yy = np.random.randint((0+h*edge_offset),(h-h*edge_offset),n_rand)
-        print('number of resampling points:',len(yy))
+        if mute==False:
+            print('number of resampling points:',len(yy))
         for ii in range(len(yy)):
             a=lbs[(xx[ii]-1).astype(int):xx[ii].astype(int),(yy[ii]-1).astype(int):yy[ii].astype(int)]
             kept_grains.append(a[0][0])
@@ -651,8 +652,9 @@ def re_scale_dataset(DIR,resolution= None, camera_parameters= None, gsd_format='
             camera_parameters_i=camera_parameters[idx]
         else:
             camera_parameters_i = []
-        rescaled_df = scale_grains(df,resolution=resolution_i,camera_parameters=camera_parameters_i,GSD_PTH=gsd,return_results=return_results,save_gsds=save_gsds,TAR_DIR=TAR_DIR)
-        rescaled_l.append(rescaled_df)
+        if not '_re_scaled' in gsd:
+            rescaled_df = scale_grains(df,resolution=resolution_i,camera_parameters=camera_parameters_i,GSD_PTH=gsd,return_results=return_results,save_gsds=save_gsds,TAR_DIR=TAR_DIR)
+            rescaled_l.append(rescaled_df)
     return rescaled_l
 
 def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
@@ -667,7 +669,7 @@ def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
     
     Parameters
     ----------
-    df (dataframe) - grain size distribution
+    df (dataframe) - grain size results
     resolution (float (optional, default = '')) - resolution in microns
     ID (str (optional, default = '')) - ID of the grain size distribution
     GSD_DIR (str (optional, default = '')) - full path of the grain size distribution file
@@ -724,9 +726,9 @@ def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
     if save_gsds == True:
         if TAR_DIR:
             os.makedirs(TAR_DIR, exist_ok=True)
-            df.to_csv(TAR_DIR+'/'+str(ID)+'_grains_re_scaled.csv')
+            df.to_csv(TAR_DIR+'/'+str(ID)+'_re_scaled.csv',sep=';')
         else:
-            df.to_csv(T_DIR+str(ID)+'_grains_re_scaled.csv')
+            df.to_csv(T_DIR+'/'+str(ID)+'_re_scaled.csv',sep=';')
     if return_results == False:
         df = []
     return df
@@ -789,6 +791,11 @@ def dataset_object_size(gsds,TAR_DIR='',save_results=True):
 
 def map_grain_res_to_img(imgs,pred_grains,pred_res_props,pred_IDs,m_string=None,p_string=None):
     new_preds,new_res,new_id = [],[],[]
+    """
+    Re-orders path lists to of prediction masks to a corresponding image path list.
+    This function is needed to correctly match the structure split sets.
+
+    """
     for kk in range(len(imgs)):
         if m_string:
             ID = Path(imgs[kk]).stem.split(m_string)[0]
@@ -806,6 +813,9 @@ def map_grain_res_to_img(imgs,pred_grains,pred_res_props,pred_IDs,m_string=None,
     return new_preds,new_res,new_id
 
 def do_gsd(gsd):
+    """
+    Calculates the GSD for grains in one image.
+    """
     if not any(gsd):
         return np.zeros(100)
     else:
@@ -814,10 +824,23 @@ def do_gsd(gsd):
     return perc_dist
 
 def gsd_for_set(gsds,column='ell: b-axis (mm)'):
+    """
+    Calculates the GSD for a set of grains from several images.
+    
+    Parameters
+    ----------
+    gsds (list) - list of grain size results
+    column (str (optional, default = 'ell: b-axis (mm)')) - column to calculate the GSD from
+    
+    Returns
+    -------
+    gsd_l (list) - list of GSDs
+    id_l (list) - list of IDs
+    """
     gsd_l,id_l = [],[]
     for grains in gsds:
         ID = Path(grains).stem
-        raw = pd.read_csv(grains)[column]
+        raw = pd.read_csv(grains,sep=';')[column]
         gsd = do_gsd(raw)
         gsd_l.append(gsd)
         id_l.append(ID)
@@ -849,14 +872,7 @@ def get_avg_perc_std(gsd1,gsd2,metric='mean'):
         return np.mean(np.std((np.array(gsd1)-np.array(gsd2))))
     elif metric == 'median':
         return np.median(np.std((np.array(gsd1)-np.array(gsd2))))
-
-def gsds_analysis(gsds):
-    d16s, d50s, d84s, d96s = [],[],[],[]
-    for gsd in gsds:
-        d16, d50, d84, d96 = get_key_percs(gsd)
-        d16s.append(d16), d50s.append(d50), d84s.append(d84), d96s.append(d96)
-    return d16s, d50s, d84s, d96s
-    
+   
 def compare_gsds_to_gts(gsds,lbls,units='px',CI=0.05,mute=False,return_std=False):
     counter = 0
     dds,ps,stds = [],[],[]
@@ -882,18 +898,11 @@ def compare_gsds_to_gts(gsds,lbls,units='px',CI=0.05,mute=False,return_std=False
     else:
         return dds,ps
 
-def gsd_uncer_analysis(gsd_res_l):
-    CId16s, CId50s, CId84s, CId96s = [],[],[],[]
-    for gsd_res in gsd_res_l:
-        d16, d50, d84, d96 = get_key_CIs(gsd_res_l[gsd_res])
-        CId16s.append(d16), CId50s.append(d50), CId84s.append(d84), CId96s.append(d96)
-    return CId16s, CId50s, CId84s, CId96s
-
 def get_key_CIs(gsd_res,perc=[15,50,84,96]):
     if not any(gsd_res[0]):
         ci_dists = np.zeros(4)
     else:
-        ci_dists = np.round([gsd_res[1][perc[i]]-gsd_res[2][perc[i]] for i in range(len(perc))],decimals=1)
+        ci_dists = np.round([[gsd_res[2][perc[i]],gsd_res[1][perc[i]]] for i in range(len(perc))],decimals=1)
     return ci_dists[0], ci_dists[1], ci_dists[2], ci_dists[3]
 
 def count_ks_hits(df, CI=0.05):
@@ -910,3 +919,24 @@ def avg_delta(df):
 
 def avg_std(df):
     return np.round(np.mean(df['delta_std']),decimals=2)
+
+def summary_statistics(files,res_dict,id_list,sep=';',unit='mm',axis='b-axis',approximation='ellipse',method='bootstrapping',save_summary=True,data_id='pred'):
+    if type(files)==str:
+        files = [files]
+    summary_df = pd.DataFrame()
+    for i,file in enumerate(files):
+        grains = data_loader.read_grains(file,sep=sep)
+        ID = id_list[i]
+        n = len(grains)
+        gsd = do_gsd(grains)
+        key_p = get_key_percs(gsd)
+        key_CI = get_key_CIs(res_dict[ID])
+        summary_df = summary_df.append(pd.DataFrame({'Image/Masks':ID,'number of grains':n,
+                        'D16':key_p[0],'CI D16 (95%)':str(key_CI[0]),
+                        'D50':key_p[1],'CI D50 (95%)':str(key_CI[1]),
+                        'D84':key_p[2],'CI D84 (95%)':str(key_CI[2]),
+                        'D96':key_p[3],'CI D96 (95%)':str(key_CI[3]),
+                        'unit':unit,'axis':axis,'method':method,'grain approximation':approximation},index=[i]))
+    if save_summary:
+        summary_df.to_csv(str(Path(files[0]).parents[1])+'/'+str(data_id)+'_summary_'+method+'.csv',sep=',',index=False)
+    return summary_df
