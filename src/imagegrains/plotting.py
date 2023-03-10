@@ -7,7 +7,7 @@ from skimage.segmentation import mark_boundaries
 from skimage.color import label2rgb
 from cellpose import io
 
-from imagegrains import import grainsizing
+from imagegrains import grainsizing
 
 def show_training_set(inp_list,mask_str='_mask'):
     for k,f in enumerate(inp_list):

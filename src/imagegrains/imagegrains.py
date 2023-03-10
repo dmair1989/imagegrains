@@ -1,11 +1,11 @@
 import os, argparse, glob, pathlib, time
 import numpy as np
 from cellpose import models, utils, io
-from imagegrains import import segmentation_helper
-from imagegrains import import grainsizing
-from imagegrains import import data_loader
-from imagegrains import import gsd_uncertainty
-from imagegrains import import plotting
+from imagegrains import segmentation_helper
+from imagegrains import grainsizing
+from imagegrains import data_loader
+from imagegrains import gsd_uncertainty
+from imagegrains import plotting
 
 #will be __main__.py in the future
 def main():
