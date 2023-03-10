@@ -12,8 +12,8 @@ from cellpose import metrics
 from cellpose import models
 from cellpose.io import logger_setup
 
-import grainsizing
-import data_loader
+from imagegrains import import grainsizing
+from imagegrains import import data_loader
 
 
 def check_labels(labels,TAR_DIR='',lbl_str='_mask',mask_format='tif'):
