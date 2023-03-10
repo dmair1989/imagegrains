@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 [project]
 name = "imagegrains"
 description = "A software library for segmenting and measuring of sedimentary particles in images"
-readme = "README.md"
+readme = "Readme.md"
 requires-python = ">=3.8"
 license = { text = "BSD 3-Clause License" }
 authors = [
