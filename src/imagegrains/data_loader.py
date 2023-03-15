@@ -30,19 +30,20 @@ def find_data(PATH,mask_str='mask',im_str='',im_format='jpg',mask_format='tif'):
         dirs=[]
     W_PATH = []
     if not dirs:
-        if 'test' in dirs:
-            W_PATH = str(PATH+'/test/')
-            test_images = find_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
-            test_masks = find_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
-        if 'train' in dirs:
-            W_PATH = str(PATH+'/train/')
-            train_images = find_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
-            train_masks = find_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
-    if not W_PATH:
         W_PATH = PATH
         train_images = find_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
         train_masks = find_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
         test_images,test_masks = [],[]
+    else:
+        for dir in dirs:
+            if 'test' in dir:
+                W_PATH = str(PATH+'/test/')
+                test_images = find_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
+                test_masks = find_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
+            if 'train' in dir:
+                W_PATH = str(PATH+'/train/')
+                train_images = find_imgs_masks(W_PATH,format=im_format,filter_str=im_str)
+                train_masks = find_imgs_masks(W_PATH,format=mask_format,filter_str=mask_str)
     return train_images,train_masks,test_images,test_masks
 
 def find_imgs_masks(W_PATH,format='',filter_str=''):
