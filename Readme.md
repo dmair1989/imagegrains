@@ -97,9 +97,7 @@ If you want to train your own models, you can use the jupyter notebook ```notebo
 ***TO DO:***  
 
 ***-code:***
-***-- ship as package***  
 ***-- make it run in google colab***  
-***-- create command-line executable***  
 
 ***-data:***
 ***--improve set with 'human-in-the-loop' approach***
