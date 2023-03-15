@@ -1,5 +1,6 @@
 # ImageGrains  <img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/logo_2.png?raw=true" width="100" title="logo" alt="logo" align="left">
-[![Coverage Status](https://coveralls.io/repos/github/dmair1989/imagegrains/badge.svg?branch=main)](https://coveralls.io/github/dmair1989/imagegrains?branch=main)  
+![build](https://github.com/dmair1989/imagegrains/actions/workflows/ci.yml/badge.svg)
+[![coverage](https://coveralls.io/repos/github/dmair1989/imagegrains/badge.svg?branch=main)](https://coveralls.io/github/dmair1989/imagegrains?branch=main)  
 
 A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the *Cellpose* algorithm  (<https://github.com/mouseland/cellpose>), designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained models from our data (**link to repo**) are available or custom models can be trained (**link to preprint**).
 
