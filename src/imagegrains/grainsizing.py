@@ -55,8 +55,6 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
                 W_DIR = INP_DIR+'/'+str(dirs[idx])
             elif 'test' in dirs[idx]:
                 W_DIR = INP_DIR+'/'+str(dirs[idx])
-            elif 'pred' in dirs[idx]:
-                W_DIR = INP_DIR+'/'+str(dirs[idx])
             elif do_subfolders == True:
                 W_DIR = INP_DIR+'/'+str(dirs[idx])
             elif not W_DIR:
