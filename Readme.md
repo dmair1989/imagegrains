@@ -27,7 +27,7 @@ The easiest way to install the software is by using the conda package manager. I
 To install the software, open an anaconda prompt / command prompt, then create a new environment with:
 
 ```text
-conda create --name imagegrains python=3.8
+conda create --name imagegrains -c conda-forge python=3.8 imagecodecs
 ```
 
 and activate it with:
@@ -36,21 +36,38 @@ and activate it with:
 conda activate imagegrains
 ```
 
-First, install cellpose, its GUI and dependancies (which includes [pytorch](https://pytorch.org/), [pyqtgrapgh](https://www.pyqtgraph.org/), [PyQt5](https://www.riverbankcomputing.com/static/Docs/PyQt5/), [numpy](https://numpy.org/), [numba](http://numba.pydata.org/numba-doc/latest/user/5minguide.html), [scipy](https://scipy.org/), [natsort](https://natsort.readthedocs.io/en/master/)):
+Then install the package using:
+
+```text
+pip install imagegrains
+```
+
+If you want access to the cellpose GUI for retraining use:
+
+```text
+pip install "imagegrains[gui]"
+```
+
+By default, 
 
 ```text
 python -m pip install cellpose[gui]
 ```
 
+By default, cellpose will run on the CPU. To use a GPU version, you will have to make sure you have a GPU compatible PyTorch version. For this:
+
+1. Uninstall the PyTorch version that gets installed by default with Cellpose:
+
+        pip uninstall torch
+
+2. Make sure your have up-to-date drivers for your NVIDIA card installed.
+
+3. Re-install a GPU version of PyTorch via conda using a command that you can find [here](https://pytorch.org/get-started/locally/) (this takes care of the cuda toolkit, cudnn etc. so **no need to install manually anything more than the driver**). The command will look like this:
+
+        conda install pytorch torchvision cudatoolkit=11.3 -c pytorch
+
+
 Details and more installation options of cellpose (including GPU versions for Windows and Linux) are found [here](https://github.com/mouseland/cellpose#installation).
-
-Then, install the additional dependancies:  
-
-- jupyter (```pip install jupyterlab```)
-- matplotlib (```pip install matplotlib```)
-- scikit-image (```python -m pip install -U scikit-image```)
-- pandas (```pip install pandas```)  
-- for tsne: scanpy (```pip install scanpy```)
 
 ## How does it work?
 

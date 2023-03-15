@@ -13,7 +13,7 @@ from scipy import stats
 from natsort import natsorted
 from glob import glob
 
-import data_loader
+from imagegrains import data_loader
 
 def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
 properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',

@@ -1,11 +1,12 @@
 import os, argparse, glob, pathlib, time
 import numpy as np
 from cellpose import models, utils, io
-import segmentation_helper
-import grainsizing
-import data_loader
-import gsd_uncertainty
-import plotting
+from imagegrains import segmentation_helper
+from imagegrains import grainsizing
+from imagegrains import data_loader
+from imagegrains import gsd_uncertainty
+from imagegrains import plotting
+
 #will be __main__.py in the future
 def main():
     parser = argparse.ArgumentParser(description='ImageGrains')
