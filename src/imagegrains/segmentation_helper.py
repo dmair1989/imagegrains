@@ -8,13 +8,8 @@ from skimage.measure import label, regionprops_table
 import numpy as np
 import pandas as pd
 
-from cellpose import metrics
-from cellpose import models
-from cellpose.io import logger_setup
-
-from imagegrains import grainsizing
-from imagegrains import data_loader
-
+from cellpose import metrics, models, io
+from imagegrains import grainsizing, data_loader
 
 def check_labels(labels,TAR_DIR='',lbl_str='_mask',mask_format='tif'):
     """
@@ -103,7 +98,7 @@ def custom_train(PATH, pretrained_model = None,datstring = None,
     
     """
 
-    logger, log_file = logger_setup()
+    logger, log_file = io.logger_setup()
     train_images,train_masks,test_images,test_masks = data_loader.find_data(PATH,mask_str=mask_filter)
     if label_check == True:
         check_labels(train_masks);
@@ -265,7 +260,7 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,mID=''):
     mask_ll,flow_ll,styles_ll,ID_ll,=[],[],[],[]
     try:
         dirs = next(os.walk(INP_DIR))[1]
-    except StopIteration:
+    except:
         dirs=[]
         W_DIR = INP_DIR+'/'
         pass
