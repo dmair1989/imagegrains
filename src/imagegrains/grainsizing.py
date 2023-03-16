@@ -49,6 +49,7 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
         dirs=[]
         W_DIR = INP_DIR+'/'
     res_grains_l,res_props_l,IDs_l = [],[],[]
+    counter = 0
     for idx in range(len(dirs)+1):
         if idx < len(dirs):
             if 'train' in dirs[idx]:
@@ -59,7 +60,7 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
                 W_DIR = INP_DIR+'/'+str(dirs[idx])
             elif not W_DIR:
                 continue
-        elif idx == len(dirs) and not res_grains_l:
+        elif idx == len(dirs) and counter==0:
             W_DIR = INP_DIR+'/'
         if W_DIR:
             res_grains_i,res_props_i,IDs_i= grains_in_dataset(INP_DIR=W_DIR,mask_format=mask_format,mask_str=mask_str,
@@ -71,6 +72,7 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
                     res_props_l.append(props)
                     IDs_l.append(id)
             W_DIR = None
+            counter += 1
     return res_grains_l,res_props_l,IDs_l
 
 def grains_in_dataset(inp_list=None,INP_DIR=None,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,

@@ -210,7 +210,7 @@ def load_grain_set(DIR,gsd_format='csv',gsd_str='grains'):
                 gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str) 
         if not G_DIR:
             gsds=[]
-            G_DIR = DIR
+            G_DIR = [DIR]
             for path in G_DIR:
                 gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str)
         return gsds
