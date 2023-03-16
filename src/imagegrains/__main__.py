@@ -1,10 +1,9 @@
-import os, argparse, glob, time
+import os, argparse
 from pathlib import Path
 import torch
-import numpy as np
 import pandas as pd
 from numpy.random import default_rng
-from cellpose import models, utils, io
+from cellpose import io
 from imagegrains import segmentation_helper, grainsizing, gsd_uncertainty
 from imagegrains import data_loader, plotting
 
