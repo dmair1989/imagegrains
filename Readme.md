@@ -42,7 +42,7 @@ conda activate imagegrains
 ```text
 pip install git+https://www.github.com/dmair1989/imagegrains.git
 ```  
-:heavy_exclamation_mark: This voids the next two statements.
+:heavy_exclamation_mark: This voids the next two statements.  
 Then install the package using:
 
 ```text
