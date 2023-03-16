@@ -224,8 +224,6 @@ def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains'):
     gsds_raw = natsorted(glob(PATH+'/*'+gsd_str+'*.'+gsd_format))
     gsds = []
     [gsds.append(gsd) for gsd in gsds_raw]
-    if not any(gsds):
-        print('Could not load GSDs.')
     return gsds
 
 def read_set_unc(PATH,mc_str='uncert'):

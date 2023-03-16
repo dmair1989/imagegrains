@@ -11,6 +11,8 @@ from tqdm import tqdm
 from multiprocessing import Pool, cpu_count
 from functools import partial
 
+from imagegrains import grainsizing
+
 """
 -----------------------------------
 Grain Size Distribution: Binomial & normal approx. for percentile uncertainty
@@ -406,7 +408,6 @@ def get_MC_percentiles(res_list,CI_bounds=[2.5,97.5]):
 
     Returns
     -------
-    per_array (array): array of percentiles
     med_list (list): list of median values
     upper_CI (list): list of upper CI values
     lower_CI (list): list of lower CI values
@@ -473,7 +474,7 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,TAR_
         return
     if not res_dict:
         res_dict = {}
-    for idx in tqdm(range(len(gsds)),desc=str(method),unit='gsd',colour='YELLOW',position=0,leave=True):
+    for idx in tqdm(range(len(gsds)),desc=str(method),unit='gsd',colour='BLUE',position=0,leave=True):
         if scale_err:
             if type(scale_err)==list: 
                 scale_err_i=scale_err[idx]
@@ -627,12 +628,12 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,sfm_type=''):
         else:
             res_list = MC_with_sfm_err_SI(gsd,sfm_error=sfm_error,avg_res=avg_res,num_it=num_it,cutoff=MC_cutoff,method=MC_method,mute=mute)
             med_list, upper_CI, lower_CI = get_MC_percentiles(res_list,CI_bounds=CI_bounds)
-    #do perc_uncert with one of the available methods
-    gsd_list=[]
-    for p in range(100):    
-        inp = np.percentile(gsd,p)
-        gsd_list.append(inp)
-    return med_list, upper_CI, lower_CI, gsd_list
+    gsd_list = grainsizing.do_gsd(gsd)
+    #gsd_list=[]
+    #for p in range(100):    
+    #    inp = np.percentile(gsd,p)
+    #    gsd_list.append(inp)
+    #return med_list, upper_CI, lower_CI, gsd_list
 
 def compile_sfm_error(from_file=''):
     """

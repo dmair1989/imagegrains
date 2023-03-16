@@ -819,7 +819,6 @@ def do_gsd(gsd):
         return np.zeros(100)
     else:
         perc_dist = [np.percentile(gsd, p, axis=0) for p in range(100)]
-        perc_dist.sort()
     return perc_dist
 
 def gsd_for_set(gsds,column='ell: b-axis (mm)'):
