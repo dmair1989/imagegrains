@@ -518,7 +518,7 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,TAR_
                     res_dict[str(ID)]=[med_list, upper_CI, lower_CI, gsd_list]
     return res_dict
 
-def gsd_uncertainty(gsd=None,ID='',INP_PATH='',sep=';',column_name='',conv_factor=1,method='bootstrapping',scale_err=0.1,length_err=1,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
+def gsd_uncertainty(gsd=None,ID='',INP_PATH='',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=0.1,length_err=1,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
 MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,TAR_DIR='',return_results=True,sfm_type='',id_string=''):
     """
     Calculate uncertainty of a GSD. Wrapper for calculate.gsd_uncertainty.

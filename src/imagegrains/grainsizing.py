@@ -24,7 +24,7 @@ return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_pr
     ----------
     INP_DIR (str) - path to the dataset
     mask_format (str (optional, default ='tif')) - format of the mask images
-    mask_str (str (optional, default ='')) - string that is contained in the mask images; e.g., '_mask' for lables, '_pred' for predictions
+    mask_str (str (optional, default ='')) - string that is contained in the mask images; e.g., '_mask' for labels, '_pred' for predictions
     TAR_DIR (str (optional, default ='')) - path to the target directory
     filters (dict (optional, default =None)) - dictionary of filters to apply to the grains
     mute (bool (optional, default =False)) - mute the output
@@ -138,7 +138,7 @@ return_results=False,save_results=True,image_res=None,set_id=None):
                 res_grains.append(props_df),res_props.append(props),IDs.append(ID)
     return res_grains,res_props,IDs 
 
-def grains_from_masks(masks,filters=None,mute=False,OT=.5,fit_method='',image_res=[],ID='',
+def grains_from_masks(masks,filters=None,mute=False,OT=.5,fit_method='',image_res=None,ID='',
 properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid']):
     """
     Measures grainsizes in single image dataset.
@@ -186,8 +186,7 @@ properties=['label','area','orientation','minor_axis_length','major_axis_length'
         if props_df['convex hull: b axis (px)']:
             props_df['convex hull: b axis (mm)'] = props_df['convex hull: b axis (px)']*image_res
             props_df['convex hull: a axis (mm)'] = props_df['convex hull: a axis (px)']*image_res
-    if mute==False:
-        print('GSD compiled.')
+
     #some data cleaning
     try:
         props_df.rename(columns = {
@@ -724,9 +723,9 @@ def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
     if save_gsds == True:
         if TAR_DIR:
             os.makedirs(TAR_DIR, exist_ok=True)
-            df.to_csv(TAR_DIR+'/'+str(ID)+'_re_scaled.csv',sep=';')
+            df.to_csv(TAR_DIR+'/'+str(ID)+'_re_scaled.csv',sep=',')
         else:
-            df.to_csv(T_DIR+'/'+str(ID)+'_re_scaled.csv',sep=';')
+            df.to_csv(T_DIR+'/'+str(ID)+'_re_scaled.csv',sep=',')
     if return_results == False:
         df = []
     return df
@@ -838,7 +837,7 @@ def gsd_for_set(gsds,column='ell: b-axis (mm)'):
     gsd_l,id_l = [],[]
     for grains in gsds:
         ID = Path(grains).stem
-        raw = pd.read_csv(grains,sep=';')[column]
+        raw = pd.read_csv(grains,sep=',')[column]
         gsd = do_gsd(raw)
         gsd_l.append(gsd)
         id_l.append(ID)
@@ -918,7 +917,7 @@ def avg_delta(df):
 def avg_std(df):
     return np.round(np.mean(df['delta_std']),decimals=2)
 
-def summary_statistics(files,res_dict,id_list,sep=';',unit='mm',axis='b-axis',approximation='ellipse',method='bootstrapping',save_summary=True,data_id='pred'):
+def summary_statistics(files,res_dict,id_list,sep=',',unit='mm',axis='b-axis',approximation='ellipse',method='bootstrapping',save_summary=True,data_id='pred'):
     if type(files)==str:
         files = [files]
     summary_df = pd.DataFrame()
