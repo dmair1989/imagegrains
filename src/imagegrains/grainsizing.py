@@ -165,7 +165,7 @@ properties=['label','area','orientation','minor_axis_length','major_axis_length'
     masks,num = label(masks,return_num=True)
     if mute==False:
         print(ID,':',str(num),' grains found')
-    if filters:
+    if filters and num > 0:
         res_, masks = filter_grains(labels=masks,properties=properties,filters=filters,mask=masks)
         if mute==False:
             print(str(len(res_))+' grains after filtering')
@@ -501,6 +501,8 @@ def filter_grains(labels,properties,filters,mask,mute=True):
 
     """
     if not labels.any():
+        filtered = []
+    if not mask.any():
         filtered = []
     else:
         grains = regionprops_table(labels,properties=properties)
