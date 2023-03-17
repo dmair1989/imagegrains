@@ -848,11 +848,11 @@ def gsd_for_set(gsds,column='ell: b-axis (mm)'):
 def get_key_percs(gsd,perc=[15,50,84,96]):
     return np.round([gsd[perc[i]]for i in range(len(perc))],decimals=1) 
 
-def gsd_test_statistics(gsd1,gsd2,mehtod='ks2amp'):
-    if mehtod == 'ks2samp':
+def gsd_test_statistics(gsd1,gsd2,method='ks2amp'):
+    if method == 'ks2samp':
         a = stats.ks_2samp(gsd1,gsd2)
         return a.statistic,a.pvalue
-    elif mehtod == 'wilcoxon':
+    elif method == 'wilcoxon':
         if all(np.array(gsd1)-np.array(gsd2))==0:
             return 0,0
         else:
@@ -880,7 +880,7 @@ def compare_gsds_to_gts(gsds,lbls,units='px',CI=0.05,mute=False,return_std=False
     for lbl,gsd in zip(lbls,gsds):
         dd = get_avg_perc_delta(lbl,gsd,metric='mean')
         dds.append(dd)
-        a,p = gsd_test_statistics(lbl,gsd,mehtod='ks2samp')
+        a,p = gsd_test_statistics(lbl,gsd,method='ks2samp')
         ps.append(p)
         if return_std == True:
             std = get_avg_perc_std(lbl,gsd,metric='mean')

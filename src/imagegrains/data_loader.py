@@ -226,7 +226,7 @@ def gsds_from_folder(PATH,gsd_format='csv',gsd_str='grains'):
     [gsds.append(gsd) for gsd in gsds_raw]
     return gsds
 
-def read_set_unc(PATH,mc_str='uncert'):
+def read_set_unc(PATH,unc_str='_perc_uncert',file_format='txt'):
     """
     Returns a filtered list of all uncertainty files and a list of all IDs.
     """
@@ -244,20 +244,19 @@ def read_set_unc(PATH,mc_str='uncert'):
         G_DIR = [PATH]
     mcs,ids=[],[]
     for path in G_DIR:
-        mc= natsorted(glob(path+'/*'+mc_str+'*.txt'))
-        im= natsorted(glob(path+'/*'+'*.jpg'))
-        id_i = [Path(im[idx]).stem for idx in range(len(im))]
-        #id_i = [im[i].split('\\')[1].split('.')[0] for i in range(len(im))]
+        mc= natsorted(glob(path+'/*'+unc_str+'*.'+file_format))
+        id_i = [Path(mc[idx]).stem for idx in range(len(mc))]
         mcs+=mc
         ids+=id_i
     return mcs,ids
 
-def read_unc(path,sep=','):
+def read_unc(path,sep=',',file_format='txt'):
     """
     Reads uncertainty file and returns a dataframe.
     """
     df = pd.read_csv(path,sep=sep, header=None)
-    df = df.T
+    if file_format == 'txt':
+        df = df.T
     df.columns = ['data','med','uci','lci']
     df = df.round(decimals=2)
     return df
