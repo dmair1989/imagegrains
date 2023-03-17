@@ -918,7 +918,7 @@ def avg_delta(df):
 def avg_std(df):
     return np.round(np.mean(df['delta_std']),decimals=2)
 
-def summary_statistics(files,res_dict,id_list,sep=',',unit='mm',axis='b-axis',approximation='ellipse',method='bootstrapping',save_summary=True,data_id='pred'):
+def summary_statistics(files,id_list,res_list=None,res_dict=None,sep=',',unit='mm',axis='b-axis',approximation='ellipse',method='bootstrapping',save_summary=True,data_id='pred',mute=True):
     if type(files)==str:
         files = [files]
     summary_df = pd.DataFrame()
@@ -928,13 +928,21 @@ def summary_statistics(files,res_dict,id_list,sep=',',unit='mm',axis='b-axis',ap
         n = len(grains)
         gsd = do_gsd(grains)
         key_p = get_key_percs(gsd)
-        key_CI = get_key_CIs(res_dict[ID])
-        summary_df = summary_df.append(pd.DataFrame({'Image/Masks':ID,'number of grains':n,
+        if res_dict is not None:
+            key_CI = get_key_CIs(res_dict[ID])
+        elif res_list is not None:
+            key_CI = get_key_CIs(res_list[i])
+        else:
+            if mute == False:
+                print('No results provided.')
+            return
+        summary_df = pd.concat([summary_df,pd.DataFrame({'Image/Masks':ID,'number of grains':n,
                         'D16':key_p[0],'CI D16 (95%)':str(key_CI[0]),
                         'D50':key_p[1],'CI D50 (95%)':str(key_CI[1]),
                         'D84':key_p[2],'CI D84 (95%)':str(key_CI[2]),
                         'D96':key_p[3],'CI D96 (95%)':str(key_CI[3]),
-                        'unit':unit,'axis':axis,'method':method,'grain approximation':approximation},index=[i]))
+                        'unit':unit,'axis':axis,'method':method,'grain approximation':approximation},index=[i])], axis=0)
+    summary_df = summary_df.round(decimals=2)
     if save_summary:
-        summary_df.to_csv(str(Path(files[0]).parents[1])+'/'+str(data_id)+'_summary_'+method+'.csv',sep=',',index=False)
+        summary_df.to_csv(str(Path(files[0]).parents[1])+'/'+str(data_id)+'_summary_'+method+'_'+approximation+'.csv',sep=',',index=False)
     return summary_df

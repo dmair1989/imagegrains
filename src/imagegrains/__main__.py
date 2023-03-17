@@ -9,10 +9,11 @@ from imagegrains import data_loader, plotting
 
 def main():
     parser = argparse.ArgumentParser(description='ImageGrains')
+    parser.add_argument('--img_dir', default=None, type=str, help='Input directory for images to segment')
+    parser.add_argument('--skip_plots', default=False, type=bool, help='Skip the overview plots')
 
     seg_args=parser.add_argument_group('Segmentation')
     seg_args.add_argument('--mute_output', default=None, type=bool, help='Mute console output. If True, example plots will not be saved.')
-    seg_args.add_argument('--img_dir', default=None, type=str, help='Input directory for images to segment')
     seg_args.add_argument('--out_dir', default=None, type=str, help='Output directory for segmented images; if not specified, the images will be saved in the same directory as the input images')
     seg_args.add_argument('--img_type', default='jpg', type=str, help='Image type to segment; by default the the script will look for .jpg files. Alternatively, .tif and .png files can be segmented.')
     seg_args.add_argument('--model_dir', default=None, type=str, help='Segemntation model to use; if not specified, the default model is used')
@@ -24,6 +25,7 @@ def main():
     gs_args=parser.add_argument_group('Grain size estimation')
     gs_args.add_argument('--min_grain_size', type=float, default=None, help='Minimum grain size in pixels to consider for grain size estimation (default: None); grains with a fitted ellipse smaller than this size will be ignored.')
     gs_args.add_argument('--edge_filter', type=float, default=None, help = 'Edge filter to remove grains close to the image boundary (default: None).')
+    gs_args.add_argument('--switch_filters_off', type=bool, default=False, help = 'Switch off all filters fro grain sizing (default: False).')
     gs_args.add_argument('--fit', type=str, default=None, help='Additional approximation for grains (default: None); options are convex hull (convex_hull) or outline (mask_outline).')
     gs_args.add_argument('--grid_resample', default=None, help = 'Resample images with a grid with a given resolution in pixel (default: None). Equivalent ot a digital Wolman grid.')
     gs_args.add_argument('--random_resample', default=None, help = 'Resample image with a random number of points (default: None).')
@@ -71,11 +73,13 @@ def main():
     #grain size estimation
 
     #set filters
-    filters = filters= {'edge':[False,.1],'px_cutoff':[False,12]}
+    filters = filters= {'edge':[True,.1],'px_cutoff':[True,12]}
     if args.min_grain_size:
         filters['px_cutoff'] = [True,args.min_grain_size]
     if args.edge_filter:
         filters['edge'] = [True,args.edge_filter]
+    if args.switch_filters_off:
+        filters= {'edge':[False,.1],'px_cutoff':[False,12]}
     print(f'>> ImageGrains: Measuring grains for masks in {args.img_dir}.')
 
     #optional resampling (if done, sub-directory with resampled masks will be created)
@@ -122,7 +126,7 @@ def segmentation_step(args,mute=False,TAR_DIR=''):
         _,M_ID = segmentation_helper.models_from_zoo(args.model_dir)
 
     #segmentation example plot
-    if mute == False:
+    if not args.skip_plots:
         for ID in M_ID:
             imgs,_,preds = data_loader.dataset_loader(args.img_dir,pred_str=f'{ID}')
             if len(imgs) > 6:
@@ -167,11 +171,11 @@ def resampling_step(args,filters,mute=False,TAR_DIR=''):
                 grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,mute=True,method=method,n_rand=n_rand)
             #save resampled mask to file
             if not TAR_DIR:
-                resampled_dir = args.img_dir+'/resampled/' 
+                resampled_dir = args.img_dir+'/Resampled_grains/' 
                 os.makedirs(resampled_dir, exist_ok=True)
                 io.imsave(resampled_dir + maskID +f'_{method}_resampled.tif',grid_resampled)
             else:
-                resampled_dir = TAR_DIR +'/resampled/' 
+                resampled_dir = TAR_DIR +'/Resampled_grains/' 
                 os.makedirs(resampled_dir, exist_ok=True)
                 io.imsave(resampled_dir + maskID+f'_{method}_resampled.tif',grid_resampled)
     return resampled_dir
@@ -221,6 +225,7 @@ def gsd_step(PATH,args,mute=False,TAR_DIR=''):
         scaled = False
         if mute == False:
             print('No scaled grains found. Loading unscaled grains.')
+    #configure columns, uncertainty method and input for uncertainty estimation
     if scaled == True:
         columns = ['ell: a-axis (mm)','ell: b-axis (mm)']
         if args.fit == 'convex_hull':
@@ -234,7 +239,9 @@ def gsd_step(PATH,args,mute=False,TAR_DIR=''):
                 sfm_type = 'OM'
             else:
                 sfm_type = 'SI'
-
+        else: 
+            sfm_err = None
+            sfm_type = None
     else:
         columns = ['ell: a-axis (px)','ell: b-axis (px)']
         if args.fit == 'convex_hull':
@@ -242,16 +249,18 @@ def gsd_step(PATH,args,mute=False,TAR_DIR=''):
         if args.fit == 'mask_outline':
             columns += ['mask outline: a axis (px)','mask outline: b axis (px)']
         method = 'bootstrapping'
+    #estimate uncertainty on a column-by-column basis
     ids = [str(Path(x).stem) for x in grains]
     df_list = []
     for i,column in enumerate(columns):
         if mute == False:
             print(column)
-
+        #call uncertainty estimation function
         column_unc = gsd_uncertainty.dataset_uncertainty(gsds=grains,gsd_id=ids,return_results=True,
                                                 save_results=False,method=method,column_name=column,
                                                 num_it=args.n,scale_err=args.scale_err,length_err=args.length_err,
                                                 sfm_error=sfm_err,sfm_type=sfm_type,mute=True)        
+        #save results to dataframe and update it for each column
         for j,idi in enumerate(ids):
             if i == 0:
                 df = pd.DataFrame({f'{column}_perc_lower_CI':column_unc[idi][2],
@@ -264,14 +273,30 @@ def gsd_step(PATH,args,mute=False,TAR_DIR=''):
                                 f'{column}_perc_median':column_unc[idi][0],
                                 f'{column}_perc_upper_CI':column_unc[idi][1],
                                 f'{column}_perc_value':column_unc[idi][3]})],axis=1)
+        
+        #call key percentile summary function and save results for each column
+
+        axis = 'b_axis' if 'b-axis' in column else 'a_axis'
+        approx = 'convex_hull' if 'convex hull' in column else 'mask_outline' if 'mask outline' in column else 'ellipse'
+        unit = 'mm' if 'mm' in column else 'px'
+        sum_df = grainsizing.summary_statistics(grains,ids,res_dict=column_unc, save_summary=False,
+                                        method=method,approximation=approx,axis=axis,unit=unit,data_id='')
+        if TAR_DIR != '':
+            out_dir2 = TAR_DIR
+        else:
+            out_dir2 = PATH
+        sum_df.to_csv(f'{out_dir2}/{axis}_{unit}_{approx}_{method}.csv',index=False)
+
+    #save full GSD+uncertainty dataframe to csv for each grain set
     if TAR_DIR != '':
-        out_dir = TAR_DIR
+        out_dir = TAR_DIR+'/GSD_uncertainty/'
     else:
-        out_dir = PATH
+        out_dir = PATH + '/GSD_uncertainty/'
+    os.makedirs(out_dir,exist_ok=True)
     for idi, dfi in zip(ids,df_list):
         idi = idi.replace('grains','')
+        dfi = dfi.round(decimals=2)
         dfi.to_csv(f'{out_dir}/{idi}_{method}_full_uncertainty.csv')
-    #summry stats will go here
     return 
 
 if __name__ == '__main__':
