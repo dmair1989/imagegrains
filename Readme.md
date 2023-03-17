@@ -74,7 +74,7 @@ Details and more installation options of cellpose (including GPU versions for Wi
 
 ## How does it work?
 
-ImageGRains is organised in 3 main modules for *Segmentation*, *Grain size measurements* and *Grain size distribution (GSD) analysis* (see below). The most basic option is to run ImageGrains from the console by first activating the enviromnent
+ImageGrains is organised in 3 main modules for *Segmentation*, *Grain size measurements* and *Grain size distribution (GSD) analysis* (see below). The most basic option is to run ImageGrains from the console by first activating the enviromnent
 ```text
 conda activate imagegrains
 ```
@@ -82,7 +82,7 @@ Then execute
 ```text
 python -m imagegrains --img_dir PATH:/to/images
 ```
-This will run the main application with the default settings images in the provided location. You can use ```--help``` to see all input options. Alternatively, you can run the jupyter notebooks in ```/notebooks``` in their order. They offer more options and information for most workflow steps. Of course, any modules and functions can be combined in custom scripts or notebooks.
+This will run the main application with the default settings on images in the provided location. You can use ```--help``` to see all input options. Alternatively, you can run the jupyter notebooks in ```/notebooks``` in their order. They offer more options and information for most workflow steps. Of course, any modules and functions can be combined in custom scripts or notebooks.
 
 ### Workflow  
 
