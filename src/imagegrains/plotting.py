@@ -239,10 +239,10 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
         colors = mask_cmap(lbl)
         rows = int(len(images)/9)
         rows = 1 if rows == 0 else rows
-        plt.subplot(int(len(images)/9),9,k+1)
+        plt.subplot(rows,9,k+1)
         
-        masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
-        plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
+        msks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
+        plt.imshow(mark_boundaries(msks, label(lbl), color=(1,0,0), mode='thick'))
         plt.axis('off')
         if res_dict != None:
             ap50 = str(np.round(res_dict[k]['ap'][0],decimals=2))
@@ -262,8 +262,9 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
     plt.tight_layout()
     return
 
-def plot_single_img_pred(img, pred,ID):
-    ID = Path(img).stem
+def plot_single_img_pred(img, pred,ID=None):
+    if not ID:
+        ID = Path(img).stem
     img = io.imread(img)
     lbl = io.imread(pred)
     colors = mask_cmap(lbl)
@@ -462,7 +463,7 @@ def plot_gsd(gsd,color='c', perc_range=np.arange(0.01,1.01,0.01),length_max=300,
 
         plt.tight_layout()
 
-def plot_gsd_uncert(uncert_res,perc_range=np.arange(0,1,0.01),color='k',uncert_area=True,uncert_bounds=False,uncert_median=False,orientation='vertical'):
+def plot_gsd_uncert(uncert_res,perc_range=np.arange(0.01,1.01,0.01),color='k',uncert_area=True,uncert_bounds=False,uncert_median=False,orientation='vertical'):
     uci,lci,med = uncert_res[1],uncert_res[2],uncert_res[0]
     if not any(uci):
          pass
@@ -485,7 +486,7 @@ def plot_gsd_uncert(uncert_res,perc_range=np.arange(0,1,0.01),color='k',uncert_a
                 plt.plot(perc_range,uci,color=color,linewidth=1,linestyle='--')
                 plt.plot(perc_range,lci,color=color,linewidth=1,linestyle='--')
 
-def plot_gsd_deltas(uncert_res,gsd,baseline,perc_range=np.arange(0,1,0.01),color='k',label_axes=True
+def plot_gsd_deltas(uncert_res,gsd,baseline,perc_range=np.arange(0.01,1.01,0.01),color='k',label_axes=True
                     ,uncert_area=True,uncert_bounds=False,uncert_median=False,orientation='horizontal'):
     uci,lci,med = uncert_res[1],uncert_res[2],uncert_res[0]
     if not any(uci):

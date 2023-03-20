@@ -1,6 +1,7 @@
 import os, argparse
 from pathlib import Path
 import torch
+import matplotlib.pyplot as plt
 import pandas as pd
 from numpy.random import default_rng
 from cellpose import io
@@ -23,6 +24,7 @@ def main():
     seg_args.add_argument('--skip_segmentation', default=False, type=bool, help='Skip segmentation and only calculate grain size distributions for already existing masks.')
 
     gs_args=parser.add_argument_group('Grain size estimation')
+    gs_args.add_argument('--filter_str', type=str, default=None, help='Filter mask files with optional strin (default: None.')
     gs_args.add_argument('--min_grain_size', type=float, default=None, help='Minimum grain size in pixels to consider for grain size estimation (default: None); grains with a fitted ellipse smaller than this size will be ignored.')
     gs_args.add_argument('--edge_filter', type=float, default=None, help = 'Edge filter to remove grains close to the image boundary (default: None).')
     gs_args.add_argument('--switch_filters_off', type=bool, default=False, help = 'Switch off all filters fro grain sizing (default: False).')
@@ -80,6 +82,9 @@ def main():
         filters['edge'] = [True,args.edge_filter]
     if args.switch_filters_off:
         filters= {'edge':[False,.1],'px_cutoff':[False,12]}
+    if mute == False:
+        print(f'Filter configuratiuon: {filters}')
+
     print(f'>> ImageGrains: Measuring grains for masks in {args.img_dir}.')
 
     #optional resampling (if done, sub-directory with resampled masks will be created)
@@ -90,9 +95,10 @@ def main():
     
     #add additional approximation (convh, outl)
     fit_method = args.fit
-    grain_size_step(args.img_dir,filters,fit_method=fit_method,mute=mute,TAR_DIR=TAR_DIR)    
+    mask_str = args.filter_str if args.filter_str else ''
+    grain_size_step(args.img_dir,filters,fit_method=fit_method,mute=mute,TAR_DIR=TAR_DIR,mask_str=mask_str)    
     if resampled == True:
-        grain_size_step(resample_path,filters,fit_method=fit_method,mute=True,TAR_DIR=TAR_DIR)
+        grain_size_step(resample_path,filters,fit_method=fit_method,mute=True,TAR_DIR=TAR_DIR,mask_str=mask_str)
     
     #optional scaling of grains
     if args.resolution:
@@ -129,12 +135,17 @@ def segmentation_step(args,mute=False,TAR_DIR=''):
     if not args.skip_plots:
         for ID in M_ID:
             imgs,_,preds = data_loader.dataset_loader(args.img_dir,pred_str=f'{ID}')
-            if len(imgs) > 6:
+            if len(imgs) == 1:
+                pred_plot = plt.figure(figsize=(10,10))
+                plotting.plot_single_img_pred(imgs[0],preds[0])
+            elif len(imgs) > 6:
                 rng = default_rng()
                 numbers = rng.choice(len(imgs), size=6, replace=False)
                 imgs = [imgs[x] for x in numbers]
                 preds = [preds[x] for x in numbers]
-            pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {ID}")
+                pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {ID}")
+            else:
+                pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {ID}")
             if TAR_DIR != '':
                 out_dir = TAR_DIR
             else:
@@ -180,13 +191,13 @@ def resampling_step(args,filters,mute=False,TAR_DIR=''):
                 io.imsave(resampled_dir + maskID+f'_{method}_resampled.tif',grid_resampled)
     return resampled_dir
 
-def grain_size_step(img_dir,filters,fit_method=None,mute=False,TAR_DIR=''):
+def grain_size_step(img_dir,filters,fit_method=None,mute=False,TAR_DIR='',mask_str=''):
     if not fit_method:
-        _,_,_ = grainsizing.batch_grainsize(img_dir,filters=filters,mute=True,TAR_DIR=TAR_DIR)
+        _,_,_ = grainsizing.batch_grainsize(img_dir,filters=filters,mute=True,TAR_DIR=TAR_DIR,mask_str=mask_str)
     else:
         if mute== False:
             print('>> Adding additional approximation for grains: ',fit_method)
-        _,_,_ = grainsizing.batch_grainsize(img_dir,filters=filters,fit_method=fit_method,mute=True,TAR_DIR=TAR_DIR)
+        _,_,_ = grainsizing.batch_grainsize(img_dir,filters=filters,fit_method=fit_method,mute=True,TAR_DIR=TAR_DIR,mask_str=mask_str)
     return
 
 def scaling_step(img_dir,resolution,mute=False,gsd_str='_grains',TAR_DIR=''):
