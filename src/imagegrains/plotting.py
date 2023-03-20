@@ -241,8 +241,8 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
         rows = 1 if rows == 0 else rows
         plt.subplot(rows,9,k+1)
         
-        masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
-        plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
+        msks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
+        plt.imshow(mark_boundaries(msks, label(lbl), color=(1,0,0), mode='thick'))
         plt.axis('off')
         if res_dict != None:
             ap50 = str(np.round(res_dict[k]['ap'][0],decimals=2))
