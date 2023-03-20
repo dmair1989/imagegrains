@@ -239,7 +239,7 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
         colors = mask_cmap(lbl)
         rows = int(len(images)/9)
         rows = 1 if rows == 0 else rows
-        plt.subplot(int(len(images)/9),9,k+1)
+        plt.subplot(rows,9,k+1)
         
         masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
         plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
