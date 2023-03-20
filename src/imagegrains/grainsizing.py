@@ -16,7 +16,7 @@ from glob import glob
 from imagegrains import data_loader
 
 def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
-properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
+properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid','bbox'],fit_method='',
 return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_predictions=False):
     """ Measures grainsizes in a dataset; can contain subfolders `train`,`test`. If do_subfolders is True, the function will also measure grainsizes in any subfolders of INP_DIR. 
 
