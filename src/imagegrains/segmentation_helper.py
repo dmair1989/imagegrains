@@ -261,9 +261,9 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,mID=''):
     try:
         dirs = next(os.walk(INP_DIR))[1]
     except:
-        dirs=[]
-        W_DIR = INP_DIR+'/'
-        pass
+        dirs=[INP_DIR+'/']
+    if not dirs:
+        dirs=[INP_DIR+'/']
     for dir in dirs:
         if dir=='train':
             W_DIR = INP_DIR+'/'+str(dir)+'/'
@@ -318,6 +318,7 @@ rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfo
 
     Parameters:
     ------------
+    DIR_PATHS (list of strings) - list of images to segment 
     MOD_DIR (str) - model directory 
     use_GPU (bool (optional, default=True)) - GPU flag
     configuration (dict or list of dicts (optional, default = None))
@@ -328,7 +329,7 @@ rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfo
             rescale (float (optional, default None))
             min_size (int (optional, default 15))
 
-    all others are thesame as helper.prediction.predict_dataset()
+    all others are the same as helper.prediction.predict_dataset()
 
     Returns
     ------------
