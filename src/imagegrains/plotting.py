@@ -262,8 +262,9 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
     plt.tight_layout()
     return
 
-def plot_single_img_pred(img, pred,ID):
-    ID = Path(img).stem
+def plot_single_img_pred(img, pred,ID=None):
+    if not ID:
+        ID = Path(img).stem
     img = io.imread(img)
     lbl = io.imread(pred)
     colors = mask_cmap(lbl)

@@ -1,6 +1,7 @@
 import os, argparse
 from pathlib import Path
 import torch
+import matplotlib.pyplot as plt
 import pandas as pd
 from numpy.random import default_rng
 from cellpose import io
@@ -134,12 +135,17 @@ def segmentation_step(args,mute=False,TAR_DIR=''):
     if not args.skip_plots:
         for ID in M_ID:
             imgs,_,preds = data_loader.dataset_loader(args.img_dir,pred_str=f'{ID}')
-            if len(imgs) > 6:
+            if len(imgs) == 1:
+                pred_plot = plt.figure(figsize=(10,10))
+                plotting.plot_single_img_pred(imgs[0],preds[0])
+            elif len(imgs) > 6:
                 rng = default_rng()
                 numbers = rng.choice(len(imgs), size=6, replace=False)
                 imgs = [imgs[x] for x in numbers]
                 preds = [preds[x] for x in numbers]
-            pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {ID}")
+                pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {ID}")
+            else:
+                pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {ID}")
             if TAR_DIR != '':
                 out_dir = TAR_DIR
             else:
