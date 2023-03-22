@@ -8,6 +8,5 @@ test/*/*.*
 test/*.*
 test/_1_best/grains/*.*
 *.eps
-*.pkl
 notebooks/*.csv
 ell
