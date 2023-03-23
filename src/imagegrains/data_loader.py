@@ -215,7 +215,7 @@ def load_grain_set(DIR,gsd_format='csv',gsd_str='grains'):
                 gsds += gsds_from_folder(path,gsd_format=gsd_format,gsd_str=gsd_str)
         return gsds
 
-def read_grains(PATH,sep=',',column_name='ell: b-axis (mm)'):
+def read_grains(PATH,sep=',',column_name='ell: b-axis (px)'):
     df = pd.read_csv(PATH,sep=sep)
     grains = df[column_name].values
     return grains

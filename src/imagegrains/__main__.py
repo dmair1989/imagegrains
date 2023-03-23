@@ -290,13 +290,14 @@ def gsd_step(PATH,args,mute=False,TAR_DIR=''):
         axis = 'b_axis' if 'b-axis' in column else 'a_axis'
         approx = 'convex_hull' if 'convex hull' in column else 'mask_outline' if 'mask outline' in column else 'ellipse'
         unit = 'mm' if 'mm' in column else 'px'
-        sum_df = grainsizing.summary_statistics(grains,ids,res_dict=column_unc, save_summary=False,
-                                        method=method,approximation=approx,axis=axis,unit=unit,data_id='')
-        if TAR_DIR != '':
-            out_dir2 = TAR_DIR
-        else:
-            out_dir2 = PATH
-        sum_df.to_csv(f'{out_dir2}/{axis}_{unit}_{approx}_{method}.csv',index=False)
+        if not args.summary:
+            sum_df = grainsizing.summary_statistics(grains,ids,res_dict=column_unc, save_summary=False, column_name = column,
+                                    method=method,approximation=approx,axis=axis,unit=unit,data_id='')
+            if TAR_DIR != '':
+                out_dir2 = TAR_DIR
+            else:
+                out_dir2 = PATH
+            sum_df.to_csv(f'{out_dir2}/{axis}_{unit}_{approx}_{method}.csv',index=False)
 
     #save full GSD+uncertainty dataframe to csv for each grain set
     if TAR_DIR != '':
@@ -308,6 +309,7 @@ def gsd_step(PATH,args,mute=False,TAR_DIR=''):
         idi = idi.replace('grains','')
         dfi = dfi.round(decimals=2)
         dfi.to_csv(f'{out_dir}/{idi}_{method}_full_uncertainty.csv')
+    print(f'>> ImageGrains successfully created results for {len(grains)} GSDs.')
     return 
 
 if __name__ == '__main__':
