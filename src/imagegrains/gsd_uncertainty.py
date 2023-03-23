@@ -140,13 +140,18 @@ def bootstrapping(gsd,num_it=1000,CI_bounds=[2.5,97.5]):
             
     """
     rand = np.random.choice(gsd, (len(gsd), num_it))
-    med_list, upper_CI, lower_CI = [],[],[]
-    for p in range(100):
-        perc_dist = np.percentile(rand, p, axis=0)
-        perc_dist.sort()
-        lower, upper = np.percentile(perc_dist, CI_bounds)
-        med = np.percentile(perc_dist, 50)
-        med_list.append(med), upper_CI.append(upper), lower_CI.append(lower)
+    if len(rand) >= 1:
+        med_list, upper_CI, lower_CI = [],[],[]
+        for p in range(100):
+            perc_dist = np.percentile(rand, p, axis=0)
+            perc_dist.sort()
+            lower, upper = np.percentile(perc_dist, CI_bounds)
+            med = np.percentile(perc_dist, 50)
+            med_list.append(med), upper_CI.append(upper), lower_CI.append(lower)
+    else:
+        med_list = np.zeros(100)
+        upper_CI = np.zeros(100)
+        lower_CI = np.zeros(100)
     return med_list, upper_CI, lower_CI
 
 def MC_with_length_scale(gsd,scale_err,length_err,method='truncnorm',num_it=1000,cutoff=0,mute=False):
@@ -626,7 +631,10 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,sfm_type=''):
         else:
             res_list = MC_with_sfm_err_SI(gsd,sfm_error=sfm_error,avg_res=avg_res,num_it=num_it,cutoff=MC_cutoff,method=MC_method,mute=mute)
             med_list, upper_CI, lower_CI = get_MC_percentiles(res_list,CI_bounds=CI_bounds)
-    gsd_list = [np.percentile(gsd, p, axis=0) for p in range(100)]
+    if len(gsd) >= 1:
+        gsd_list = [np.percentile(gsd, p, axis=0) for p in range(100)]
+    else:
+        gsd_list = np.zeros(100)
     #gsd_list=[]
     #for p in range(100):    
     #    inp = np.percentile(gsd,p)

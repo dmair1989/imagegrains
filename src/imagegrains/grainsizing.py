@@ -920,12 +920,12 @@ def avg_delta(df):
 def avg_std(df):
     return np.round(np.mean(df['delta_std']),decimals=2)
 
-def summary_statistics(files,id_list,res_list=None,res_dict=None,sep=',',unit='mm',axis='b-axis',approximation='ellipse',method='bootstrapping',save_summary=True,data_id='pred',mute=True):
+def summary_statistics(files,id_list,res_list=None,res_dict=None,sep=',',unit='mm',axis='b-axis',approximation='ellipse',method='bootstrapping',save_summary=True,data_id='pred',mute=True,column_name='ell: b-axis (px)'):
     if type(files)==str:
         files = [files]
     summary_df = pd.DataFrame()
     for i,file in enumerate(files):
-        grains = data_loader.read_grains(file,sep=sep)
+        grains = data_loader.read_grains(file,sep=sep,column_name=column_name)
         ID = id_list[i]
         n = len(grains)
         gsd = do_gsd(grains)

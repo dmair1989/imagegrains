@@ -2,7 +2,7 @@
 ![build](https://github.com/dmair1989/imagegrains/actions/workflows/ci.yml/badge.svg)
 [![coverage](https://coveralls.io/repos/github/dmair1989/imagegrains/badge.svg?branch=main)](https://coveralls.io/github/dmair1989/imagegrains?branch=main)  
 
-A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the *Cellpose* algorithm  (<https://github.com/mouseland/cellpose>), designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained models from our data (**link to repo**) are available or custom models can be trained (**link to preprint**).
+A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the [*Cellpose*](<https://github.com/mouseland/cellpose>) algorithm, designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained segmentation models from our data (**link to data repo**) are available or custom models can be trained (**link to preprint**).
 
 ## Citation  
 
@@ -20,9 +20,7 @@ If you use ImageGrains to calculate percentile uncertainties please also cite:
 
 - Mair, D., Henrique, A., Prado, D., Garefalakis, P., Lechmann, A., Whittaker, A., and Schlunegger, F. (2022): Grain size of fluvial gravel bars from close-range UAV imagery-uncertainty in segmentation-based data, Earth Surf. Dyn., 10,953-973. <https://doi.org/10.5194/esurf-10-953-2022>.
 
-## Installation
-
-### Local installation  
+## Local installation  
 
 The easiest way to install the software is by using the conda package manager. If you do not have conda installed, please follow the instructions on the [conda website](https://docs.conda.io/en/latest/miniconda.html).  
 
