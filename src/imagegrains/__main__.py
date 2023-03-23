@@ -39,7 +39,6 @@ def main():
     gsd_args.add_argument('--scale_err', default=0.1, help='Scale error for MC uncertainty estimation in fractions (default: 0.1).')
     gsd_args.add_argument('--length_err', default=0.1, help='Length error for MC uncertainty estimation in pixel or mm (default: 1); whether it is interpreted as py or mm value depends resolution was provided or not.')
     gsd_args.add_argument('--SfM_file', default = None, help = 'Path to SfM uncertainty file (default: None). See template for details.')
-    gsd_args.add_argument('--summary', type = bool, default = True, help = 'Save key percentile summary for all images (default: True).')
 
     try:
         args = parser.parse_args()
@@ -290,14 +289,14 @@ def gsd_step(PATH,args,mute=False,TAR_DIR=''):
         axis = 'b_axis' if 'b-axis' in column else 'a_axis'
         approx = 'convex_hull' if 'convex hull' in column else 'mask_outline' if 'mask outline' in column else 'ellipse'
         unit = 'mm' if 'mm' in column else 'px'
-        if not args.summary:
-            sum_df = grainsizing.summary_statistics(grains,ids,res_dict=column_unc, save_summary=False, column_name = column,
-                                    method=method,approximation=approx,axis=axis,unit=unit,data_id='')
-            if TAR_DIR != '':
-                out_dir2 = TAR_DIR
-            else:
-                out_dir2 = PATH
-            sum_df.to_csv(f'{out_dir2}/{axis}_{unit}_{approx}_{method}.csv',index=False)
+
+        sum_df = grainsizing.summary_statistics(grains,ids,res_dict=column_unc, save_summary=False, column_name = column,
+                                method=method,approximation=approx,axis=axis,unit=unit,data_id='')
+        if TAR_DIR != '':
+            out_dir2 = TAR_DIR
+        else:
+            out_dir2 = PATH
+        sum_df.to_csv(f'{out_dir2}/{axis}_{unit}_{approx}_{method}.csv',index=False)
 
     #save full GSD+uncertainty dataframe to csv for each grain set
     if TAR_DIR != '':
