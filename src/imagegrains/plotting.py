@@ -2,6 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
+from tqdm import tqdm
 from skimage.measure import label, regionprops
 from skimage.segmentation import mark_boundaries 
 from skimage.color import label2rgb
@@ -262,16 +263,43 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
     plt.tight_layout()
     return
 
-def plot_single_img_pred(img, pred,ID=None):
-    if not ID:
+def plot_single_img_pred(image,mask,ID=None, show_n=False, save=False, TAR_DIR='',show=False):
+    if ID == None:
         ID = Path(img).stem
-    img = io.imread(img)
-    lbl = io.imread(pred)
+    else:
+        ID = ID
+    img = io.imread(image)
+    lbl = io.imread(mask)
+    if show == False:
+        plt.ioff()
     colors = mask_cmap(lbl)
     masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
     plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
     plt.axis('off')
-    plt.title(ID)
+    if show_n == True and ID:
+        n = np.unique(label(lbl))
+        plt.title(f'{ID} (n={len(n)})')
+    elif ID:
+        plt.title(f'{ID}')
+    elif show_n == True:
+        n = np.unique(label(lbl))
+        plt.title(f'n={len(n)}')
+    if save == True:
+        if TAR_DIR != '':
+            out_dir = f'{TAR_DIR}/prediction_masks/' 
+            os.makedirs(out_dir, exist_ok=True)
+        else:
+            out_dir = f'{str(Path(image).parent)}/prediction_masks/'
+            os.makedirs(out_dir, exist_ok=True)
+        plt.savefig(f'{out_dir}/{Path(mask).stem}_seg_overlay.png',dpi=300,pad_inches=0)
+
+def save_pred_overlays(imgs,preds,save=True,show_n=False,mute=False,TAR_DIR='',show=False):
+    if mute == False:
+        for img, pred in tqdm(zip(imgs,preds),desc='Saving images with masks',unit=' images',position=0,leave=True):
+            plot_single_img_pred(img,pred,ID='',show_n=show_n,save=save,TAR_DIR=TAR_DIR,show=show)
+    else:
+        for img, pred in zip(imgs,preds):
+            plot_single_img_pred(img,pred,ID='',show_n=False,save=True,TAR_DIR=TAR_DIR,show=show)
 
 def all_grains_plot(masks,elements,props=None, image =None, 
                     fit_res =None,fit_method ='convex_hull',do_fit= False,

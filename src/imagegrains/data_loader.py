@@ -260,3 +260,16 @@ def read_unc(path,sep=',',file_format='txt'):
     df.columns = ['data','med','uci','lci']
     df = df.round(decimals=2)
     return df
+
+def get_img_name_for_summary(PATH, imgs = None, p_string= '_full',overwrite = True):
+    df = pd.read_csv(PATH)
+    imgs_stem = [Path(img).stem for img in imgs]
+    imgs_name = [Path(img).name for img in imgs]
+    for i in range(len(df)):
+        a=Path(df['Image/Masks'][i]).stem.split(p_string)[0]
+        for j,b in enumerate(imgs_stem):
+            if a==b:
+                df.at[i,'Image_Name'] = imgs_name[j]
+    if overwrite == True:
+        df.to_csv(PATH, index = False)
+    return df
