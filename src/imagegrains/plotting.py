@@ -265,7 +265,7 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
 
 def plot_single_img_pred(image,mask,ID=None, show_n=False, save=False, TAR_DIR='',show=False):
     if ID == None:
-        ID = Path(img).stem
+        ID = Path(image).stem
     else:
         ID = ID
     img = io.imread(image)
@@ -292,6 +292,7 @@ def plot_single_img_pred(image,mask,ID=None, show_n=False, save=False, TAR_DIR='
             out_dir = f'{str(Path(image).parent)}/prediction_masks/'
             os.makedirs(out_dir, exist_ok=True)
         plt.savefig(f'{out_dir}/{Path(mask).stem}_seg_overlay.png',dpi=300,pad_inches=0)
+    return
 
 def save_pred_overlays(imgs,preds,save=True,show_n=False,mute=False,TAR_DIR='',show=False):
     if mute == False:

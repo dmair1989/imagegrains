@@ -457,7 +457,7 @@ def eval_wrapper(pred_list,imgs,filterstrings,taglist,filters=None,save_results=
     """ 
     Wrapper for eval_set to evaluate multiple predictions on the same dataset
     """
-    res_list, tt_list = [],[]
+    res_list, tt_list,preds_fil_sort_list = [],[],[]
     for i in range(len(pred_list)):
         preds_fil_sort = map_preds_to_imgs(pred_list[i],imgs,p_string=filterstrings[i],m_string=m_string)
         test_idxs = find_test_idxs(imgs)
@@ -465,8 +465,9 @@ def eval_wrapper(pred_list,imgs,filterstrings,taglist,filters=None,save_results=
                                             dataID=str(out_path+taglist[i])+'_on'+str(dataset),filters=filters, save_results=save_results)
         res_list.append(i_res)
         tt_list.append(test_idxs)
-    return res_list, tt_list, preds_fil_sort
-    
+        preds_fil_sort_list.append(preds_fil_sort)
+    return res_list, tt_list, preds_fil_sort_list
+
 def map_preds_to_imgs(preds,imgs,p_string='',m_string=''):
     """ 
     Match predictions to images/labels based on the file name.
