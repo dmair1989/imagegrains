@@ -25,7 +25,7 @@ def show_training_set(inp_list,mask_str='_mask'):
         plt.axis('off')
     return
 
-def eval_plot(img,y_pred,y_true,j_score,f1,ap,_print=False,ID =''):
+def eval_plot(img,y_pred,y_true,j_score,f1,ap,_print=False,title_id =''):
     plt.imshow(mark_boundaries(img, y_pred,mode='thick'))
     plt.imshow(np.ma.masked_where(y_true==0,y_true),alpha=.5)
 
@@ -39,7 +39,7 @@ def eval_plot(img,y_pred,y_true,j_score,f1,ap,_print=False,ID =''):
     plt.text(25, 145, t[1], bbox={'facecolor': 'white','edgecolor':'None'},fontsize=15,wrap=True)
     plt.text(25, 220, t[2], bbox={'facecolor': 'white','edgecolor':'None'},fontsize=15,wrap=True)
     plt.text(25, 290, t[3], bbox={'facecolor': 'white','edgecolor':'None'},fontsize=15,wrap=True)
-    plt.title(ID)
+    plt.title(title_id)
     if _print == True:
         print('jaccard score (pixel-level): ',np.round(j_score,decimals=2))
         print('f1 score (pixel-level): ',np.round(f1,decimals=2))
@@ -94,10 +94,10 @@ def AP_IoU_summary_plot(eval_results_list,elements,test_idx_list =None ,labels=T
     eval_results_list: list of eval_results from eval_results_list
     elements: dict with the elements to be plotted: 
         dataset = str with the name of the dataset
-        model_ID = list with the identifier string for predictions from different models        
+        model_id = list with the identifier string for predictions from different models        
         colors = list of colors for the different models
         images = bool, if True, plots the AP for each image
-        SD = bool, if True, plots the standard deviation of the AP for each image
+        std = bool, if True, plots the standard deviation of the AP for each image
         avg = bool, if True, plots the average AP for the dataset 
     """
     
@@ -121,18 +121,18 @@ def AP_IoU_summary_plot(eval_results_list,elements,test_idx_list =None ,labels=T
             std_ul.append(np.mean(res_l[m])+np.std(res_l[m]))
             std_ll.append(np.mean(res_l[m])-np.std(res_l[m]))
         if not elements['colors']:
-            cmap = plt.cm.get_cmap('tab20', len(elements['model_ID']))
-            elements['colors'] = [cmap(x) for x in range(len(elements['model_ID']))]
+            cmap = plt.cm.get_cmap('tab20', len(elements['model_id']))
+            elements['colors'] = [cmap(x) for x in range(len(elements['model_id']))]
         if elements['images']==True:
             for i  in range(len(eval_results_list[ds])):
                 if i ==0:
                     plt.plot(thresholds,eval_results_list[ds][i]['ap'],'k',alpha=.1,label='Single image')
                 else:
                     plt.plot(thresholds,eval_results_list[ds][i]['ap'],color=elements['colors'][ds],alpha=.5)
-        if elements['SD']==True:
+        if elements['std']==True:
             plt.fill_between(thresholds,std_ul,std_ll,color=elements['colors'][ds],alpha=0.2)
         if elements['avg_model']==True:
-            plt.plot(thresholds,avg_l,color=elements['colors'][ds],lw=1.5,label=str(elements['model_ID'][ds]))
+            plt.plot(thresholds,avg_l,color=elements['colors'][ds],lw=1.5,label=str(elements['model_id'][ds]))
     plt.xlim(np.min(thresholds),np.max(thresholds))
     plt.ylim(0,1)
     plt.title(str(elements['dataset']))
@@ -143,14 +143,14 @@ def AP_IoU_summary_plot(eval_results_list,elements,test_idx_list =None ,labels=T
     plt.tight_layout()
     return
     
-def inspect_predictions(imgs,preds,lbls=None,title='',PATH='',save_fig=False):
+def inspect_predictions(imgs,preds,lbls=None,title='',tar_dir='',save_fig=False):
     """
     Plot images and predictions side by side.  
     `imgs` list of image paths  
     `preds` list of prediction paths
     `lbls` list of label paths (optional)
     `title` title of plot (optional)
-    `PATH` path to save plot (optional)
+    `tar_dir` path to save plot (optional)
     """
     
     if lbls:
@@ -188,17 +188,16 @@ def inspect_predictions(imgs,preds,lbls=None,title='',PATH='',save_fig=False):
                 plt.ylabel('Ground truth')
             plt.xticks([],[])
             plt.yticks([],[])
-            i_ID = Path(imgs[k]).stem
-            #i_ID = imgs[k].split('\\')[len(imgs[k].split('\\'))-1].split('.')[0]
-            plt.xlabel(i_ID)
-            
+            i_id = Path(imgs[k]).stem
+            #i_id = imgs[k].split('\\')[len(imgs[k].split('\\'))-1].split('.')[0]
+            plt.xlabel(i_id)      
     if title != '':
         if isinstance(title, list):
             plt.title(title[k])
         else:
             plt.suptitle(title)
-    if PATH != '' and save_fig == True:
-        plt.savefig(PATH+'pred_overview.pdf',dpi=300)
+    if tar_dir != '' and save_fig == True:
+        plt.savefig(tar_dir+'pred_overview.pdf',dpi=300)
     plt.tight_layout()
     return fig
 
@@ -214,10 +213,10 @@ def inspect_dataset_grains(imgs,masks,res_props=None,elements=['image','mask','e
     for k in range(len(masks)):
         if not res_props:
             masks_ = io.imread(masks)
-        m_ID = Path(masks[k]).stem
-        #m_ID = masks[k].split('\\')[len(masks[k].split('\\'))-1].split('.')[0]
+        m_id = Path(masks[k]).stem
+        #m_id = masks[k].split('\\')[len(masks[k].split('\\'))-1].split('.')[0]
         plt.subplot(np.int(np.int(np.round(len(masks)/4))), 4, k+1)
-        all_grains_plot(io.imread(masks[k]),elements,props=res_props[k],image=io.imread(imgs[k]),title=m_ID)
+        all_grains_plot(io.imread(masks[k]),elements,props=res_props[k],image=io.imread(imgs[k]),title=m_id)
         plt.tight_layout()
     return fig
 
@@ -228,7 +227,7 @@ def mask_cmap(masks):
     np.random.shuffle(colors)
     return colors
 
-def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,showID=False,title_str=''):
+def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show_id=False,title_str=''):
     plt.figure(figsize=(20,2.222*(len(images)/9)))
     if len(images) > 81:
         print('Too many images to show. Showing first 81.')
@@ -252,9 +251,9 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
                 plt.title('AP: '+str(ap50))
             elif showmap == True:
                 plt.title('mAP: '+str(np.round(mAP50_90,decimals=2)))
-        elif showID == True:
-            ID = Path(images[k]).stem
-            plt.title(ID)
+        elif show_id == True:
+            img_id = Path(images[k]).stem
+            plt.title(img_id)
         elif title_str != '':
             if isinstance(title_str, list):
                 plt.title(title_str[k])
@@ -263,11 +262,11 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
     plt.tight_layout()
     return
 
-def plot_single_img_pred(image,mask,ID=None, show_n=False, save=False, TAR_DIR='',show=False):
-    if ID == None:
-        ID = Path(image).stem
+def plot_single_img_pred(image,mask,file_id=None, show_n=False, save=False, tar_dir='',show=False):
+    if file_id == None:
+        file_id = Path(image).stem
     else:
-        ID = ID
+        file_id = file_id
     img = io.imread(image)
     lbl = io.imread(mask)
     if show == False:
@@ -276,17 +275,17 @@ def plot_single_img_pred(image,mask,ID=None, show_n=False, save=False, TAR_DIR='
     masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
     plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
     plt.axis('off')
-    if show_n == True and ID:
+    if show_n == True and file_id:
         n = np.unique(label(lbl))
-        plt.title(f'{ID} (n={len(n)})')
-    elif ID:
-        plt.title(f'{ID}')
+        plt.title(f'{file_id} (n={len(n)})')
+    elif file_id:
+        plt.title(f'{file_id}')
     elif show_n == True:
         n = np.unique(label(lbl))
         plt.title(f'n={len(n)}')
     if save == True:
-        if TAR_DIR != '':
-            out_dir = f'{TAR_DIR}/prediction_masks/' 
+        if tar_dir != '':
+            out_dir = f'{tar_dir}/prediction_masks/' 
             os.makedirs(out_dir, exist_ok=True)
         else:
             out_dir = f'{str(Path(image).parent)}/prediction_masks/'
@@ -294,13 +293,13 @@ def plot_single_img_pred(image,mask,ID=None, show_n=False, save=False, TAR_DIR='
         plt.savefig(f'{out_dir}/{Path(mask).stem}_seg_overlay.png',dpi=300,pad_inches=0)
     return
 
-def save_pred_overlays(imgs,preds,save=True,show_n=False,mute=False,TAR_DIR='',show=False):
+def save_pred_overlays(imgs,preds,save=True,show_n=False,mute=False,tar_dir='',show=False):
     if mute == False:
         for img, pred in tqdm(zip(imgs,preds),desc='Saving images with masks',unit=' images',position=0,leave=True):
-            plot_single_img_pred(img,pred,ID='',show_n=show_n,save=save,TAR_DIR=TAR_DIR,show=show)
+            plot_single_img_pred(img,pred,file_id='',show_n=show_n,save=save,tar_dir=tar_dir,show=show)
     else:
         for img, pred in zip(imgs,preds):
-            plot_single_img_pred(img,pred,ID='',show_n=False,save=True,TAR_DIR=TAR_DIR,show=show)
+            plot_single_img_pred(img,pred,file_id='',show_n=False,save=True,tar_dir=tar_dir,show=show)
 
 def all_grains_plot(masks,elements,props=None, image =None, 
                     fit_res =None,fit_method ='convex_hull',do_fit= False,
@@ -372,12 +371,12 @@ def all_grains_plot(masks,elements,props=None, image =None,
     plt.tight_layout()
     return
 
-def plot_single_img_mask(img, mask,ID):
+def plot_single_img_mask(img, mask,file_id):
     colors = mask_cmap(mask)
     masks = label2rgb(label(mask), image=img, bg_label=0,colors=colors)
     plt.imshow(mark_boundaries(masks, label(mask), color=(1,0,0), mode='thick'))
     plt.axis('off')
-    plt.title(ID)
+    plt.title(file_id)
 
 def single_grain_plot(mask,elements,props=None, image =None, fit_res =None,
                         fit_method ='convex_hull',do_fit= False,
@@ -459,7 +458,7 @@ def ell_from_props(props,_idx=0):
     y = y0 + a/2 * np.cos(phi) * np.sin(-orientation) + b/2 * np.sin(phi) * np.cos(-orientation)
     return(x0,x1,x2,x3,x4,y0,y1,y2,y3,y4,x,y)
         
-def plot_gsd(gsd,color='c', perc_range=np.arange(0.01,1.01,0.01),length_max=300,ID=None,title=None,label_axes=False,lw=.75,orientation='vertical',units='px',alpha=1):
+def plot_gsd(gsd,color='c', perc_range=np.arange(0.01,1.01,0.01),length_max=300,gsd_id=None,title=None,label_axes=False,lw=.75,orientation='vertical',units='px',alpha=1):
         if orientation == 'vertical':
             xmax = length_max
             xmin = 0
@@ -480,10 +479,10 @@ def plot_gsd(gsd,color='c', perc_range=np.arange(0.01,1.01,0.01),length_max=300,
             if label_axes != False:
                 plt.xlabel('Grain Size ( '+str(units)+')')
                 plt.ylabel('Fraction smaller')
-        if not ID:
+        if not gsd_id:
                 plt.plot(x,y,color=color,linewidth=lw)
         else:
-                plt.plot(x,y,color=color,label=ID,linewidth=lw)
+                plt.plot(x,y,color=color,label=gsd_id,linewidth=lw)
         plt.ylim(ymin,ymax)
         plt.xlim(xmin,xmax)
 

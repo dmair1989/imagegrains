@@ -230,11 +230,11 @@ def MC_with_sfm_err_SI(gsd,sfm_error,method='truncnorm',avg_res=1,num_it=1000,cu
     res_list (list) - list of percentile distributions
 
     """
-    alt = sfm_error['alt_mean']
-    alt_std = sfm_error['alt_std'] 
-    point_prec_z = sfm_error['z_err'] 
-    point_prec_std = sfm_error['z_err_std']
-    dom_amp = sfm_error['dom_amp']
+    alt = sfm_error['alt_mean (m)']
+    alt_std = sfm_error['alt_std (m)'] 
+    point_prec_z = sfm_error['z_err (m)'] 
+    point_prec_std = sfm_error['z_err_std (m)']
+    dom_amp = sfm_error['dom_amp (m)']
     gsd = np.delete(gsd, np.where(gsd <= cutoff))
     res_list = []
     if mute == False:
@@ -317,14 +317,14 @@ def MC_with_sfm_err_OM(gsd,sfm_error,method='truncnorm',avg_res=1,num_it=1000,cu
     if not sfm_error:
         print('No SfM error dictionary provided.')
     try:
-        alt = sfm_error['alt_mean']
-        alt_std = sfm_error['alt_std'] 
-        point_prec_z = sfm_error['z_err']
-        point_prec_std = sfm_error['z_err_std']
-        dom_amp = sfm_error['dom_amp']
-        om_res = sfm_error['om_res']
-        px_err = sfm_error['pix_err']
-        px_rms = sfm_error['pix_rms'] 
+        alt = sfm_error['alt_mean (m)']
+        alt_std = sfm_error['alt_std (m)'] 
+        point_prec_z = sfm_error['z_err (m)']
+        point_prec_std = sfm_error['z_err_std (m)']
+        dom_amp = sfm_error['dom_amp (m)']
+        om_res = sfm_error['om_res (mm/px)']
+        px_err = sfm_error['pix_err (px)']
+        px_rms = sfm_error['pix_rms (px)'] 
         gsd = np.delete(gsd, np.where(gsd <= cutoff))
     except:
         print('SfM error dictionary not complete.')
@@ -400,7 +400,7 @@ def MC_SfM_OM_loop(arg,gsd=None,avg_res=1,alt=5,alt_std=1,method ='truncnorm',
         #rand_p_new = np.delete(rand_p_new,np.where(rand_p_new<cutoff-length_std))
     return rand_p_new
 
-def get_MC_percentiles(res_list,CI_bounds=[2.5,97.5]):
+def get_MC_percentiles(res_list,CI_bounds=[2.5,97.5],mute=True):
     """
     Get percentiles from MC results
     
@@ -420,7 +420,8 @@ def get_MC_percentiles(res_list,CI_bounds=[2.5,97.5]):
     D_list = []
     for _,res in enumerate(res_list):
         if len(res) <1:
-            print('Empty GSD!')
+            if mute == False:
+                print('Empty GSD!')
             continue
         pc = [np.percentile(res,pi) for pi in range(100)]
         D_list.append(pc)
@@ -624,14 +625,14 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,sfm_type=''):
         med_list, upper_CI, lower_CI = bootstrapping(gsd,num_it=num_it,CI_bounds=CI_bounds)
     if method == 'MC':
         res_list = MC_with_length_scale(gsd,scale_err,length_err,method=MC_method,num_it=num_it,cutoff=MC_cutoff,mute=mute)
-        med_list, upper_CI, lower_CI = get_MC_percentiles(res_list,CI_bounds=CI_bounds)
+        med_list, upper_CI, lower_CI = get_MC_percentiles(res_list,CI_bounds=CI_bounds, mute = mute)
     if method == 'MC_SfM':
         if sfm_type == 'OM':
             res_list = MC_with_sfm_err_OM(gsd,sfm_error=sfm_error,avg_res=avg_res,num_it=num_it,cutoff=MC_cutoff,method=MC_method,mute=mute)
-            med_list, upper_CI, lower_CI = get_MC_percentiles(res_list,CI_bounds=CI_bounds)
+            med_list, upper_CI, lower_CI = get_MC_percentiles(res_list,CI_bounds=CI_bounds, mute = mute)
         else:
             res_list = MC_with_sfm_err_SI(gsd,sfm_error=sfm_error,avg_res=avg_res,num_it=num_it,cutoff=MC_cutoff,method=MC_method,mute=mute)
-            med_list, upper_CI, lower_CI = get_MC_percentiles(res_list,CI_bounds=CI_bounds)
+            med_list, upper_CI, lower_CI = get_MC_percentiles(res_list,CI_bounds=CI_bounds, mute = mute)
     if len(gsd) >= 1:
         gsd_list = [np.percentile(gsd, p, axis=0) for p in range(100)]
     else:

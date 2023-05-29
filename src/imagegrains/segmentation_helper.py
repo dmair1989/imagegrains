@@ -11,7 +11,7 @@ import pandas as pd
 from cellpose import metrics, models, io
 from imagegrains import grainsizing, data_loader
 
-def check_labels(labels,TAR_DIR='',lbl_str='_mask',mask_format='tif'):
+def check_labels(labels,tar_dir='',lbl_str='_mask',mask_format='tif'):
     """
     This function checks if the labels are in the correct format. If not, it renames the labels to the correct format.
     The labels are renamed to the format: <image_ID><lbl_str>.<mask_format>
@@ -19,7 +19,7 @@ def check_labels(labels,TAR_DIR='',lbl_str='_mask',mask_format='tif'):
     Parameters:
     ------------
     labels (list) - List of paths to the labels
-    TAR_DIR (str(optional, default '')) - Target directory to save the renamed labels. If not specified, the labels are saved in the same directory as the original labels.
+    tar_dir (str(optional, default '')) - Target directory to save the renamed labels. If not specified, the labels are saved in the same directory as the original labels.
     lbl_str (str(optional, default '_mask')) - String to be added to the image ID to form the label ID
     mask_format (str(optional, default 'tif')) - Image format of the labels
 
@@ -28,20 +28,20 @@ def check_labels(labels,TAR_DIR='',lbl_str='_mask',mask_format='tif'):
     track_l (list) - List of image IDs for which the labels were renamed
     
     """
-    if TAR_DIR:
-        os.makedirs(TAR_DIR, exist_ok=True)
+    if tar_dir:
+        os.makedirs(tar_dir, exist_ok=True)
     track_l = []
     for label in labels:
         if lbl_str in label:
             continue
         else:
             img= io.imread(label)
-            ID = Path(label).stem
-            #ID = label.split('\\')[len(label.split('\\'))-1].split('.')[0]
-            print(ID)
+            img_id = Path(label).stem
+            #img_id = label.split('\\')[len(label.split('\\'))-1].split('.')[0]
+            print(img_id)
             #plt.imshow(img)
-            io.imsave(TAR_DIR+'/'+ID+lbl_str+'.'+mask_format,img)
-            track_l.append(ID)
+            io.imsave(tar_dir+'/'+img_id+lbl_str+'.'+mask_format,img)
+            track_l.append(img_id)
     if len(track_l) == 0:
         print('No files renamed.')
     return track_l
@@ -62,9 +62,9 @@ def check_im_label_pairs(img_list,lbl_list):
     """
     error_list=[]
     for image in img_list:
-        ID = Path(image).stem
-        #ID = image.split('\\')[len(image.split('\\'))-1].split('.')[0]
-        if any(ID in x for x in lbl_list):
+        img_id = Path(image).stem
+        #img_id = image.split('\\')[len(image.split('\\'))-1].split('.')[0]
+        if any(img_id in x for x in lbl_list):
             continue
         else:
             error_list.append(image)
@@ -72,7 +72,7 @@ def check_im_label_pairs(img_list,lbl_list):
         print('All images have labels.')
     return error_list
 
-def custom_train(PATH, pretrained_model = None,datstring = None,
+def custom_train(image_path, pretrained_model = None,datstring = None,
                 lr = 0.2, nepochs = 1000,chan1 = 0, chan2= 0, gpu = True, batch_size = 8,
                 mask_filter = '_mask', rescale = False, save_each = False, return_model = False,
                 save_every = 100,model_name = None, label_check = True):
@@ -82,7 +82,7 @@ def custom_train(PATH, pretrained_model = None,datstring = None,
     
     Parameters:
     ------------
-    PATH (str) - Path to the directory containing the images and labels
+    image_path (str) - Path to the directory containing the images and labels
     pretrained_model (str(optional, default None)) - Path to the pretrained model. If not specified, the model is trained from scratch.
     datstring (str(optional, default None)) - String to be added to the model name. 
     return_model (bool(optional, default False)) - If True, the model is returned
@@ -99,7 +99,7 @@ def custom_train(PATH, pretrained_model = None,datstring = None,
     """
 
     logger, log_file = io.logger_setup()
-    train_images,train_masks,test_images,test_masks = data_loader.find_data(PATH,mask_str=mask_filter)
+    train_images,train_masks,test_images,test_masks = data_loader.find_data(image_path,mask_str=mask_filter)
     if label_check == True:
         check_labels(train_masks);
         check_labels(test_masks);
@@ -130,15 +130,15 @@ def custom_train(PATH, pretrained_model = None,datstring = None,
         model = models.CellposeModel(gpu=gpu,pretrained_model=pretrained_model)
     try:
         model.train(train_data,train_labels,train_images,test_data,test_labels,test_images,channels =[chan1,chan2],
-                rescale=rescale,learning_rate=lr,save_path=PATH, batch_size=batch_size,
+                rescale=rescale,learning_rate=lr,save_path=image_path, batch_size=batch_size,
                 n_epochs=nepochs,save_each=save_each,save_every=save_every,model_name=model_name)
     except KeyboardInterrupt:
             print('Training interrupted.')
     if return_model == True:
         return model 
 
-def predict_folder(INP_DIR,model,image_format='jpg',filter_str='',channels=[0,0],diameter=None,min_size=15,rescale=None,config=None,TAR_DIR='',
-return_results=False,save_masks=True,mute=False,mID=''):
+def predict_folder(image_path,model,image_format='jpg',filter_str='',channels=[0,0],diameter=None,min_size=15,rescale=None,config=None,tar_dir='',
+return_results=False,save_masks=True,mute=False,model_id=''):
     """
     This function takes in a directory containing images, and uses a pre-trained model to predict segmentation masks for the images.
     If `return_results` is `True` respective lists of 1D arrays for predicted *masks*, *flows* and *styles* 
@@ -146,19 +146,19 @@ return_results=False,save_masks=True,mute=False,mID=''):
 
     Parameters:
     ------------
-    INP_DIR (str) - Input directory 
+    image_path (str) - Input directory 
     model (obj) - Trained model from 'models.CellposeModel' class. 
         Use either `models.CellposeModel(model_type='')` for built-in cellpose models or 
         `models.CellposeModel(pretrained_model='') for custom models.
         See https://cellpose.readthedocs.io/en/latest/models.html for more details
-    image_format (str(optional, default 'jpg')) - Image format of the images in `INP_DIR`
-    filter_str (str(optional, default '')) - A string used to filter the images in `INP_DIR`
+    image_format (str(optional, default 'jpg')) - Image format of the images in `image_path`
+    filter_str (str(optional, default '')) - A string used to filter the images in `image_path`
     return_results (bool(optional, default False)) - flag for returning predicted masks, flows and styles
     config (dict(optional, default None)) - dictionary of advanced parameters to be handed down to `CellposeModel.eval()` where keys are parameters and values are parameter values.
-    TAR_DIR (str(optional, default '')) - The directory to save the predicted masks to.
-    save_masks (bool(optional, default True)) - flag for saving predicted mask as `.tif` files in `TAR_DIR`
+    tar_dir (str(optional, default '')) - The directory to save the predicted masks to.
+    save_masks (bool(optional, default True)) - flag for saving predicted mask as `.tif` files in `tar_dir`
     mute (bool (optional, default=False)) - flag for muting console output
-    mID (str (optional, default = '')) - optional model name that will be written into output file names
+    model_id (str (optional, default = '')) - optional model name that will be written into output file names
 
     Parameters that can be handed down explicitly to `CellposeModel.eval()`, 
     see https://cellpose.readthedocs.io/en/latest/api.html#id5 :
@@ -175,22 +175,22 @@ return_results=False,save_masks=True,mute=False,mID=''):
         flows[k][2] = cell probability (if > cellprob_threshold, pixel used for dynamics) 
         flows[k][3] = final pixel locations after Euler integration
     styles_l (list of 1D arrays of length 64 (optional, default = [])) - style vector summarizing each image, also used to estimate size of objects in image
-    ID_l (list of strings (optional, default = [])) - Name tags for input images
+    id_list (list of strings (optional, default = [])) - Name tags for input images
     img_l (list 2D array lists (optional, default = [])) - Input images
 
     """
-    mask_l,flow_l,styles_l,ID_l,img_l = [],[],[],[],[]
+    mask_l,flow_l,styles_l,id_list,img_l = [],[],[],[],[]
     try:
-        Z = natsorted(glob(INP_DIR+'/*'+filter_str+'*.'+image_format))
+        file_list = natsorted(glob(image_path+'/*'+filter_str+'*.'+image_format))
         if mute== False:
-            print('Predicting for ',INP_DIR,'...')
+            print('Predicting for ',image_path,'...')
         count=0
-        #for _,im in tqdm(enumerate(Z), desc=INP_DIR,unit='image',colour='CYAN'):               
-        for idx in tqdm(range(len(Z)), desc=INP_DIR,unit='image',colour='CYAN'):
-            img= io.imread(Z[idx])
-            ID = Path(Z[idx]).stem
-            #ID = Z[im_idx].split('\\')[len(Z[im_idx].split('\\'))-1].split('.')[0]
-            if any(x in ID for x in ['flow','flows','masks','mask','pred']):
+        #for _,im in tqdm(enumerate(file_list), desc=image_path,unit='image',colour='CYAN'):               
+        for idx in tqdm(range(len(file_list)), desc=image_path,unit='image',colour='CYAN'):
+            img= io.imread(file_list[idx])
+            img_id = Path(file_list[idx]).stem
+            #img_id = file_list[im_idx].split('\\')[len(file_list[im_idx].split('\\'))-1].split('.')[0]
+            if any(x in img_id for x in ['flow','flows','masks','mask','pred']):
                 continue
             else:
                 if config:
@@ -213,26 +213,26 @@ return_results=False,save_masks=True,mute=False,mID=''):
                     print('Saving and returning of results were switched of - therefore mask saving was turned on!')
                     save_masks = True
                 if save_masks == True:
-                    if TAR_DIR:
-                        os.makedirs(TAR_DIR, exist_ok=True)
-                        io.imsave(TAR_DIR+'/'+ID+'_'+mID+'_pred.tif',masks)
+                    if tar_dir:
+                        os.makedirs(tar_dir, exist_ok=True)
+                        io.imsave(tar_dir+'/'+img_id+'_'+model_id+'_pred.tif',masks)
                     else:
-                        io.imsave(INP_DIR+'/'+ID+'_'+mID+'_pred.tif',masks)
+                        io.imsave(image_path+'/'+img_id+'_'+model_id+'_pred.tif',masks)
                 if return_results == True:
                     mask_l.append(masks)
                     flow_l.append(flows)
                     styles_l.append(styles)
-                    ID_l.append(ID)
-                    img_l = [Z[x] for x in range(len(Z))]
+                    id_list.append(img_id)
+                    img_l = [file_list[x] for x in range(len(file_list))]
                 count+=1
         if mute== False:
             print('Sucessfully created predictions for',count,'image(s).')
     except KeyboardInterrupt:
         print('Aborted.')
-    return mask_l,flow_l,styles_l,ID_l,img_l
+    return mask_l,flow_l,styles_l,id_list,img_l
 
-def predict_dataset(INP_DIR,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,config=None,TAR_DIR='',
-return_results=False,save_masks=True,mute=False,do_subfolders=False,mID=''):
+def predict_dataset(image_path,model,image_format='jpg',channels=[0,0],diameter=None,min_size=15,rescale=None,config=None,tar_dir='',
+return_results=False,save_masks=True,mute=False,do_subfolders=False,model_id=''):
     """
     Wrapper for helper.prediction.predict_folder() for a dataset that is organised in subfolders (e.g., in directories named `train`,`test`)
 
@@ -252,77 +252,77 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,mID=''):
 
     styles_ll (list of 1D arrays of length 64 (optional, default = [])) - style vector summarizing each image, also used to estimate size of objects in image
     
-    ID_ll (list of strings (optional, default = [])) - Name tags for input images
+    list_of_id_lists (list of strings (optional, default = [])) - Name tags for input images
 
     img_ll (list 2D array lists (optional, default = [])) - Input images
 
     """
-    mask_ll,flow_ll,styles_ll,ID_ll,=[],[],[],[]
+    mask_ll,flow_ll,styles_ll,list_of_id_lists,=[],[],[],[]
     try:
-        dirs = next(os.walk(INP_DIR))[1]
+        dirs = next(os.walk(image_path))[1]
     except:
-        dirs=[INP_DIR+'/']
+        dirs=[image_path+'/']
     if not dirs:
-        dirs=[INP_DIR+'/']
+        dirs=[image_path+'/']
     for dir in dirs:
         if dir=='train':
-            W_DIR = INP_DIR+'/'+str(dir)+'/'
+            working_directory = image_path+'/'+str(dir)+'/'
         elif dir=='test':
-            W_DIR = INP_DIR+'/'+str(dir)+'/'
+            working_directory = image_path+'/'+str(dir)+'/'
         elif do_subfolders == True:
-            W_DIR = INP_DIR+'/'+str(dir)+'/'
+            working_directory = image_path+'/'+str(dir)+'/'
         else:
-            W_DIR = INP_DIR
-        check_l = natsorted(glob(W_DIR+'/*.'+image_format))
+            working_directory = image_path
+        check_l = natsorted(glob(working_directory+'/*.'+image_format))
         if len(check_l)>0:
-            mask_l_i,flow_l_i,styles_l_i,ID_l_i,_ = predict_folder(W_DIR,model,image_format=image_format,channels=channels,diameter=diameter,
-            min_size=min_size,rescale=rescale,config=config,TAR_DIR=TAR_DIR,return_results=return_results,save_masks=save_masks,mute=mute,mID=mID)
+            mask_l_i,flow_l_i,styles_l_i,id_list_i,_ = predict_folder(working_directory,model,image_format=image_format,channels=channels,diameter=diameter,
+            min_size=min_size,rescale=rescale,config=config,tar_dir=tar_dir,return_results=return_results,save_masks=save_masks,mute=mute,model_id=model_id)
             if return_results==True:
                 for idx,x in enumerate(mask_l_i):
                     mask_ll.append(x)
                     flow_ll.append(flow_l_i[idx])
                     styles_ll.append(styles_l_i[idx])
-                    ID_ll.append(ID_l_i[idx])
+                    list_of_id_lists.append(id_list_i[idx])
         else:
             continue
-    return mask_ll,flow_ll,styles_ll,ID_ll
+    return mask_ll,flow_ll,styles_ll,list_of_id_lists
 
-def models_from_zoo(MOD_DIR,use_GPU=True):
+def models_from_zoo(model_dir,use_GPU=True):
     """
     Loads pre-trained cellpose model(s) from a folder.
 
     Parameters:
     ------------
-    MOD_DIR (str) - model directory 
+    model_dir (str) - model directory 
     use_GPU (bool (optional, default=True)) - GPU flag
 
     Returns
     ------------
     model_list (list) - list of cellpose model paths
-    M_ID (list) - list of cellpose model names
+    model_id_list (list) - list of cellpose model names
 
     """
-    model_list = natsorted(glob(MOD_DIR+'/*.*'))
+    model_list = natsorted(glob(model_dir+'/*.*'))
     try:
         models.CellposeModel(gpu=use_GPU,pretrained_model=model_list[0])
     except:
         print('No cellpose model found in this directory.')
-    M_ID = [Path(model_list[idx]).stem for idx in range(len(model_list))]
-    #M_ID = [model_list[i].split('\\')[len(model_list[i].split('\\'))-1].split('.')[0] for i in range(len(model_list))]
-    return model_list,M_ID
+    model_id_list = [Path(model_list[idx]).stem for idx in range(len(model_list))]
+    #model_id_list = [model_list[i].split('\\')[len(model_list[i].split('\\'))-1].split('.')[0] for i in range(len(model_list))]
+    return model_list,model_id_list
 
-def batch_predict(MOD_DIR,DIR_PATHS,configuration=None,image_format='jpg',use_GPU=True,channels=[0,0],diameter=None,min_size=15,
-rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfolders=False):
+def batch_predict(model_dir,DIR_PATHS,configuration=None,image_format='jpg',use_GPU=True,channels=[0,0],diameter=None,min_size=15,
+rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfolders=False):
     """
-    Wrapper for helper.prediction.predict_dataset() that can do predictions on the same dataset for multiple models from a directory (`MOD_DIR`).
+    Wrapper for helper.prediction.predict_dataset() that can do predictions on the same dataset for multiple models from a directory (`model_dir`).
 
     Parameters:
     ------------
     DIR_PATHS (list of strings) - list of images to segment 
-    MOD_DIR (str) - model directory 
+    model_dir (str) - model directory 
     use_GPU (bool (optional, default=True)) - GPU flag
     configuration (dict or list of dicts (optional, default = None))
-        dictionary where `key` = paramter name and `val` = parameter value; can be varied for each cellpose model model in `MOD_DIR`
+        dictionary where `key` = paramter name and `val` = parameter value; can be varied for each cellpose model model in `model_dir`
         currently handed down are:
             channels (list (optional, default [0,0]))
             diameter (float (optional, default None))
@@ -336,16 +336,16 @@ rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfo
     all_results (dict (optional, default = {})) - dict containing output from helper.prediction.predict_dataset().
     
     """
-    if '.' in MOD_DIR:
-        model_list = [MOD_DIR]
-        M_ID = [Path(MOD_DIR).stem]
+    if '.' in model_dir:
+        model_list = [model_dir]
+        model_id_list = [Path(model_dir).stem]
     else:
-        model_list,M_ID = models_from_zoo(MOD_DIR)
+        model_list,model_id_list = models_from_zoo(model_dir)
     all_results= {}
     for m_idx in range(len(model_list)):
         model = models.CellposeModel(gpu=use_GPU,pretrained_model=model_list[m_idx])
-        mID = M_ID[m_idx]
-        print(mID,'found...')
+        model_id = model_id_list[m_idx]
+        print(model_id,'found...')
         if configuration:
             if len(configuration)>1:
                 try:
@@ -365,12 +365,12 @@ rescale=None,TAR_DIR='',return_results=False,save_masks=True,mute=False,do_subfo
         if type(DIR_PATHS) != list:
             DIR_PATHS = [DIR_PATHS] 
         for d_idx in range(len(DIR_PATHS)):
-            all_mask_l,all_flow_l,all_styles_l,all_ID_l = predict_dataset(DIR_PATHS[d_idx],model,
-            image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,config=config,TAR_DIR=TAR_DIR,
-            return_results=return_results,save_masks=save_masks,mute=mute,do_subfolders=do_subfolders,mID=mID)
+            all_mask_l,all_flow_l,all_styles_l,all_id_list = predict_dataset(DIR_PATHS[d_idx],model,
+            image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,config=config,tar_dir=tar_dir,
+            return_results=return_results,save_masks=save_masks,mute=mute,do_subfolders=do_subfolders,model_id=model_id)
             if return_results == True:
-                dataset_res = {'masks':all_mask_l,'flows':all_flow_l,'styles':all_styles_l,'id':all_ID_l}
-                all_results[str(mID)+'_'+str(d_idx)]=dataset_res
+                dataset_res = {'masks':all_mask_l,'flows':all_flow_l,'styles':all_styles_l,'id':all_id_list}
+                all_results[str(model_id)+'_'+str(d_idx)]=dataset_res
     return all_results
 
 
@@ -400,7 +400,7 @@ def eval_image(y_true,y_pred,thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8,
     #f1 = f1_score(y_true,y_pred,average="macro")
     return ap, tp, fp, fn, iout, preds
 
-def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],
+def eval_set(imgs,lbls,preds,data_id='',tar_dir='',thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],
     filters={'edge':[False,.05],'px_cutoff':[False,10]},filter_props=['label','area','centroid','major_axis_length','minor_axis_length'],
     save_results=True,return_results=True,return_test_idx=False):
     """
@@ -411,8 +411,8 @@ def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.55, 0.6, 
     imgs (list) - List of images
     lbls (list) - List of labels
     preds (list) - List of predictions
-    dataID (str (optional, default='')) - ID for the dataset
-    TAR_DIR (str (optional, default='')) - Directory to save results to
+    data_id (str (optional, default='')) - ID for the dataset
+    tar_dir (str (optional, default='')) - Directory to save results to
     thresholds (list (optional, default=[0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1])) - Thresholds to evaluate at
     filters (dict (optional, default={'edge':[False,.05],'px_cutoff':[False,10]})) - Dictionary of filters to apply to labels and predictions
     filter_props (list (optional, default=['label','area','centroid','major_axis_length','minor_axis_length'])) - pPoperties to filter on
@@ -426,7 +426,7 @@ def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.55, 0.6, 
     """
     eval_results={}
     for idx,im in enumerate(imgs):
-        ID = Path(im).stem
+        img_id = Path(im).stem
         img = io.imread(im)
         y_true = io.imread(lbls[idx])
         y_pred = io.imread(preds[idx])
@@ -441,13 +441,13 @@ def eval_set(imgs,lbls,preds,dataID='',TAR_DIR='',thresholds = [0.5, 0.55, 0.6, 
                 iout = []
                 ap = np.zeros(len(thresholds))
 
-        eval_results[idx] = {'id':ID,'img':img, 'ap':ap, 'iout':iout,}
+        eval_results[idx] = {'id':img_id,'img':img, 'ap':ap, 'iout':iout,}
     if save_results==True:
-        if TAR_DIR:
-            os.makedirs(TAR_DIR, exist_ok=True)
-            export = TAR_DIR+'/'+dataID+'_eval_res.pkl'
+        if tar_dir:
+            os.makedirs(tar_dir, exist_ok=True)
+            export = tar_dir+'/'+data_id+'_eval_res.pkl'
         else:
-            export = dataID+'_eval_res.pkl'
+            export = data_id+'_eval_res.pkl'
         with open(str(export), 'wb') as f:
             pickle.dump(eval_results, f)
     if return_results == True:
@@ -462,7 +462,7 @@ def eval_wrapper(pred_list,imgs,filterstrings,taglist,filters=None,save_results=
         preds_fil_sort = map_preds_to_imgs(pred_list[i],imgs,p_string=filterstrings[i],m_string=m_string)
         test_idxs = find_test_idxs(imgs)
         i_res = eval_set(imgs,imgs,preds_fil_sort,
-                                            dataID=str(out_path+taglist[i])+'_on'+str(dataset),filters=filters, save_results=save_results)
+                                            data_id=str(out_path+taglist[i])+'_on'+str(dataset),filters=filters, save_results=save_results)
         res_list.append(i_res)
         tt_list.append(test_idxs)
         preds_fil_sort_list.append(preds_fil_sort)
@@ -475,15 +475,15 @@ def map_preds_to_imgs(preds,imgs,p_string='',m_string=''):
     new_preds = []
     for kk in range(len(imgs)):
         if m_string:
-            ID = Path(imgs[kk]).stem.split(m_string)[0]
+            img_id = Path(imgs[kk]).stem.split(m_string)[0]
         else:
-            ID = Path(imgs[kk]).stem
+            img_id = Path(imgs[kk]).stem
         for k in range(len(preds)):
             if p_string:
-                ID2 = Path(preds[k]).stem.split(p_string)[0]
+                img_id2 = Path(preds[k]).stem.split(p_string)[0]
             else:
-                ID2 = Path(preds[k]).stem
-            if ID == ID2:
+                img_id2 = Path(preds[k]).stem
+            if img_id == img_id2:
                 new_preds.append(preds[k])
     if not new_preds:
         print(p_string,' - Could not match prediction to images!')
@@ -502,9 +502,9 @@ def map_res_to_imgs(res_dict,imgs):
     """
     new_res = {}
     for kk in range(len(imgs)):
-        ID = Path(imgs[kk]).stem
+        img_id = Path(imgs[kk]).stem
         for k in range(len(res_dict)):
-            if ID == res_dict[k]['id']:
+            if img_id == res_dict[k]['id']:
                 new_res[kk] = res_dict[k]
     return new_res
 

@@ -15,67 +15,67 @@ from glob import glob
 
 from imagegrains import data_loader
 
-def batch_grainsize(INP_DIR,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
+def batch_grainsize(data_dir,mask_format='tif',mask_str='',tar_dir='',filters=None,mute=False,outline_threshold=.5,
 properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid','bbox'],fit_method='',
-return_results=False,save_results=True,do_subfolders=False,do_labels=False,do_predictions=False):
-    """ Measures grainsizes in a dataset; can contain subfolders `train`,`test`. If do_subfolders is True, the function will also measure grainsizes in any subfolders of INP_DIR. 
+return_results=False,save_results=True,do_subfolders=False):
+    """ Measures grainsizes in a dataset; can contain subfolders `train`,`test`. If do_subfolders is True, the function will also measure grainsizes in any subfolders of data_dir. 
 
     Parameters
     ----------
-    INP_DIR (str) - path to the dataset
+    data_dir (str) - path to the dataset
     mask_format (str (optional, default ='tif')) - format of the mask images
     mask_str (str (optional, default ='')) - string that is contained in the mask images; e.g., '_mask' for labels, '_pred' for predictions
-    TAR_DIR (str (optional, default ='')) - path to the target directory
+    tar_dir (str (optional, default ='')) - path to the target directory
     filters (dict (optional, default =None)) - dictionary of filters to apply to the grains
     mute (bool (optional, default =False)) - mute the output
-    OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+    outline_threshold (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
     properties (list (optional, default =['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'])) - list of properties to be extracted from the masks
     fit_method (str (optional, default ='')) - method to fit the grain outlines. Options are,'convex_hull','mask_outline'. If fit_method is not specified, ellipsoidal fit will be used. ! Please note that using 'convex_hull' or 'mask_outline' will be slow.
     return_results (bool (optional, default =False)) - return the results as a list of pandas dataframes
     save_results (bool (optional, default =True)) - save the results as csv files
-    do_subfolders (bool (optional, default =False)) - if True, the function will also measure grainsizes in any subfolders of INP_DIR
+    do_subfolders (bool (optional, default =False)) - if True, the function will also measure grainsizes in any subfolders of data_dir
 
     Returns     
     -------
     res_grains_l (list) - list of pandas dataframes containing the results
     res_props_l (list) - list of dictionaries containing the results
-    IDs_l (list) - list of IDs
+    ids_l (list) - list of file_ids
 
     """
-    W_DIR = None
+    working_directory = None
     try:
-        dirs = next(os.walk(INP_DIR))[1]
+        dirs = next(os.walk(data_dir))[1]
     except StopIteration:
         dirs=[]
-        W_DIR = INP_DIR+'/'
-    res_grains_l,res_props_l,IDs_l = [],[],[]
+        working_directory = data_dir+'/'
+    res_grains_l,res_props_l,ids_l = [],[],[]
     counter = 0
     for idx in range(len(dirs)+1):
         if idx < len(dirs):
             if 'train' in dirs[idx]:
-                W_DIR = INP_DIR+'/'+str(dirs[idx])
+                working_directory = data_dir+'/'+str(dirs[idx])
             elif 'test' in dirs[idx]:
-                W_DIR = INP_DIR+'/'+str(dirs[idx])
+                working_directory = data_dir+'/'+str(dirs[idx])
             elif do_subfolders == True:
-                W_DIR = INP_DIR+'/'+str(dirs[idx])
-            elif not W_DIR:
+                working_directory = data_dir+'/'+str(dirs[idx])
+            elif not working_directory:
                 continue
         elif idx == len(dirs) and counter==0:
-            W_DIR = INP_DIR+'/'
-        if W_DIR:
-            res_grains_i,res_props_i,IDs_i= grains_in_dataset(INP_DIR=W_DIR,mask_format=mask_format,mask_str=mask_str,
-            TAR_DIR=TAR_DIR,filters=filters,mute=mute,OT=OT,properties=properties,fit_method=fit_method,
+            working_directory = data_dir+'/'
+        if working_directory:
+            res_grains_i,res_props_i,ids_i= grains_in_dataset(data_dir=working_directory,mask_format=mask_format,mask_str=mask_str,
+            tar_dir=tar_dir,filters=filters,mute=mute,outline_threshold=outline_threshold,properties=properties,fit_method=fit_method,
             return_results=return_results,save_results=save_results)
             if return_results==True:
-                for grains, props, id in zip(res_grains_i,res_props_i,IDs_i):
+                for grains, props, id in zip(res_grains_i,res_props_i,ids_i):
                     res_grains_l.append(grains)
                     res_props_l.append(props)
-                    IDs_l.append(id)
-            W_DIR = None
+                    ids_l.append(id)
+            working_directory = None
             counter += 1
-    return res_grains_l,res_props_l,IDs_l
+    return res_grains_l,res_props_l,ids_l
 
-def grains_in_dataset(inp_list=None,INP_DIR=None,mask_format='tif',mask_str='',TAR_DIR='',filters=None,mute=False,OT=.5,
+def grains_in_dataset(inp_list=None,data_dir=None,mask_format='tif',mask_str='',tar_dir='',filters=None,mute=False,outline_threshold=.5,
 properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'],fit_method='',
 return_results=False,save_results=True,image_res=None,set_id=None):
     """
@@ -83,13 +83,13 @@ return_results=False,save_results=True,image_res=None,set_id=None):
 
     Parameters
     ----------
-    INP_DIR (str) - path to the dataset
+    data_dir (str) - path to the dataset
     mask_format (str (optional, default ='tif')) - format of the mask images
     mask_str (str (optional, default ='')) - string that is contained in the mask images
-    TAR_DIR (str (optional, default ='')) - path to the target directory
+    tar_dir (str (optional, default ='')) - path to the target directory
     filters (dict (optional, default =None)) - dictionary of filters to apply to the grains
     mute (bool (optional, default =False)) - mute the output
-    OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+    outline_threshold (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
     properties (list (optional, default =['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'])) - list of properties to be extracted from the masks
     fit_method (str (optional, default ='')) - method to fit the grain outlines. Options are'convex_hull','mask_outline'.
     return_results (bool (optional, default =False)) - return the results as a list of pandas dataframes
@@ -101,46 +101,46 @@ return_results=False,save_results=True,image_res=None,set_id=None):
     -------
     res_grains (list) - list of pandas dataframes containing the results
     res_props (list) - list of dictionaries containing the results
-    IDs (list) - list of IDs
+    ids (list) - list of file_ids
 
     """
     if not inp_list:
-        X = natsorted(glob(INP_DIR+'/*'+mask_str+'*.'+mask_format))
+        file_list = natsorted(glob(data_dir+'/*'+mask_str+'*.'+mask_format))
     else:
-        X = inp_list
+        file_list = inp_list
     if not set_id and not inp_list:
-        set_id = str(INP_DIR)
+        set_id = str(data_dir)
     elif set_id:
         set_id = set_id
     else:
         set_id = 'Unknown dataset'
-    res_grains,res_props,IDs = [],[],[]
-    #for idx,X_i in tqdm(enumerate(X),desc=str(INP_DIR),unit='file',colour='MAGENTA',position=0,leave=True):
-    for idx in tqdm(range(len(X)),desc=str(set_id),unit='file',colour='MAGENTA',position=0,leave=True):
-        ID = Path(X[idx]).stem
-        if 'flow' in ID: #catch flow representation files frpm cp
+    res_grains,res_props,ids = [],[],[]
+    #for idx,x_i in tqdm(enumerate(file_list),desc=str(data_dir),unit='file',colour='MAGENTA',position=0,leave=True):
+    for idx in tqdm(range(len(file_list)),desc=str(set_id),unit='file',colour='MAGENTA',position=0,leave=True):
+        file_id = Path(file_list[idx]).stem
+        if 'flow' in file_id: #catch flow representation files frpm cp
             if idx==0:
                 print('Skipping flow representation files - use mask_str to filter files')
             continue
         else:
-            #ID = X_i.split('\\')[len(X_i.split('\\'))-1].split('.')[0]
-            masks = label(io.imread(X[idx]))
+            #file_id = x_i.split('\\')[len(x_i.split('\\'))-1].split('.')[0]
+            masks = label(io.imread(file_list[idx]))
             if image_res:
                 image_res_i=image_res[idx]
             else:
                 image_res_i = []
-            props_df,props = grains_from_masks(masks,filters=filters,OT=OT,mute=mute,properties=properties,ID=ID,image_res=image_res_i,fit_method=fit_method)
+            props_df,props = grains_from_masks(masks,filters=filters,outline_threshold=outline_threshold,mute=mute,properties=properties,file_id=file_id,image_res=image_res_i,fit_method=fit_method)
             if save_results == True:
-                if TAR_DIR:
-                    os.makedirs(TAR_DIR, exist_ok=True)
-                    props_df.to_csv(TAR_DIR+'/'+str(ID)+'_grains.csv')
+                if tar_dir:
+                    os.makedirs(tar_dir, exist_ok=True)
+                    props_df.to_csv(tar_dir+'/'+str(file_id)+'_grains.csv')
                 else:
-                    props_df.to_csv(INP_DIR+'/'+str(ID)+'_grains.csv')
+                    props_df.to_csv(data_dir+'/'+str(file_id)+'_grains.csv')
             if return_results ==True:
-                res_grains.append(props_df),res_props.append(props),IDs.append(ID)
-    return res_grains,res_props,IDs 
+                res_grains.append(props_df),res_props.append(props),ids.append(file_id)
+    return res_grains,res_props,ids 
 
-def grains_from_masks(masks,filters=None,mute=False,OT=.5,fit_method='',image_res=None,ID='',
+def grains_from_masks(masks,filters=None,mute=False,outline_threshold=.5,fit_method='',image_res=None,file_id='',
 properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid']):
     """
     Measures grainsizes in single image dataset.
@@ -150,10 +150,10 @@ properties=['label','area','orientation','minor_axis_length','major_axis_length'
     masks (numpy array) - numpy array containing the masks
     filters (dict (optional, default =None)) - dictionary of filters to apply to the grains
     mute (bool (optional, default =False)) - mute the output
-    OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+    outline_threshold (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
     fit_method (str (optional, default ='')) - method to fit the grain outlines. Options are'convex_hull','mask_outline'. 
     image_res (list (optional, default =None)) - list of image resolutions in µm/pixel
-    ID (str (optional, default ='')) - ID of the image
+    file_id (str (optional, default ='')) - ID of the image
     properties (list (optional, default =['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'])) - list of properties to be extracted from the masks
     
     Returns
@@ -164,7 +164,7 @@ properties=['label','area','orientation','minor_axis_length','major_axis_length'
     """
     masks,num = label(masks,return_num=True)
     if mute==False:
-        print(ID,':',str(num),' grains found')
+        print(file_id,':',str(num),' grains found')
     if filters and num > 0:
         res_, masks = filter_grains(labels=masks,properties=properties,filters=filters,mask=masks)
         if mute==False:
@@ -174,9 +174,9 @@ properties=['label','area','orientation','minor_axis_length','major_axis_length'
     if any(x in fit_method for x in ['convex_hull','mask_outline']):
         if mute== False:
             print('Fitting axes...')
-        a_list,b_list,a_coords,b_coords = fit_grain_axes(props,method=fit_method,OT=OT,mute=mute)
+        a_list,b_list,a_coords,b_coords = fit_grain_axes(props,method=fit_method,outline_threshold=outline_threshold,mute=mute)
         fit_res = [a_list,b_list,a_coords,b_coords]
-        _,props_df = compile_ax_stats(masks,props=props,fit_res=fit_res,properties=properties,mute=mute,ID=ID)
+        _,props_df = compile_ax_stats(masks,props=props,fit_res=fit_res,properties=properties,mute=mute,file_id=file_id)
     else:
         props_df = props_df
     if image_res:
@@ -207,9 +207,9 @@ properties=['label','area','orientation','minor_axis_length','major_axis_length'
         print('Modified DataFrame structure - check results.')
     return props_df,props
 
-def compile_ax_stats(grains,props=None,fit_res=None,fit_method='convex_hull',padding_size=2, OT=.5,
+def compile_ax_stats(grains,props=None,fit_res=None,fit_method='convex_hull',padding_size=2, outline_threshold=.5,
         export_results=True, mute = False,
-        properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid','bbox'],ID=None):
+        properties=['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid','bbox'],file_id=None):
     """
     Compiles grain statistics from a list of grains.
 
@@ -220,7 +220,7 @@ def compile_ax_stats(grains,props=None,fit_res=None,fit_method='convex_hull',pad
     fit_res (list (optional, default =None)) - list of results from the grain axes fit
     fit_method (str (optional, default ='convex_hull')) - method to fit the grain outlines. Options are 'ellipse','convex_hull','mask_outline'. Default is 'ellipse'
     padding_size (int (optional, default =2)) - padding size for the grain axes fit
-    OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+    outline_threshold (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
     export_results (bool (optional, default =True)) - export the results to a pandas dataframe
     mute (bool (optional, default =False)) - mute the output
     properties (list (optional, default =['label','area','orientation','minor_axis_length','major_axis_length','centroid','local_centroid'])) - list of properties to be extracted from the masks
@@ -237,7 +237,7 @@ def compile_ax_stats(grains,props=None,fit_res=None,fit_method='convex_hull',pad
         props_df = pd.DataFrame(regionprops_table(label(grains),properties=properties))
     if not fit_method:
         print('Fitted axes not found: Attempting axes fit for',fit_method,'...')
-        a_list,b_list,a_coords,b_coords = fit_grain_axes(props,method=fit_method,padding_size=padding_size,OT=OT,mute=mute,ID=ID)
+        a_list,b_list,a_coords,b_coords = fit_grain_axes(props,method=fit_method,padding_size=padding_size,outline_threshold=outline_threshold,mute=mute,file_id=file_id)
     elif fit_res:
             a_list,b_list,a_coords,b_coords = fit_res[0],fit_res[1],fit_res[2],fit_res[3]
     else:
@@ -281,7 +281,7 @@ def ell_stats(masks,export_results=True,properties=[
         return props
 
 
-def fit_grain_axes(props,method='convex_hull',padding=True,padding_size=2,OT=.5,c_threshold=.5,mute=False,ID=None):
+def fit_grain_axes(props,method='convex_hull',padding=True,padding_size=2,outline_threshold=.5,c_threshold=.5,mute=False,file_id=None):
     """
     Fits the grain axes to the grain outlines. 
 
@@ -291,7 +291,7 @@ def fit_grain_axes(props,method='convex_hull',padding=True,padding_size=2,OT=.5,
     method (str (optional, default ='convex_hull')) - method to fit the grain outlines. Options are 'ellipse','convex_hull','mask_outline'. Default is 'ellipse'
     padding (bool (optional, default =True)) - pad the grain outlines
     padding_size (int (optional, default =2)) - padding size for each region during the grain axes fit
-    OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+    outline_threshold (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
     c_threshold (float (optional, default =.5)) - threshold for the b-axis detection during outline fitting
     mute (bool (optional, default =False)) - mute the output
 
@@ -319,14 +319,14 @@ def fit_grain_axes(props,method='convex_hull',padding=True,padding_size=2,OT=.5,
         if padding==True:
             mask = image_padding(mask,padding_size)
         outline = contour_grain(mask,c_threshold)
-        a_ax,a_points, b_ax,b_points,counter = get_axes(outline,OT=OT,_idx=_idx,mute=mute,ID=ID)
+        a_ax,a_points, b_ax,b_points,counter = get_axes(outline,outline_threshold=outline_threshold,_idx=_idx,mute=mute,file_id=file_id)
         a_list.append(a_ax), a_coords.append(a_points)
         b_list.append(b_ax), b_coords.append(b_points)
         counter_l += counter
     result = [a_list,b_list,a_coords,b_coords,counter_l]
     counter_res = result[4]
     if counter_res > 0 and mute == False:
-        print(ID,'Number of grains with irregular/small shape:',counter_res)
+        print(file_id,'Number of grains with irregular/small shape:',counter_res)
     return result[0],result[1],result[2],result[3]
 
 def image_padding(grain_img,padding_size=2):
@@ -343,22 +343,22 @@ def contour_grain(grain_img,c_threshold=.5):
     contours = find_contours(grain_img,c_threshold)
     return contours
 
-def get_axes(outline,counter=0,OT=0.05,_idx=0,mute=False,ID=None):
+def get_axes(outline,counter=0,outline_threshold=0.05,_idx=0,mute=False,file_id=None):
     """"
     Fits the grain axes to the grain outline.
     Takes outline as series of X,Y points.
     """
     a_ax, a_points = get_a_axis(outline)
     a_norm = (a_points[1]-a_points[0]) / a_ax
-    b_ax,b_points = iterate_b(outline,a_norm,OT)
+    b_ax,b_points = iterate_b(outline,a_norm,outline_threshold)
     if b_ax == 0:
         counter += 1
     while b_ax == 0:
-        OT = OT+.5
-        b_ax,b_points = iterate_b(outline,a_norm,OT)
-        if b_ax == 0 and OT > 5:
+        outline_threshold = outline_threshold+.5
+        b_ax,b_points = iterate_b(outline,a_norm,outline_threshold)
+        if b_ax == 0 and outline_threshold > 5:
             if mute == False:
-                print(ID,'! Irregular grain skipped - check shape of grain @index:',_idx)
+                print(file_id,'! Irregular grain skipped - check shape of grain @index:',_idx)
             break
     return a_ax, a_points,b_ax,b_points,counter
 
@@ -373,7 +373,7 @@ def get_a_axis(outline):
     a_points =[outline[0][max_keys[0][0]],outline[0][max_keys[0][1]]]
     return a_ax,a_points
 
-def iterate_b(outline,a_norm,OT=0.05):
+def iterate_b(outline,a_norm,outline_threshold=0.05):
     """
     Fits the b-axis to the grain outline.
     Takes outline as series of X,Y points.
@@ -382,7 +382,7 @@ def iterate_b(outline,a_norm,OT=0.05):
     ----------
     outline (list) - list of X,Y coordinates
     a_norm (list) - normalized a-axis vector
-    OT (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
+    outline_threshold (float (optional, default =.5)) - Angular tolerance threshold for b-axis detection during outline fitting in °.
 
     Returns
     -------
@@ -402,35 +402,35 @@ def iterate_b(outline,a_norm,OT=0.05):
                 dot_p = np.dot(b_norm,a_norm)
                 if dot_p >-1 and dot_p < 1: #catch bad cos values
                     angle = np.degrees(np.arccos(dot_p))
-                    if angle > 90-OT and angle < 90+OT:
+                    if angle > 90-outline_threshold and angle < 90+outline_threshold:
                         if current_distance > b_ax:
                             b_ax = current_distance
                             b_points = [a,b]
     return b_ax,b_points
 
-def batch_outline(labels,imgs,TAR_DIR='',prop_l=None,filters= None,
-                         padding=True,padding_size=2,mute=True,ID='',
+def batch_outline(labels,imgs,tar_dir='',prop_l=None,filters= None,
+                         padding=True,padding_size=2,mute=True,file_id='',
                          elements=['binary_mask','image_slice','image_masked','mask_outline']):
     for id_x,(lbl,img) in enumerate(zip(labels,imgs)):
-        ID = Path(img).stem
+        file_id = Path(img).stem
         img = io.imread(img)
         lbl = io.imread(lbl)
         if not prop_l:
            props =None
-        export_grain_outline(lbl,img=img,props=None,TAR_DIR=TAR_DIR,filters= filters,
-                         padding=padding,padding_size=padding_size,mute=mute,ID=ID,
+        export_grain_outline(lbl,img=img,props=None,tar_dir=tar_dir,filters= filters,
+                         padding=padding,padding_size=padding_size,mute=mute,file_id=file_id,
                          elements=elements)
     
 
-def export_grain_outline(masks,img=None,props=None,method='mask_outline', TAR_DIR='',filters= None,
-                         padding=True,padding_size=2,mute=False,ID='',plot_summary=False,
+def export_grain_outline(masks,img=None,props=None,method='mask_outline', tar_dir='',filters= None,
+                         padding=True,padding_size=2,mute=False,file_id='',plot_summary=False,
                          elements=['binary_mask','image_slice','image_masked','mask_outline']):
-    if not ID:
+    if not file_id:
         if mute == False:
             print('No ID given: Generating random ID...')
-        ID = str(np.random.randint(1000,2000))
-    TAR_DIR = TAR_DIR+'/'+ID+'/'
-    os.makedirs(TAR_DIR, exist_ok=True)
+        file_id = str(np.random.randint(1000,2000))
+    tar_dir = tar_dir+'/'+file_id+'/'
+    os.makedirs(tar_dir, exist_ok=True)
     if not props:
         if mute == False:
             print('No regionprops found: Finding grains...') 
@@ -448,12 +448,12 @@ def export_grain_outline(masks,img=None,props=None,method='mask_outline', TAR_DI
         miny, minx, maxy, maxx = props_i.bbox
         image_slice= img[props_i.slice].copy()
         if 'binary_mask' in elements:
-            io.imsave(TAR_DIR+'/'+ID+'_'+str(props_i.label)+'_mask_outline.tif',mask)
+            io.imsave(tar_dir+'/'+file_id+'_'+str(props_i.label)+'_mask_outline.tif',mask)
         if 'image_slice' in elements:
-            io.imsave(TAR_DIR+'/'+ID+'_'+str(props_i.label)+'_image_slice.png',image_slice)
+            io.imsave(tar_dir+'/'+file_id+'_'+str(props_i.label)+'_image_slice.png',image_slice)
         if 'image_masked' in elements:
             image_slice[props_i.image==0] = 255
-            io.imsave(TAR_DIR+'/'+ID+'_'+str(props_i.label)+'_image_masked.png',image_slice)
+            io.imsave(tar_dir+'/'+file_id+'_'+str(props_i.label)+'_image_masked.png',image_slice)
         if 'mask_outline' in elements:
             x,y = [],[]
             for contour in contours:
@@ -464,7 +464,7 @@ def export_grain_outline(masks,img=None,props=None,method='mask_outline', TAR_DI
                 x_arr.append(xi)
                 y_arr.append(yi)
             df = pd.DataFrame({'x':x_arr,'y':y_arr})
-            df.to_csv(TAR_DIR+'/'+ID+'_'+str(props_i.label)+'_mask_outline.csv',index=False)
+            df.to_csv(tar_dir+'/'+file_id+'_'+str(props_i.label)+'_mask_outline.csv',index=False)
         #plt.imshow(image_slice,extent=[minx,maxx,maxy,miny])
         if plot_summary == True:
             plt.imshow(image_slice,extent=[minx,maxx,maxy,miny])
@@ -617,20 +617,20 @@ def apply_length_cutoff(gsd,cutoff):
         print(a-b,' entries dropped')
     return gsd
     
-def re_scale_dataset(DIR,resolution= None, camera_parameters= None, gsd_format='csv', gsd_str='grains', return_results=False, save_gsds=True, TAR_DIR=''):
+def re_scale_dataset(data_path,resolution= None, camera_parameters= None, gsd_format='csv', gsd_str='grains', return_results=False, save_gsds=True, tar_dir=''):
     """
     Rescales a dataset of grain size distributions to a given resolution.
     
     Parameters
     ----------
-    DIR (str) - directory containing the grain size distributions
+    data_path (str) - directory containing the grain size distributions
     resolution (list (optional, default = None)) - list of resolutions
     camera_parameters (list (optional, default = None)) - list of camera parameters
     gsd_format (str (optional, default = 'csv')) - format of the grain size distributions
     gsd_str (str (optional, default = 'grains')) - string to identify the grain size distributions
     return_results (bool (optional, default = False)) - returns the rescaled grain size distributions
     save_gsds (bool (optional, default = True)) - saves the rescaled grain size distributions
-    TAR_DIR (str (optional, default = '')) - directory to save the rescaled grain size distributions
+    tar_dir (str (optional, default = '')) - directory to save the rescaled grain size distributions
 
 
     Returns
@@ -638,7 +638,7 @@ def re_scale_dataset(DIR,resolution= None, camera_parameters= None, gsd_format='
     rescaled_l (list) - grain size distributions to rescale
 
     """
-    gsds = data_loader.load_grain_set(DIR, gsd_format = gsd_format, gsd_str=gsd_str)
+    gsds = data_loader.load_grain_set(data_path, gsd_format = gsd_format, gsd_str=gsd_str)
     rescaled_l = []
     for idx,gsd in enumerate(gsds):
         try:
@@ -654,17 +654,17 @@ def re_scale_dataset(DIR,resolution= None, camera_parameters= None, gsd_format='
         else:
             camera_parameters_i = []
         if not '_re_scaled' in gsd:
-            rescaled_df = scale_grains(df,resolution=resolution_i,camera_parameters=camera_parameters_i,GSD_PTH=gsd,return_results=return_results,save_gsds=save_gsds,TAR_DIR=TAR_DIR)
+            rescaled_df = scale_grains(df,resolution=resolution_i,camera_parameters=camera_parameters_i,gsd_path=gsd,return_results=return_results,save_gsds=save_gsds,tar_dir=tar_dir)
             rescaled_l.append(rescaled_df)
     return rescaled_l
 
-def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
+def scale_grains(df,resolution='', file_id='', gsd_path ='', camera_parameters= {
     'image_distance_m': None, 
     'focal_length_mm': None,
     'sensorH_mm': None,
     'sensorW_mm': None,
     'pixelsW':None,
-    'pixelsH':None},return_results=False,save_gsds=True,TAR_DIR=''):
+    'pixelsH':None},return_results=False,save_gsds=True,tar_dir=''):
     """
     Rescales a grain size distribution to a given resolution.
     
@@ -672,8 +672,8 @@ def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
     ----------
     df (dataframe) - grain size results
     resolution (float (optional, default = '')) - resolution in microns
-    ID (str (optional, default = '')) - ID of the grain size distribution
-    GSD_DIR (str (optional, default = '')) - full path of the grain size distribution file
+    file_id (str (optional, default = '')) - file_id of the grain size distribution
+    gsd_path (str (optional, default = '')) - full path of the grain size distribution file
     camera_parameters (list (optional, default = {
                         'image_distance_m': None,
                         'focal_length_mm': None,
@@ -683,7 +683,7 @@ def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
                         'pixelsH':None})) - list of camera parameters
     return_results (bool (optional, default = False)) - returns the rescaled grain size distributions
     save_gsds (bool (optional, default = True)) - saves the rescaled grain size distributions
-    TAR_DIR (str (optional, default = '')) - directory to save the rescaled grain size distributions
+    tar_dir (str (optional, default = '')) - directory to save the rescaled grain size distributions
     
 
     Returns
@@ -691,14 +691,14 @@ def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
     df (dataframe) - rescaled grain size distribution
 
     """
-    if not ID:
+    if not file_id:
         try:
-            ID = Path(GSD_PTH).stem
-            T_DIR = str(Path(GSD_PTH).parent)
-            #ID = GSD_DIR.split('\\')[len(GSD_DIR.split('\\'))-1].split('.')[0]
-            #T_DIR = GSD_PTH.split(str(ID))[0]
+            file_id = Path(gsd_path).stem
+            target_dir = str(Path(gsd_path).parent)
+            #file_id = gsd_path.split('\\')[len(gsd_path.split('\\'))-1].split('.')[0]
+            #target_dir = gsd_path.split(str(file_id))[0]
         except ValueError:
-            print('Neither ID nor GSD_PTH were provided')
+            print('Neither file_id nor gsd_path were provided')
     if resolution:
         resolution = resolution
     elif camera_parameters['image_distance_m']:
@@ -725,11 +725,11 @@ def scale_grains(df,resolution='', ID='', GSD_PTH ='', camera_parameters= {
     except KeyError:
         pass
     if save_gsds == True:
-        if TAR_DIR:
-            os.makedirs(TAR_DIR, exist_ok=True)
-            df.to_csv(TAR_DIR+'/'+str(ID)+'_re_scaled.csv',sep=',')
+        if tar_dir:
+            os.makedirs(tar_dir, exist_ok=True)
+            df.to_csv(tar_dir+'/'+str(file_id)+'_re_scaled.csv',sep=',')
         else:
-            df.to_csv(T_DIR+'/'+str(ID)+'_re_scaled.csv',sep=',')
+            df.to_csv(target_dir+'/'+str(file_id)+'_re_scaled.csv',sep=',')
     if return_results == False:
         df = []
     return df
@@ -755,19 +755,19 @@ def calculate_camera_res(focal_length_mm, height_m, sensorH_mm, sensorW_mm, pixe
     fovH_m = (sensorH_mm/focal_length_mm)*height_m
     fovW_m = (sensorW_mm/focal_length_mm)*height_m
     #print("\nFoV: {:0.4f} by {:0.4f} m\n".format(fovH_m, fovW_m))
-    X_res, Y_res = np.round(fovH_m*1000/pixelsH, 4), np.round(fovW_m*1000/pixelsW, 4)
-    average_res = np.round(np.mean([X_res, Y_res]), 4)
+    x_res, y_res = np.round(fovH_m*1000/pixelsH, 4), np.round(fovW_m*1000/pixelsW, 4)
+    average_res = np.round(np.mean([x_res, y_res]), 4)
     return average_res
 
 
-def dataset_object_size(gsds,TAR_DIR='',save_results=True):
+def dataset_object_size(gsds,tar_dir='',save_results=True):
     """
     Compiles the object size of all grains in a dataset.
     
     Parameters
     ----------
     gsds (list) - list of grain size distributions
-    TAR_DIR (str (optional, default = '')) - directory to save the results
+    tar_dir (str (optional, default = '')) - directory to save the results
     save_results (bool (optional, default = True)) - save the results
     
     Returns
@@ -775,22 +775,22 @@ def dataset_object_size(gsds,TAR_DIR='',save_results=True):
     res_df (pandas dataframe) - dataframe containing the object size of all grains in a dataset
     
     """
-    ID_l,min_l,max_l,med_l,mean_l = [],[],[],[],[]
+    id_l,min_l,max_l,med_l,mean_l = [],[],[],[],[]
     for _,gsd in enumerate(gsds):
         dfi = pd.read_csv(gsd)
-        ID_l.append(Path(gsd).stem)
-        #ID_l.append(gsd.split('\\')[len(gsd.split('\\'))-1].split('.')[0])
+        id_l.append(Path(gsd).stem)
+        #id_l.append(gsd.split('\\')[len(gsd.split('\\'))-1].split('.')[0])
         min_l.append(np.min(dfi['ell: b-axis (px)']))
         max_l.append(np.max(dfi['ell: b-axis (px)']))
         med_l.append(np.median(dfi['ell: b-axis (px)']))
         mean_l.append(np.mean(dfi['ell: b-axis (px)']))
-    res_df = pd.DataFrame(list(zip(ID_l,min_l,max_l,med_l,mean_l)),columns=['ID','min','max','med','mean'])
+    res_df = pd.DataFrame(list(zip(id_l,min_l,max_l,med_l,mean_l)),columns=['file_id','min','max','med','mean'])
     if save_results ==True:
-        os.makedirs(TAR_DIR, exist_ok=True)
-        res_df.to_csv(TAR_DIR+'dataset_object_size.csv')
+        os.makedirs(tar_dir, exist_ok=True)
+        res_df.to_csv(tar_dir+'dataset_object_size.csv')
     return res_df
 
-def map_grain_res_to_img(imgs,pred_grains,pred_res_props,pred_IDs,m_string=None,p_string=None):
+def map_grain_res_to_img(imgs,pred_grains,pred_res_props,pred_ids,m_string=None,p_string=None):
     new_preds,new_res,new_id = [],[],[]
     """
     Re-orders path lists to of prediction masks to a corresponding image path list.
@@ -799,18 +799,18 @@ def map_grain_res_to_img(imgs,pred_grains,pred_res_props,pred_IDs,m_string=None,
     """
     for kk in range(len(imgs)):
         if m_string:
-            ID = Path(imgs[kk]).stem.split(m_string)[0]
+            file_id = Path(imgs[kk]).stem.split(m_string)[0]
         else:
-            ID = Path(imgs[kk]).stem
-        for pred, res, id in zip(pred_grains,pred_res_props,pred_IDs):
+            file_id = Path(imgs[kk]).stem
+        for pred, res, idi in zip(pred_grains,pred_res_props,pred_ids):
                 if p_string:
-                    ID2 = id.split(p_string)[0]
+                    file_id2 = idi.split(p_string)[0]
                 else:
-                    ID2 = id
-                if ID == ID2:
+                    file_id2 = idi
+                if file_id == file_id2:
                     new_preds.append(pred)
                     new_res.append(res)
-                    new_id.append(id)
+                    new_id.append(idi)
     return new_preds,new_res,new_id
 
 def do_gsd(gsd):
@@ -835,15 +835,15 @@ def gsd_for_set(gsds,column='ell: b-axis (mm)'):
     Returns
     -------
     gsd_l (list) - list of GSDs
-    id_l (list) - list of IDs
+    id_l (list) - list of file_ids
     """
     gsd_l,id_l = [],[]
     for grains in gsds:
-        ID = Path(grains).stem
+        file_id = Path(grains).stem
         raw = pd.read_csv(grains,sep=',')[column]
         gsd = do_gsd(raw)
         gsd_l.append(gsd)
-        id_l.append(ID)
+        id_l.append(file_id)
     return gsd_l,id_l
 
 # Statistics
@@ -926,19 +926,19 @@ def summary_statistics(files,id_list,res_list=None,res_dict=None,sep=',',unit='m
     summary_df = pd.DataFrame()
     for i,file in enumerate(files):
         grains = data_loader.read_grains(file,sep=sep,column_name=column_name)
-        ID = id_list[i]
+        file_id = id_list[i]
         n = len(grains)
         gsd = do_gsd(grains)
         key_p = get_key_percs(gsd)
         if res_dict is not None:
-            key_CI = get_key_CIs(res_dict[ID])
+            key_CI = get_key_CIs(res_dict[file_id])
         elif res_list is not None:
             key_CI = get_key_CIs(res_list[i])
         else:
             if mute == False:
                 print('No results provided.')
             return
-        summary_df = pd.concat([summary_df,pd.DataFrame({'Image/Masks':ID,'number of grains':n,
+        summary_df = pd.concat([summary_df,pd.DataFrame({'Image/Masks':file_id,'number of grains':n,
                         'D16':key_p[0],'CI D16 (95%)':str(key_CI[0]),
                         'D50':key_p[1],'CI D50 (95%)':str(key_CI[1]),
                         'D84':key_p[2],'CI D84 (95%)':str(key_CI[2]),

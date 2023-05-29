@@ -35,7 +35,7 @@ def main():
 
     gsd_args=parser.add_argument_group('GSD analysis')
     gsd_args.add_argument('--unc_method', type = str, default = 'bootstrapping', help = 'Method to estimate uncertainty of grain size distribution (default: bootstrap). Options are bootstraping (bootstrapping), simpple Monte Carlo (MC), or advanced Monte Carlo for SfM data (MC_SfM_OM or MC_SfM_SI).')
-    gsd_args.add_argument('--n', type = int, default = 1000, help = 'Number of iterations for uncertainty estimation (default: 10000).')
+    gsd_args.add_argument('--n', type = int, default = 5000, help = 'Number of iterations for uncertainty estimation (default: 5000).')
     gsd_args.add_argument('--scale_err', default=0.1, help='Scale error for MC uncertainty estimation in fractions (default: 0.1).')
     gsd_args.add_argument('--length_err', default=0.1, help='Length error for MC uncertainty estimation in pixel or mm (default: 1); whether it is interpreted as py or mm value depends resolution was provided or not.')
     gsd_args.add_argument('--SfM_file', default = None, help = 'Path to SfM uncertainty file (default: None). See template for details.')
@@ -65,11 +65,11 @@ def main():
             print('>> Default model not found. Please provide a valid model path or re-download the default models.')
             exit()
     
-    TAR_DIR = '' if args.out_dir == None else args.out_dir
+    tar_dir = '' if args.out_dir == None else args.out_dir
 
     #segmentation
     if skip_segmentation == False:
-        segmentation_step(args,mute=mute,TAR_DIR=TAR_DIR)
+        segmentation_step(args,mute=mute,tar_dir=tar_dir)
     
     #grain size estimation
 
@@ -89,31 +89,31 @@ def main():
     #optional resampling (if done, sub-directory with resampled masks will be created)
     resampled = None
     if args.grid_resample or args.random_resample:
-        resample_path = resampling_step(args,filters,mute=mute,TAR_DIR=TAR_DIR)
+        resample_path = resampling_step(args,filters,mute=mute,tar_dir=tar_dir)
         resampled = True 
     
     #add additional approximation (convh, outl)
     fit_method = args.fit
     mask_str = args.filter_str if args.filter_str else ''
-    grain_size_step(args.img_dir,filters,fit_method=fit_method,mute=mute,TAR_DIR=TAR_DIR,mask_str=mask_str)    
+    grain_size_step(args.img_dir,filters,fit_method=fit_method,mute=mute,tar_dir=tar_dir,mask_str=mask_str)    
     if resampled == True:
-        grain_size_step(resample_path,filters,fit_method=fit_method,mute=True,TAR_DIR=TAR_DIR,mask_str=mask_str)
+        grain_size_step(resample_path,filters,fit_method=fit_method,mute=True,tar_dir=tar_dir,mask_str=mask_str)
     
     #optional scaling of grains
     if args.resolution:
-        scaling_step(args.img_dir,args.resolution,mute=mute,TAR_DIR=TAR_DIR)
+        scaling_step(args.img_dir,args.resolution,mute=mute,tar_dir=tar_dir)
         if resampled == True:
-            scaling_step(resample_path,args.resolution,gsd_str='resampled_grains',mute=True,TAR_DIR=TAR_DIR)
+            scaling_step(resample_path,args.resolution,gsd_str='resampled_grains',mute=True,tar_dir=tar_dir)
 
     #gsd analysis
     print ('>> ImageGrains: Calculating grain size distributions and uncertainties for ',args.img_dir)
-    gsd_step(args.img_dir,args,mute=mute,TAR_DIR=TAR_DIR)
+    gsd_step(args.img_dir,args,mute=mute,tar_dir=tar_dir)
     if resampled == True:
         print('>> Calculating grain size distributions and uncertainties for ',resample_path)
-        gsd_step(resample_path,args,mute=mute,TAR_DIR=TAR_DIR)
+        gsd_step(resample_path,args,mute=mute,tar_dir=tar_dir)
 
 
-def segmentation_step(args,mute=False,TAR_DIR=''):
+def segmentation_step(args,mute=False,tar_dir=''):
     if args.gpu == True:
         if torch.cuda.is_available() == True and mute == False:
             print('>> Using GPU: ',torch.cuda.get_device_name(0))
@@ -121,19 +121,19 @@ def segmentation_step(args,mute=False,TAR_DIR=''):
             print('>> GPU not available - check if correct pytorch version is installed. Using CPU instead.')
 
     print('>> ImageGrains: Segmenting ',args.img_type,' images in ',args.img_dir)
-    _ = segmentation_helper.batch_predict(args.model_dir,args.img_dir,TAR_DIR=TAR_DIR,
+    _ = segmentation_helper.batch_predict(args.model_dir,args.img_dir,tar_dir=tar_dir,
                                     image_format=args.img_type,use_GPU=args.gpu,diameter=args.diameter, min_size=args.min_size,
                                         mute=mute,return_results=False,save_masks=True)
 
     if '.' in args.model_dir:
-        M_ID = [Path(args.model_dir).stem]
+        model_ids = [Path(args.model_dir).stem]
     else:
-        _,M_ID = segmentation_helper.models_from_zoo(args.model_dir)
+        _,model_ids = segmentation_helper.models_from_zoo(args.model_dir)
 
     #segmentation example plot
     if not args.skip_plots:
-        for ID in M_ID:
-            imgs,_,preds = data_loader.dataset_loader(args.img_dir,pred_str=f'{ID}')
+        for model_id in model_ids:
+            imgs,_,preds = data_loader.dataset_loader(args.img_dir,pred_str=f'{model_id}')
             if len(imgs) == 1:
                 pred_plot = plt.figure(figsize=(10,10))
                 plotting.plot_single_img_pred(imgs[0],preds[0])
@@ -142,17 +142,17 @@ def segmentation_step(args,mute=False,TAR_DIR=''):
                 numbers = rng.choice(len(imgs), size=6, replace=False)
                 imgs = [imgs[x] for x in numbers]
                 preds = [preds[x] for x in numbers]
-                pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {ID}")
+                pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {model_id}")
             else:
-                pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {ID}")
-            if TAR_DIR != '':
-                out_dir = TAR_DIR
+                pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {model_id}")
+            if tar_dir != '':
+                out_dir = tar_dir
             else:
                 out_dir = args.img_dir
-            pred_plot.savefig(out_dir+f'/{ID}_prediction_examples.png',dpi=300)
+            pred_plot.savefig(out_dir+f'/{model_id}_prediction_examples.png',dpi=300)
     return
 
-def resampling_step(args,filters,mute=False,TAR_DIR=''):    
+def resampling_step(args,filters,mute=False,tar_dir=''):    
     if args.grid_resample:
         method = 'wolman'
         grid_size= int(args.grid_resample)
@@ -168,8 +168,8 @@ def resampling_step(args,filters,mute=False,TAR_DIR=''):
     
     for _,mask in enumerate(masks):
         #get ID from file name
-        maskID = Path(mask).stem
-        if 'flow' in maskID: #catch flow representations from potentially present from training
+        mask_id = Path(mask).stem
+        if 'flow' in mask_id: #catch flow representations from potentially present from training
             continue
         else:
             #load masks from file
@@ -180,30 +180,30 @@ def resampling_step(args,filters,mute=False,TAR_DIR=''):
             else:
                 grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,mute=True,method=method,n_rand=n_rand)
             #save resampled mask to file
-            if not TAR_DIR:
+            if not tar_dir:
                 resampled_dir = args.img_dir+'/Resampled_grains/' 
                 os.makedirs(resampled_dir, exist_ok=True)
-                io.imsave(resampled_dir + maskID +f'_{method}_resampled.tif',grid_resampled)
+                io.imsave(resampled_dir + mask_id +f'_{method}_resampled.tif',grid_resampled)
             else:
-                resampled_dir = TAR_DIR +'/Resampled_grains/' 
+                resampled_dir = tar_dir +'/Resampled_grains/' 
                 os.makedirs(resampled_dir, exist_ok=True)
-                io.imsave(resampled_dir + maskID+f'_{method}_resampled.tif',grid_resampled)
+                io.imsave(resampled_dir + mask_id+f'_{method}_resampled.tif',grid_resampled)
     return resampled_dir
 
-def grain_size_step(img_dir,filters,fit_method=None,mute=False,TAR_DIR='',mask_str=''):
+def grain_size_step(img_dir,filters,fit_method=None,mute=False,tar_dir='',mask_str=''):
     if not fit_method:
-        _,_,_ = grainsizing.batch_grainsize(img_dir,filters=filters,mute=True,TAR_DIR=TAR_DIR,mask_str=mask_str)
+        _,_,_ = grainsizing.batch_grainsize(img_dir,filters=filters,mute=True,tar_dir=tar_dir,mask_str=mask_str)
     else:
         if mute== False:
             print('>> Adding additional approximation for grains: ',fit_method)
-        _,_,_ = grainsizing.batch_grainsize(img_dir,filters=filters,fit_method=fit_method,mute=True,TAR_DIR=TAR_DIR,mask_str=mask_str)
+        _,_,_ = grainsizing.batch_grainsize(img_dir,filters=filters,fit_method=fit_method,mute=True,tar_dir=tar_dir,mask_str=mask_str)
     return
 
-def scaling_step(img_dir,resolution,mute=False,gsd_str='_grains',TAR_DIR=''):
+def scaling_step(img_dir,resolution,mute=False,gsd_str='_grains',tar_dir=''):
     try:
         res = float(resolution)
         if type(res) == float:
-            _ = grainsizing.re_scale_dataset(img_dir,resolution=res,gsd_str=gsd_str,save_gsds=True, TAR_DIR=TAR_DIR)
+            _ = grainsizing.re_scale_dataset(img_dir,resolution=res,gsd_str=gsd_str,save_gsds=True, tar_dir=tar_dir)
         if mute == False:
                 print('>> Scaled grains with a spacing of',res,'mm/px.')
     except ValueError:
@@ -218,20 +218,20 @@ def scaling_step(img_dir,resolution,mute=False,gsd_str='_grains',TAR_DIR=''):
         #find matching names
         new_res = []
         for kk in range(len(grains)):
-            gr_ID = Path(grains[kk]).stem
+            gr_id = Path(grains[kk]).stem
             for namei, resi in zip(names, resolutions):
-                if namei in gr_ID:
+                if namei in gr_id:
                     new_res.append(resi)    
-        _ = grainsizing.re_scale_dataset(img_dir,resolution=new_res,gsd_str=gsd_str,save_gsds=True, TAR_DIR=TAR_DIR)
+        _ = grainsizing.re_scale_dataset(img_dir,resolution=new_res,gsd_str=gsd_str,save_gsds=True, tar_dir=tar_dir)
         if mute == False:
             print('>> Rescaled grains image-specific resolutions from',resolution,'.')
         return
 
-def gsd_step(PATH,args,mute=False,TAR_DIR=''):
-    grains= data_loader.load_grain_set(PATH,gsd_str='grains_re_scaled')
+def gsd_step(file_path,args,mute=False,tar_dir=''):
+    grains= data_loader.load_grain_set(file_path,gsd_str='grains_re_scaled')
     scaled = True
     if not grains:
-        grains = data_loader.load_grain_set(PATH,gsd_str='grains')
+        grains = data_loader.load_grain_set(file_path,gsd_str='grains')
         scaled = False
         if mute == False:
             print('No scaled grains found. Loading unscaled grains.')
@@ -296,17 +296,17 @@ def gsd_step(PATH,args,mute=False,TAR_DIR=''):
 
         sum_df = grainsizing.summary_statistics(grains,ids,res_dict=column_unc, save_summary=False, column_name = column,
                                 method=method,approximation=approx,axis=axis,unit=unit,data_id='')
-        if TAR_DIR != '':
-            out_dir2 = TAR_DIR
+        if tar_dir != '':
+            out_dir2 = tar_dir
         else:
-            out_dir2 = PATH
+            out_dir2 = file_path
         sum_df.to_csv(f'{out_dir2}/{axis}_{unit}_{approx}_{method}.csv',index=False)
 
     #save full GSD+uncertainty dataframe to csv for each grain set
-    if TAR_DIR != '':
-        out_dir = TAR_DIR+'/GSD_uncertainty/'
+    if tar_dir != '':
+        out_dir = tar_dir+'/GSD_uncertainty/'
     else:
-        out_dir = PATH + '/GSD_uncertainty/'
+        out_dir = file_path + '/GSD_uncertainty/'
     os.makedirs(out_dir,exist_ok=True)
     for idi, dfi in zip(ids,df_list):
         idi = idi.replace('grains','')
