@@ -27,7 +27,7 @@ def main():
     gs_args.add_argument('--filter_str', type=str, default=None, help='Filter mask files with optional strin (default: None.')
     gs_args.add_argument('--min_grain_size', type=float, default=None, help='Minimum grain size in pixels to consider for grain size estimation (default: None); grains with a fitted ellipse smaller than this size will be ignored.')
     gs_args.add_argument('--edge_filter', type=float, default=None, help = 'Edge filter to remove grains close to the image boundary (default: None).')
-    gs_args.add_argument('--switch_filters_off', type=bool, default=False, help = 'Switch off all filters fro grain sizing (default: False).')
+    gs_args.add_argument('--switch_filters_off', type=bool, default=False, help = 'Switch off all filters for grain sizing (default: False).')
     gs_args.add_argument('--fit', type=str, default=None, help='Additional approximation for grains (default: None); options are convex hull (convex_hull) or outline (mask_outline).')
     gs_args.add_argument('--grid_resample', default=None, help = 'Resample images with a grid with a given resolution in pixel (default: None). Equivalent ot a digital Wolman grid.')
     gs_args.add_argument('--random_resample', default=None, help = 'Resample image with a random number of points (default: None).')
@@ -243,12 +243,16 @@ def gsd_step(PATH,args,mute=False,TAR_DIR=''):
         if args.fit == 'mask_outline':
             columns += ['mask outline: a axis (mm)','mask outline: b axis (mm)']
         method = args.unc_method
-        if method == 'MC_SfM':
-            sfm_err = gsd_uncertainty.compile_sfm_error(args.SfM_file)
-            if 'OM' in args.SfM_file:
+        if 'MC_SfM' in method:
+            if 'OM' in method:
                 sfm_type = 'OM'
-            else:
+            if 'SI' in method:
                 sfm_type = 'SI'
+            method = 'MC_SfM'
+            if not args.SfM_file:
+                print('No SfM file provided. Please provide a SfM file for uncertainty estimation with the MC_SfM method.')
+            else:
+                sfm_err = gsd_uncertainty.compile_sfm_error(args.SfM_file)
         else: 
             sfm_err = None
             sfm_type = None

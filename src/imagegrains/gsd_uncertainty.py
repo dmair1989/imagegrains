@@ -619,6 +619,7 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,sfm_type=''):
     """
     Calculate uncertainty of a GSD. 
     """
+    med_list = []
     if method == 'bootstrapping':
         med_list, upper_CI, lower_CI = bootstrapping(gsd,num_it=num_it,CI_bounds=CI_bounds)
     if method == 'MC':
@@ -635,6 +636,10 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,sfm_type=''):
         gsd_list = [np.percentile(gsd, p, axis=0) for p in range(100)]
     else:
         gsd_list = np.zeros(100)
+    if not med_list:
+        med_list = np.zeros(100)
+        upper_CI = np.zeros(100)
+        lower_CI = np.zeros(100)
     #gsd_list=[]
     #for p in range(100):    
     #    inp = np.percentile(gsd,p)
