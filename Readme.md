@@ -8,7 +8,7 @@ A software library for segmenting and measuring of sedimentary particles in imag
 
 If you use software and/or data from here in your research, please cite the following works:  
 
-- **bibtex here**  
+- Mair, D., Henrique, A., Prado, D., Garefalakis, P., Witz, G., and Schlunegger, F. (in prep.): Automated finding, segmenting, and measuring of grains in images of fluvial sediments – the potential of transfer learning in deep neural networks.
 
 - Stringer, C.A., Pachitariu, M., (2021). Cellpose: a generalist algorithm for cellular segmentation. Nat Methods 18, 100–106. <https://doi.org/10.1038/s41592-020-01018-x>.
 
@@ -35,12 +35,7 @@ and activate it with:
 ```text
 conda activate imagegrains
 ```
-  
-:heavy_exclamation_mark: Until the repository will become public, install directly from the repo with:
-```text
-pip install git+https://www.github.com/dmair1989/imagegrains.git
-```  
-:heavy_exclamation_mark: This voids the next two statements.  
+
 Then install the package using:
 
 ```text

@@ -1,2 +1,2 @@
-ID,alt_mean,alt_std,z_err,z_err_std,dom_amp,pix_err,pix_rms,imh,imw,f,om_res
+ID,alt_mean (m),alt_std (m),z_err (m),z_err_std (m),dom_amp (m),pix_err (px),pix_rms (px),imh,imw,f,om_res (mm/px)
 K1_2_C1_low,5.81,0.43,0.00972,0.00693,0.460416,1.993,1,3648,5472,3716.119165,1
