@@ -230,6 +230,7 @@ def scaling_step(img_dir,resolution,mute=False,gsd_str='_grains',tar_dir=''):
 def gsd_step(file_path,args,mute=False,tar_dir=''):
     grains= data_loader.load_grain_set(file_path,gsd_str='grains_re_scaled')
     scaled = True
+    sfm_err = None
     if not grains:
         grains = data_loader.load_grain_set(file_path,gsd_str='grains')
         scaled = False
