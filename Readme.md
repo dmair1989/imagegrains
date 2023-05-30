@@ -38,6 +38,12 @@ conda activate imagegrains
 
 Then install the package using:
 
+:heavy_exclamation_mark: Until the repository will become public, install directly from the repo with:
+```text
+pip install git+https://www.github.com/dmair1989/imagegrains.git
+```  
+:heavy_exclamation_mark: This voids the next two statements. 
+
 ```text
 pip install imagegrains
 ```

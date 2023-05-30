@@ -35,7 +35,7 @@ def main():
 
     gsd_args=parser.add_argument_group('GSD analysis')
     gsd_args.add_argument('--unc_method', type = str, default = 'bootstrapping', help = 'Method to estimate uncertainty of grain size distribution (default: bootstrap). Options are bootstraping (bootstrapping), simpple Monte Carlo (MC), or advanced Monte Carlo for SfM data (MC_SfM_OM or MC_SfM_SI).')
-    gsd_args.add_argument('--n', type = int, default = 5000, help = 'Number of iterations for uncertainty estimation (default: 5000).')
+    gsd_args.add_argument('--n', type = int, default = 1000, help = 'Number of iterations for uncertainty estimation (default: 1000).')
     gsd_args.add_argument('--scale_err', default=0.1, help='Scale error for MC uncertainty estimation in fractions (default: 0.1).')
     gsd_args.add_argument('--length_err', default=0.1, help='Length error for MC uncertainty estimation in pixel or mm (default: 1); whether it is interpreted as py or mm value depends resolution was provided or not.')
     gsd_args.add_argument('--SfM_file', default = None, help = 'Path to SfM uncertainty file (default: None). See template for details.')
@@ -231,6 +231,7 @@ def gsd_step(file_path,args,mute=False,tar_dir=''):
     grains= data_loader.load_grain_set(file_path,gsd_str='grains_re_scaled')
     scaled = True
     sfm_err = None
+    sfm_type = None
     if not grains:
         grains = data_loader.load_grain_set(file_path,gsd_str='grains')
         scaled = False
