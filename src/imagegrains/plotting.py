@@ -12,14 +12,14 @@ from imagegrains import grainsizing
 
 def show_training_set(inp_list,mask_str='_mask'):
     for k,f in enumerate(inp_list):
-        img = io.imread(f)
+        img = io.imread(str(f))
         plt.subplot(2,len(inp_list),k+1)
     
         plt.imshow(img)
         plt.axis('off')
 
         plt.subplot(2,len(inp_list),len(inp_list) + k+1)
-        seg = io.imread(os.path.splitext(f)[0] + mask_str+'.tif')
+        seg = io.imread(os.path.splitext(str(f))[0] + mask_str+'.tif')
         #masks= seg['masks'].squeeze()
         plt.imshow(seg)
         plt.axis('off')
@@ -160,7 +160,7 @@ def inspect_predictions(imgs,preds,lbls=None,title='',tar_dir='',save_fig=False)
         fig = plt.figure(figsize=(len(imgs)*2,len(imgs)*0.66), dpi=300)
         rows = 2
     for k in range(len(imgs)):
-        img = io.imread(imgs[k])
+        img = io.imread(str(imgs[k]))
         plt.subplot(rows,len(imgs),k+1)
         plt.imshow(img)
         
@@ -171,7 +171,7 @@ def inspect_predictions(imgs,preds,lbls=None,title='',tar_dir='',save_fig=False)
         
 
         plt.subplot(rows,len(imgs),len(imgs) + k+1)
-        pred = io.imread(preds[k])
+        pred = io.imread(str(preds[k]))
         colors = mask_cmap(pred)
         plt.imshow(label2rgb(pred, image=img, colors=colors, bg_label=0))
         if k == 0:
@@ -181,7 +181,7 @@ def inspect_predictions(imgs,preds,lbls=None,title='',tar_dir='',save_fig=False)
 
         if lbls:
             plt.subplot(rows,len(imgs),(len(imgs)*2)+ k+1)
-            lbl = io.imread(lbls[k])
+            lbl = io.imread(str(lbls[k]))
             colors = mask_cmap(lbl)
             plt.imshow(label2rgb(lbl, image=img, colors=colors, bg_label=0))
             if k == 0:
@@ -207,16 +207,16 @@ def inspect_dataset_grains(imgs,masks,res_props=None,elements=['image','mask','e
         res_props = []
         print('No regionprops: Finding grains...')
         for x in range(len(masks)):
-            masks_ = io.imread(masks[x])
+            masks_ = io.imread(str(masks[x]))
             res_props_i = regionprops(label(masks_))
             res_props.append(res_props_i)
     for k in range(len(masks)):
         if not res_props:
-            masks_ = io.imread(masks)
+            masks_ = io.imread(str(masks))
         m_id = Path(masks[k]).stem
         #m_id = masks[k].split('\\')[len(masks[k].split('\\'))-1].split('.')[0]
         plt.subplot(int(int(np.round(len(masks)/4))), 4, k+1)
-        all_grains_plot(io.imread(masks[k]),elements,props=res_props[k],image=io.imread(imgs[k]),title=m_id)
+        all_grains_plot(io.imread(str((masks[k]))),elements,props=res_props[k],image=io.imread(str(imgs[k])),title=m_id)
         plt.tight_layout()
     return fig
 
@@ -234,8 +234,8 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
         images = images[0:80]
         masks = masks[0:80]
     for k in range(len(images)):
-        img = io.imread(images[k])
-        lbl = io.imread(masks[k])
+        img = io.imread(str(images[k]))
+        lbl = io.imread(str(masks[k]))
         colors = mask_cmap(lbl)
         rows = int(len(images)/9)
         rows = 1 if rows == 0 else rows
@@ -267,8 +267,8 @@ def plot_single_img_pred(image,mask,file_id=None, show_n=False, save=False, tar_
         file_id = Path(image).stem
     else:
         file_id = file_id
-    img = io.imread(image)
-    lbl = io.imread(mask)
+    img = io.imread(str(image))
+    lbl = io.imread(str(mask))
     if show == False:
         plt.ioff()
     colors = mask_cmap(lbl)

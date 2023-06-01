@@ -472,13 +472,14 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,tar_
 
     """
     if inp_dir:
-        gsds = natsorted(glob(inp_dir+'/*'+grain_str+'*.csv'))
+        #gsds = natsorted(glob(inp_dir+'/*'+grain_str+'*.csv'))
+        gsds = natsorted(glob(f'{Path(inp_dir)}/*{grain_str}*.csv'))
     if not gsds:
         print('No GSD(s) provided!')
         return
     if not res_dict:
         res_dict = {}
-    for idx in tqdm(range(len(gsds)),desc=str(method),unit='gsd',colour='BLUE',position=0,leave=True):
+    for idx in tqdm(range(len(gsds)),desc=f'{column_name} {method}',unit='gsd',colour='BLUE',position=0,leave=True):
         if scale_err:
             if type(scale_err)==list: 
                 scale_err_i=scale_err[idx]
@@ -508,19 +509,19 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,tar_
             sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,tar_tir=tar_tir,return_results=True,sfm_type=sfm_type,id_string=id_string)
         else:
             if not gsd_id:
-                gsd_id = str(idx)
+                gsd_id_i = str(idx)
             else:
-                gsd_id = gsd_id[idx]
+                gsd_id_i = gsd_id[idx]
             if all(np.unique(gsds[idx])) == 0:
                 if mute == False:
                     print('Empty GSD')
                 if return_results==True:
                     res_dict[str(gsd_id)]=[[], [], [], []]
             else:
-                med_list, upper_CI, lower_CI, gsd_list, _ = gsd_uncertainty(gsd=gsds[idx],gsd_id=gsd_id,sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
+                med_list, upper_CI, lower_CI, gsd_list, _ = gsd_uncertainty(gsd=gsds[idx],gsd_id=gsd_id_i,sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
                 sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,tar_tir=tar_tir,return_results=True,sfm_type=sfm_type,id_string=id_string)
                 if return_results==True:
-                    res_dict[str(gsd_id)]=[med_list, upper_CI, lower_CI, gsd_list]
+                    res_dict[str(gsd_id_i)]=[med_list, upper_CI, lower_CI, gsd_list]
     return res_dict
 
 def gsd_uncertainty(gsd=None,gsd_id='',inp_path='',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=0.1,length_err=1,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
@@ -532,7 +533,7 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,tar_ti
     ----------
     gsd (list (optional, default = None)): list of GSDs
     gsd_id (str (optional, default = '')): ID of GSD
-    inp_path (str (optional, default = '')): path to GSD
+    inp_path (str, Path (optional, default = '')): path to GSD
     sep (str (optional, default = ',')): separator for GSD
     column_name (str (optional, default = '')): column name of GSD
     conv_factor (float (optional, default = 1)): conversion factor for GSD
@@ -547,7 +548,7 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,tar_ti
     avg_res (list (optional, default = None)): list of average results
     mute (bool (optional, default = False)): mute output
     save_results (bool (optional, default = True)): save results
-    tar_tir (str (optional, default = '')): path to save results
+    tar_tir (str, Path (optional, default = '')): path to save results
     return_results (bool (optional, default = False)): return results
     sfm_type (str (optional, default = '')): type of sfm
 
@@ -582,8 +583,8 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,tar_ti
                 except:
                     pass
                 try:
-                    df['ell: a-axis (px)']
-                    column_name = 'ell: a-axis (px)'
+                    df['ell: b-axis (px)']
+                    column_name = 'ell: b-axis (px)'
                 except:
                     print('No data found!')
                     return
@@ -595,15 +596,16 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,tar_ti
         sfm_error=sfm_error,num_it=num_it,CI_bounds=CI_bounds,MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res,mute=mute,sfm_type=sfm_type)
         if save_results == True:
             if tar_tir:
-                os.makedirs(tar_tir, exist_ok=True)
+                os.makedirs(Path(tar_tir), exist_ok=True)
                 out_dir = tar_tir
-            elif not out_dir:
+            elif not tar_tir:
                 if not inp_path or len(inp_path)==0:
                     out_dir = os.getcwd()
                 elif inp_path:
-                    out_dir = str(Path(inp_path).parent)
+                    out_dir = Path(inp_path).parent
                 #out_dir = inp_path.split('\\')[0]+'/'
-            with open(out_dir + '/' + str(gsd_id) + str(method) + id_string + '_perc_uncert.txt', 'w') as f:
+            outpath = Path(f'{out_dir}/{gsd_id}{method}{id_string}_perc_uncert.txt')
+            with open(outpath, 'w') as f:
                 fwriter = csv.writer(f,delimiter=';')
                 fwriter.writerow(gsd_list)
                 fwriter.writerow(med_list)

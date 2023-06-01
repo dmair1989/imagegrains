@@ -59,8 +59,9 @@ def main():
     if args.model_dir == None and skip_segmentation==False:
         if mute == False:
             print('>> No model specified. Using default model.')
-        parent = str(Path(os.getcwd()).parent)
-        args.model_dir = parent+'/models/full_set_1.170223'
+        #parent = str(Path(os.getcwd()).parent)
+        parent = Path(os.getcwd()).parent
+        args.model_dir = Path(parent / '/models/full_set_1.170223')
         if os.path.exists(args.model_dir) == False:
             print('>> Default model not found. Please provide a valid model path or re-download the default models.')
             exit()
@@ -146,10 +147,10 @@ def segmentation_step(args,mute=False,tar_dir=''):
             else:
                 pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {model_id}")
             if tar_dir != '':
-                out_dir = tar_dir
+                out_dir = Path(tar_dir)/ f'{model_id}/_prediction_examples.png'
             else:
-                out_dir = args.img_dir
-            pred_plot.savefig(out_dir+f'/{model_id}_prediction_examples.png',dpi=300)
+                out_dir = Path(args.img_dir)/ f'{model_id}/_prediction_examples.png'
+            pred_plot.savefig(out_dir,dpi=300)
     return
 
 def resampling_step(args,filters,mute=False,tar_dir=''):    
@@ -173,7 +174,7 @@ def resampling_step(args,filters,mute=False,tar_dir=''):
             continue
         else:
             #load masks from file
-            mask = io.imread(mask)
+            mask = io.imread(str(mask))
             #resample mask to grid
             if method == 'wolman':
                 grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,method = method, grid_size=grid_size,mute=True)
@@ -181,13 +182,17 @@ def resampling_step(args,filters,mute=False,tar_dir=''):
                 grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,mute=True,method=method,n_rand=n_rand)
             #save resampled mask to file
             if not tar_dir:
-                resampled_dir = args.img_dir+'/Resampled_grains/' 
+                #resampled_dir = args.img_dir+'/Resampled_grains/'
+                resampled_dir = Path(args.img_dir)/'Resampled_grains/'
                 os.makedirs(resampled_dir, exist_ok=True)
-                io.imsave(resampled_dir + mask_id +f'_{method}_resampled.tif',grid_resampled)
+                #io.imsave(resampled_dir + mask_id +f'_{method}_resampled.tif',grid_resampled)
             else:
-                resampled_dir = tar_dir +'/Resampled_grains/' 
+                #resampled_dir = tar_dir +'/Resampled_grains/'
+                resampled_dir = Path(tar_dir)/'Resampled_grains/' 
                 os.makedirs(resampled_dir, exist_ok=True)
-                io.imsave(resampled_dir + mask_id+f'_{method}_resampled.tif',grid_resampled)
+                #io.imsave(resampled_dir + mask_id+f'_{method}_resampled.tif',grid_resampled)
+            filepath = resampled_dir / f'{mask_id}_{method}_resampled.tif'
+            io.imsave(str(filepath),grid_resampled)
     return resampled_dir
 
 def grain_size_step(img_dir,filters,fit_method=None,mute=False,tar_dir='',mask_str=''):
@@ -265,56 +270,69 @@ def gsd_step(file_path,args,mute=False,tar_dir=''):
         if args.fit == 'mask_outline':
             columns += ['mask outline: a axis (px)','mask outline: b axis (px)']
         method = 'bootstrapping'
-    #estimate uncertainty on a column-by-column basis
     ids = [str(Path(x).stem) for x in grains]
     df_list = []
-    for i,column in enumerate(columns):
-        if mute == False:
-            print(column)
-        #call uncertainty estimation function
-        column_unc = gsd_uncertainty.dataset_uncertainty(gsds=grains,gsd_id=ids,return_results=True,
-                                                save_results=False,method=method,column_name=column,
-                                                num_it=args.n,scale_err=args.scale_err,length_err=args.length_err,
-                                                sfm_error=sfm_err,sfm_type=sfm_type,mute=True)        
-        #save results to dataframe and update it for each column
-        for j,idi in enumerate(ids):
-            if i == 0:
-                df = pd.DataFrame({f'{column}_perc_lower_CI':column_unc[idi][2],
-                                f'{column}_perc_median':column_unc[idi][0],
-                                f'{column}_perc_upper_CI':column_unc[idi][1],
-                                f'{column}_perc_value':column_unc[idi][3]})
-                df_list.append(df)
+
+    #assert output directory 
+    if tar_dir != '':
+        #out_dir = tar_dir+'/GSD_uncertainty/'
+        out_dir = Path(tar_dir)/'GSD_uncertainty/'
+    else:
+        #out_dir = file_path + '/GSD_uncertainty/'
+        out_dir = Path(file_path)/'GSD_uncertainty/'
+    os.makedirs(out_dir,exist_ok=True)
+
+    #estimate uncertainty on a column-by-column basis
+    try:
+        for i,column in enumerate(columns):
+            if mute == False:
+                print(column)
+            #call uncertainty estimation function
+            column_unc = gsd_uncertainty.dataset_uncertainty(gsds=grains,gsd_id=ids,return_results=True,
+                                                    save_results=False,method=method,column_name=column,
+                                                    num_it=args.n,scale_err=args.scale_err,length_err=args.length_err,
+                                                    sfm_error=sfm_err,sfm_type=sfm_type,mute=True)        
+            #save results to dataframe and update it for each column
+            for j,idi in enumerate(ids):
+                if i == 0:
+                    df = pd.DataFrame({f'{column}_perc_lower_CI':column_unc[idi][2],
+                                    f'{column}_perc_median':column_unc[idi][0],
+                                    f'{column}_perc_upper_CI':column_unc[idi][1],
+                                    f'{column}_perc_value':column_unc[idi][3]})
+                    df_list.append(df)
+                else:
+                    df_list[j]=pd.concat([df_list[j],pd.DataFrame({f'{column}_perc_lower_CI':column_unc[idi][2],
+                                    f'{column}_perc_median':column_unc[idi][0],
+                                    f'{column}_perc_upper_CI':column_unc[idi][1],
+                                    f'{column}_perc_value':column_unc[idi][3]})],axis=1)
+
+            #call key percentile summary function and save results for each column
+
+            axis = 'b_axis' if 'b-axis' in column else 'a_axis'
+            approx = 'convex_hull' if 'convex hull' in column else 'mask_outline' if 'mask outline' in column else 'ellipse'
+            unit = 'mm' if 'mm' in column else 'px'
+
+            sum_df = grainsizing.summary_statistics(grains,ids,res_dict=column_unc, save_summary=False, column_name = column,
+                                    method=method,approximation=approx,axis=axis,unit=unit,data_id='')
+            if tar_dir != '':
+                out_dir2 = Path(tar_dir)
             else:
-                df_list[j]=pd.concat([df_list[j],pd.DataFrame({f'{column}_perc_lower_CI':column_unc[idi][2],
-                                f'{column}_perc_median':column_unc[idi][0],
-                                f'{column}_perc_upper_CI':column_unc[idi][1],
-                                f'{column}_perc_value':column_unc[idi][3]})],axis=1)
-        
-        #call key percentile summary function and save results for each column
-
-        axis = 'b_axis' if 'b-axis' in column else 'a_axis'
-        approx = 'convex_hull' if 'convex hull' in column else 'mask_outline' if 'mask outline' in column else 'ellipse'
-        unit = 'mm' if 'mm' in column else 'px'
-
-        sum_df = grainsizing.summary_statistics(grains,ids,res_dict=column_unc, save_summary=False, column_name = column,
-                                method=method,approximation=approx,axis=axis,unit=unit,data_id='')
-        if tar_dir != '':
-            out_dir2 = tar_dir
-        else:
-            out_dir2 = file_path
-        sum_df.to_csv(f'{out_dir2}/{axis}_{unit}_{approx}_{method}.csv',index=False)
+                out_dir2 = Path(file_path)
+            out_path = out_dir2/f'{axis}_{unit}_{approx}_{method}.csv'
+            sum_df.to_csv(out_path,index=False)
+            #sum_df.to_csv(f'{out_dir2}/{axis}_{unit}_{approx}_{method}.csv',index=False)
+    except KeyboardInterrupt:
+        print('Uncertainty estimation interrupted. Saving results so far.')
+        pass
 
     #save full GSD+uncertainty dataframe to csv for each grain set
-    if tar_dir != '':
-        out_dir = tar_dir+'/GSD_uncertainty/'
-    else:
-        out_dir = file_path + '/GSD_uncertainty/'
-    os.makedirs(out_dir,exist_ok=True)
     for idi, dfi in zip(ids,df_list):
         idi = idi.replace('grains','')
         dfi = dfi.round(decimals=2)
-        dfi.to_csv(f'{out_dir}/{idi}_{method}_full_uncertainty.csv')
-    print(f'>> ImageGrains successfully created results for {len(grains)} GSDs.')
+        out_path = Path(out_dir)/f'{idi}_{method}_full_uncertainty.csv'
+        dfi.to_csv(out_path)
+        #dfi.to_csv(f'{out_dir}/{idi}_{method}_full_uncertainty.csv')
+    print(f'>> ImageGrains successfully created results for {len(df_list)} GSDs.')
     return 
 
 if __name__ == '__main__':

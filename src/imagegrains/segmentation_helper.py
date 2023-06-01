@@ -29,18 +29,20 @@ def check_labels(labels,tar_dir='',lbl_str='_mask',mask_format='tif'):
     
     """
     if tar_dir:
-        os.makedirs(tar_dir, exist_ok=True)
+        os.makedirs(Path(tar_dir), exist_ok=True)
     track_l = []
     for label in labels:
         if lbl_str in label:
             continue
         else:
-            img= io.imread(label)
+            img= io.imread(str(label))
             img_id = Path(label).stem
             #img_id = label.split('\\')[len(label.split('\\'))-1].split('.')[0]
             print(img_id)
             #plt.imshow(img)
-            io.imsave(tar_dir+'/'+img_id+lbl_str+'.'+mask_format,img)
+            #io.imsave(tar_dir+'/'+img_id+lbl_str+'.'+mask_format,img)
+            imgpath = Path(tar_dir)/f'{img_id}{lbl_str}.{mask_format}'
+            io.imsave(str(imgpath),img)
             track_l.append(img_id)
     if len(track_l) == 0:
         print('No files renamed.')
@@ -82,7 +84,7 @@ def custom_train(image_path, pretrained_model = None,datstring = None,
     
     Parameters:
     ------------
-    image_path (str) - Path to the directory containing the images and labels
+    image_path (str, Path) - Path to the directory containing the images and labels
     pretrained_model (str(optional, default None)) - Path to the pretrained model. If not specified, the model is trained from scratch.
     datstring (str(optional, default None)) - String to be added to the model name. 
     return_model (bool(optional, default False)) - If True, the model is returned
@@ -108,18 +110,18 @@ def custom_train(image_path, pretrained_model = None,datstring = None,
 
     train_data,train_labels,test_data,test_labels = [],[],[],[]
     for x1,y1 in zip(train_images,train_masks):
-        train_data.append(io.imread(x1))
-        train_labels.append(io.imread(y1))
+        train_data.append(io.imread(str(x1)))
+        train_labels.append(io.imread(str(y1)))
 
     for x2,y2 in zip(test_images,test_masks):
-        test_data.append(io.imread(x2))
-        test_labels.append(io.imread(y2))
+        test_data.append(io.imread(str(x2)))
+        test_labels.append(io.imread(str(y2)))
     if not model_name:
         model_name = model_name
     else: 
         if not datstring:
             datstring = ''
-        model_name = model_name + '.' + datstring
+        model_name = f'{model_name}.{datstring}'
     if not pretrained_model:
         model = models.CellposeModel(gpu=gpu,pretrained_model=None)
     elif pretrained_model == 'nuclei':
@@ -146,7 +148,7 @@ return_results=False,save_masks=True,mute=False,model_id=''):
 
     Parameters:
     ------------
-    image_path (str) - Input directory 
+    image_path (str, Path) - Input directory 
     model (obj) - Trained model from 'models.CellposeModel' class. 
         Use either `models.CellposeModel(model_type='')` for built-in cellpose models or 
         `models.CellposeModel(pretrained_model='') for custom models.
@@ -181,13 +183,14 @@ return_results=False,save_masks=True,mute=False,model_id=''):
     """
     mask_l,flow_l,styles_l,id_list,img_l = [],[],[],[],[]
     try:
-        file_list = natsorted(glob(image_path+'/*'+filter_str+'*.'+image_format))
+        #file_list = natsorted(glob(image_path+'/*'+filter_str+'*.'+image_format))
+        file_list = natsorted(glob(f'{Path(image_path)}/*{filter_str}*.{image_format}'))
         if mute== False:
             print('Predicting for ',image_path,'...')
         count=0
         #for _,im in tqdm(enumerate(file_list), desc=image_path,unit='image',colour='CYAN'):               
         for idx in tqdm(range(len(file_list)), desc=image_path,unit='image',colour='CYAN'):
-            img= io.imread(file_list[idx])
+            img= io.imread(str(file_list[idx]))
             img_id = Path(file_list[idx]).stem
             #img_id = file_list[im_idx].split('\\')[len(file_list[im_idx].split('\\'))-1].split('.')[0]
             if any(x in img_id for x in ['flow','flows','masks','mask','pred']):
@@ -214,10 +217,12 @@ return_results=False,save_masks=True,mute=False,model_id=''):
                     save_masks = True
                 if save_masks == True:
                     if tar_dir:
-                        os.makedirs(tar_dir, exist_ok=True)
-                        io.imsave(tar_dir+'/'+img_id+'_'+model_id+'_pred.tif',masks)
+                        os.makedirs(Path(tar_dir), exist_ok=True)
+                        filepath = Path(tar_dir) / f'/{img_id}_{model_id}_pred.tif'
+                        #io.imsave(tar_dir+'/'+img_id+'_'+model_id+'_pred.tif',masks)
                     else:
-                        io.imsave(image_path+'/'+img_id+'_'+model_id+'_pred.tif',masks)
+                        filepath = Path(image_path) / f'/{img_id}_{model_id}_pred.tif'
+                    io.imsave(str(filepath),masks)
                 if return_results == True:
                     mask_l.append(masks)
                     flow_l.append(flows)
@@ -259,21 +264,24 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,model_id='')
     """
     mask_ll,flow_ll,styles_ll,list_of_id_lists,=[],[],[],[]
     try:
-        dirs = next(os.walk(image_path))[1]
+        dirs = next(os.walk(Path(image_path)))[1]
     except:
-        dirs=[image_path+'/']
+        dirs=[Path(f'{image_path}/')]
     if not dirs:
-        dirs=[image_path+'/']
+        dirs=[Path(f'{image_path}/')]
     for dir in dirs:
         if dir=='train':
-            working_directory = image_path+'/'+str(dir)+'/'
+            #working_directory = image_path+'/'+str(dir)+'/'
+            working_directory = Path(image_path) / f'/{dir}/'
         elif dir=='test':
-            working_directory = image_path+'/'+str(dir)+'/'
+            #working_directory = image_path+'/'+str(dir)+'/'
+            working_directory = Path(image_path) / f'/{dir}/'
         elif do_subfolders == True:
-            working_directory = image_path+'/'+str(dir)+'/'
+            #working_directory = image_path+'/'+str(dir)+'/'
+            working_directory = Path(image_path) / f'/{dir}/'
         else:
             working_directory = image_path
-        check_l = natsorted(glob(working_directory+'/*.'+image_format))
+        check_l = natsorted(glob(f'{working_directory}/*.{image_format}'))
         if len(check_l)>0:
             mask_l_i,flow_l_i,styles_l_i,id_list_i,_ = predict_folder(working_directory,model,image_format=image_format,channels=channels,diameter=diameter,
             min_size=min_size,rescale=rescale,config=config,tar_dir=tar_dir,return_results=return_results,save_masks=save_masks,mute=mute,model_id=model_id)
@@ -293,7 +301,7 @@ def models_from_zoo(model_dir,use_GPU=True):
 
     Parameters:
     ------------
-    model_dir (str) - model directory 
+    model_dir (str, Path) - model directory 
     use_GPU (bool (optional, default=True)) - GPU flag
 
     Returns
@@ -302,7 +310,7 @@ def models_from_zoo(model_dir,use_GPU=True):
     model_id_list (list) - list of cellpose model names
 
     """
-    model_list = natsorted(glob(model_dir+'/*.*'))
+    model_list = natsorted(glob(f'{Path(model_dir)}/*.*'))
     try:
         models.CellposeModel(gpu=use_GPU,pretrained_model=model_list[0])
     except:
@@ -318,8 +326,8 @@ rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfo
 
     Parameters:
     ------------
-    DIR_PATHS (list of strings) - list of images to segment 
-    model_dir (str) - model directory 
+    DIR_PATHS (list of str, Path) - list of images to segment 
+    model_dir (str, Path) - model directory 
     use_GPU (bool (optional, default=True)) - GPU flag
     configuration (dict or list of dicts (optional, default = None))
         dictionary where `key` = paramter name and `val` = parameter value; can be varied for each cellpose model model in `model_dir`
@@ -370,7 +378,7 @@ rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfo
             return_results=return_results,save_masks=save_masks,mute=mute,do_subfolders=do_subfolders,model_id=model_id)
             if return_results == True:
                 dataset_res = {'masks':all_mask_l,'flows':all_flow_l,'styles':all_styles_l,'id':all_id_list}
-                all_results[str(model_id)+'_'+str(d_idx)]=dataset_res
+                all_results[f'{model_id}_{d_idx}']=dataset_res
     return all_results
 
 
@@ -427,9 +435,9 @@ def eval_set(imgs,lbls,preds,data_id='',tar_dir='',thresholds = [0.5, 0.55, 0.6,
     eval_results={}
     for idx,im in enumerate(imgs):
         img_id = Path(im).stem
-        img = io.imread(im)
-        y_true = io.imread(lbls[idx])
-        y_pred = io.imread(preds[idx])
+        img = io.imread(str(im))
+        y_true = io.imread(str(lbls[idx]))
+        y_pred = io.imread(str(preds[idx]))
 
         if filters:
             _, y_true = grainsizing.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
@@ -444,10 +452,10 @@ def eval_set(imgs,lbls,preds,data_id='',tar_dir='',thresholds = [0.5, 0.55, 0.6,
         eval_results[idx] = {'id':img_id,'img':img, 'ap':ap, 'iout':iout,}
     if save_results==True:
         if tar_dir:
-            os.makedirs(tar_dir, exist_ok=True)
-            export = tar_dir+'/'+data_id+'_eval_res.pkl'
+            os.makedirs(Path(tar_dir), exist_ok=True)
+            export = Path(tar_dir)/ f'/{data_id}_eval_res.pkl'
         else:
-            export = data_id+'_eval_res.pkl'
+            export = f'{data_id}_eval_res.pkl'
         with open(str(export), 'wb') as f:
             pickle.dump(eval_results, f)
     if return_results == True:
@@ -462,7 +470,7 @@ def eval_wrapper(pred_list,imgs,filterstrings,taglist,filters=None,save_results=
         preds_fil_sort = map_preds_to_imgs(pred_list[i],imgs,p_string=filterstrings[i],m_string=m_string)
         test_idxs = find_test_idxs(imgs)
         i_res = eval_set(imgs,imgs,preds_fil_sort,
-                                            data_id=str(out_path+taglist[i])+'_on'+str(dataset),filters=filters, save_results=save_results)
+                                            data_id = f'{out_path}{taglist[i]}_on_{dataset}',filters=filters, save_results=save_results)
         res_list.append(i_res)
         tt_list.append(test_idxs)
         preds_fil_sort_list.append(preds_fil_sort)
@@ -512,7 +520,7 @@ def get_stats_for_res(preds,res_dict,test_idxs=None):
     tpreds, taps50, tamaps = [],[],[]
     ttpreds, ttaps50, ttamaps = [],[],[]
     for i in range(len(preds)):
-        a = regionprops_table((label(io.imread(preds[i]))))
+        a = regionprops_table((label(io.imread(str(preds[i])))))
         napred = len(a['label'])
         aap50 = res_dict[i]['ap'][0]
         amap = res_dict[i]['ap'][0:9].mean()
