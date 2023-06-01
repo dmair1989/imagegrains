@@ -215,7 +215,7 @@ def inspect_dataset_grains(imgs,masks,res_props=None,elements=['image','mask','e
             masks_ = io.imread(masks)
         m_id = Path(masks[k]).stem
         #m_id = masks[k].split('\\')[len(masks[k].split('\\'))-1].split('.')[0]
-        plt.subplot(np.int(np.int(np.round(len(masks)/4))), 4, k+1)
+        plt.subplot(int(int(np.round(len(masks)/4))), 4, k+1)
         all_grains_plot(io.imread(masks[k]),elements,props=res_props[k],image=io.imread(imgs[k]),title=m_id)
         plt.tight_layout()
     return fig
@@ -307,8 +307,8 @@ def all_grains_plot(masks,elements,props=None, image =None,
     if 'image' in elements and image.any:
         plt.imshow(image)
         h,w,_ = image.shape
-        plt.xlim(0-np.int(w/plot_padding),w+np.int(w/plot_padding))
-        plt.ylim(0-np.int(h/plot_padding),h+np.int(h/plot_padding))
+        plt.xlim(0-int(w/plot_padding),w+int(w/plot_padding))
+        plt.ylim(0-int(h/plot_padding),h+int(h/plot_padding))
     if 'masks_individual' in elements:
         plt.imshow(label2rgb(label(masks), bg_label=0),alpha=0.3)
     if not props:
