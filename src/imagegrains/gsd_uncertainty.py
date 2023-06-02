@@ -178,7 +178,7 @@ def MC_with_length_scale(gsd,scale_err,length_err,method='truncnorm',num_it=1000
     if mute == False:
         print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))     
     with Pool(processes=cpu_count()-1) as pool:
-        res_list=pool.map(partial(MC_loop, gsd=gsd,length_err=length_err,scale_err=scale_err,method=method,cutoff=cutoff), range(num_it))
+        res_list=pool.map(partial(MC_loop, gsd=gsd,length_err=length_err,scale_err=scale_err,method=method,cutoff=cutoff), range(num_it)).get(num_it)
     return res_list
 
 def MC_loop(arg,gsd=None,length_err=0,scale_err=.1,method ='truncnorm',cutoff=0):
@@ -240,8 +240,8 @@ def MC_with_sfm_err_SI(gsd,sfm_error,method='truncnorm',avg_res=1,num_it=1000,cu
     if mute == False:
         print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))
     with Pool(processes=cpu_count()-1) as pool:
-        res_list=pool.map(partial(MC_SfM_SI_loop,gsd=gsd,avg_res=avg_res,alt=alt,alt_std=alt_std,
-        method =method,point_prec_z=point_prec_z,point_prec_std=point_prec_std,dom_amp=dom_amp,cutoff=cutoff), range(num_it))
+        res_list=pool.map_async(partial(MC_SfM_SI_loop,gsd=gsd,avg_res=avg_res,alt=alt,alt_std=alt_std,
+        method =method,point_prec_z=point_prec_z,point_prec_std=point_prec_std,dom_amp=dom_amp,cutoff=cutoff), range(num_it)).get(num_it)
     return res_list
 
 def MC_SfM_SI_loop(arg,gsd=None,avg_res=1,alt=5,alt_std=1,method ='truncnorm',point_prec_z=1,
@@ -332,9 +332,9 @@ def MC_with_sfm_err_OM(gsd,sfm_error,method='truncnorm',avg_res=1,num_it=1000,cu
     if mute == False:
         print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))
     with Pool(processes=cpu_count()-1) as pool:
-        res_list=pool.map(partial(MC_SfM_OM_loop,gsd=gsd,avg_res=avg_res,alt=alt,alt_std=alt_std,
+        res_list=pool.map_async(partial(MC_SfM_OM_loop,gsd=gsd,avg_res=avg_res,alt=alt,alt_std=alt_std,
         method =method,point_prec_z=point_prec_z,point_prec_std=point_prec_std,dom_amp=dom_amp,
-        cutoff=cutoff,om_res=om_res,px_err=px_err,px_rms=px_rms), range(num_it))
+        cutoff=cutoff,om_res=om_res,px_err=px_err,px_rms=px_rms), range(num_it)).get(num_it)
     return res_list
 
 def MC_SfM_OM_loop(arg,gsd=None,avg_res=1,alt=5,alt_std=1,method ='truncnorm',
