@@ -22,6 +22,7 @@ def main():
     seg_args.add_argument('--diameter', default=None, type=float, help='Mean grain diameter in pixels to rescale images to; default is None, which leads to automated size estimation')
     seg_args.add_argument('--min_size', default=0, type=float, help='Minimum object diameter in pixels to segement; default is 15 pixels')
     seg_args.add_argument('--skip_segmentation', default=False, type=bool, help='Skip segmentation and only calculate grain size distributions for already existing masks.')
+    seg_args.add_argument('--save_composites', default=False, type=bool, help='Save a composite of all images and segmentation masks as .png files.')
 
     gs_args=parser.add_argument_group('Grain size estimation')
     gs_args.add_argument('--filter_str', type=str, default=None, help='Filter mask files with optional strin (default: None.')
@@ -134,7 +135,7 @@ def segmentation_step(args,mute=False,tar_dir=''):
     #segmentation example plot
     if not args.skip_plots:
         for model_id in model_ids:
-            imgs,_,preds = data_loader.dataset_loader(args.img_dir,pred_str=f'{model_id}')
+            imgs,_,preds = data_loader.dataset_loader(Path(args.img_dir),pred_str=f'{model_id}')
             if len(imgs) == 1:
                 pred_plot = plt.figure(figsize=(10,10))
                 plotting.plot_single_img_pred(imgs[0],preds[0])
@@ -147,10 +148,21 @@ def segmentation_step(args,mute=False,tar_dir=''):
             else:
                 pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {model_id}")
             if tar_dir != '':
-                out_dir = Path(tar_dir)/ f'{model_id}/_prediction_examples.png'
+                out_dir = Path(tar_dir)/ f'{model_id}_prediction_examples.png'
             else:
-                out_dir = Path(args.img_dir)/ f'{model_id}/_prediction_examples.png'
+                out_dir = Path(args.img_dir)/ f'{model_id}_prediction_examples.png'
             pred_plot.savefig(out_dir,dpi=300)
+            if args.save_composites:
+                print('>> Saving composite images...')
+                for img,pred in zip(imgs,preds):
+                    pred_plot_i = plt.figure(figsize=(10,10))
+                    file_id = Path(img).stem
+                    plotting.plot_single_img_pred(img,pred,file_id=file_id)
+                    if tar_dir != '':
+                        out_dir2 = Path(tar_dir)/ f'{file_id}_{model_id}_composite.png'
+                    else:
+                        out_dir2 = Path(args.img_dir)/ f'{file_id}_{model_id}_composite.png'
+                    pred_plot_i.savefig(out_dir2,dpi=300)
     return
 
 def resampling_step(args,filters,mute=False,tar_dir=''):    
@@ -210,7 +222,7 @@ def scaling_step(img_dir,resolution,mute=False,gsd_str='_grains',tar_dir=''):
         if type(res) == float:
             _ = grainsizing.re_scale_dataset(img_dir,resolution=res,gsd_str=gsd_str,save_gsds=True, tar_dir=tar_dir)
         if mute == False:
-                print('>> Scaled grains with a spacing of',res,'mm/px.')
+                print('>> Scaled grains with a resolutiomn of',res,'mm/px.')
     except ValueError:
         pass
     if os.path.exists(resolution) == True:        
@@ -326,11 +338,12 @@ def gsd_step(file_path,args,mute=False,tar_dir=''):
         pass
 
     #save full GSD+uncertainty dataframe to csv for each grain set
-    for idi, dfi in zip(ids,df_list):
-        idi = idi.replace('grains','')
-        dfi = dfi.round(decimals=2)
-        out_path = Path(out_dir)/f'{idi}_{method}_full_uncertainty.csv'
-        dfi.to_csv(out_path)
+    for idx,(idi, dfi) in enumerate(zip(ids,df_list)):
+        if idx < len(df_list):
+            idi = idi.replace('grains','')
+            dfi = dfi.round(decimals=2)
+            out_path = Path(out_dir)/f'{idi}_{method}_full_uncertainty.csv'
+            dfi.to_csv(out_path)
         #dfi.to_csv(f'{out_dir}/{idi}_{method}_full_uncertainty.csv')
     print(f'>> ImageGrains successfully created results for {len(df_list)} GSDs.')
     return 
