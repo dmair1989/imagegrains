@@ -178,7 +178,7 @@ def MC_with_length_scale(gsd,scale_err,length_err,method='truncnorm',num_it=1000
     if mute == False:
         print('Simulating %s distributions'% str(num_it),'with %s grains each...' %round(len(gsd)))     
     with Pool(processes=cpu_count()-1) as pool:
-        res_list=pool.map(partial(MC_loop, gsd=gsd,length_err=length_err,scale_err=scale_err,method=method,cutoff=cutoff), range(num_it)).get(num_it)
+        res_list=pool.map_async(partial(MC_loop, gsd=gsd,length_err=length_err,scale_err=scale_err,method=method,cutoff=cutoff), range(num_it)).get(num_it)
     return res_list
 
 def MC_loop(arg,gsd=None,length_err=0,scale_err=.1,method ='truncnorm',cutoff=0):
