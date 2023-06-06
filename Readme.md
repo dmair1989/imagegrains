@@ -2,7 +2,7 @@
 ![build](https://github.com/dmair1989/imagegrains/actions/workflows/ci.yml/badge.svg)
 [![coverage](https://coveralls.io/repos/github/dmair1989/imagegrains/badge.svg?branch=main)](https://coveralls.io/github/dmair1989/imagegrains?branch=main)  
 
-A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the [*Cellpose*](<https://github.com/mouseland/cellpose>) algorithm, designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained segmentation models from our [data](<https://doi.org/10.5281/zenodo.8005771>) are available or custom models can be trained (see paper for details).
+A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the [*Cellpose*](https://github.com/mouseland/cellpose) algorithm, designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained segmentation models from our [data](https://doi.org/10.5281/zenodo.8005771) are available or custom models can be trained (see paper for details).
 
 ## Citation  
 
@@ -96,4 +96,4 @@ To analyze the GSD, use the jupyter notebook ```notebooks/4_gsd_analysis.ipynb``
 
 ### Training of custom models
 
-If you want to train your own models, you can use the jupyter notebook ```notebooks/1_model_training.ipynb```, you can use the cellpose GUI (<https://www.cellpose.org/>; start it with ```python -m cellpose```) or train via console (<https://cellpose.readthedocs.io/en/latest/train.html>) with the full funcitionality of cellpose. To train custom models, you will first need manually annotated ground truth data ("labels"). This can be done either with the cellpose GUI or with any dedicated annotation tool. We used the labkit plugin for ImageJ (<https://imagej.net/Labkit>). Please note, that each grain has to have a unique class value.
+If you want to train your own models, you can use the jupyter notebook ```notebooks/1_model_training.ipynb```, you can use the [Cellpose GUI](https://www.cellpose.org/) (start it with ```python -m cellpose```) or train via [console](https://cellpose.readthedocs.io/en/latest/train.html) with the full funcitionality of Cellpose. To train custom models, you will first need manually annotated ground truth data ("labels"). This can be done either with the Cellpose GUI or with any dedicated annotation tool. We used the [labkit plugin](https://imagej.net/Labkit) for ImageJ. Please note, that each grain has to have a unique class value.
