@@ -39,7 +39,7 @@ conda activate imagegrains
 Then install the package using:
 
 ```text
-pip install imagegrains
+pip install git+https://www.github.com/dmair1989/imagegrains.git
 ```
 
 If you want access to the cellpose GUI for retraining use:
