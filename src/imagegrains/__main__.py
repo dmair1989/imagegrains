@@ -74,6 +74,11 @@ def main():
         segmentation_step(args,mute=mute,tar_dir=tar_dir)
     
     #grain size estimation
+    ## catch out_dir here by replacing args.img_dir with out_dir if provided
+    if args.out_dir:
+        img_dir = args.out_dir
+    else:
+        img_dir = args.img_dir
 
     #set filters
     filters = filters= {'edge':[True,.1],'px_cutoff':[True,12]}
@@ -86,7 +91,7 @@ def main():
     if mute == False:
         print(f'Filter configuratiuon: {filters}')
 
-    print(f'>> ImageGrains: Measuring grains for masks in {args.img_dir}.')
+    print(f'>> ImageGrains: Measuring grains for masks in {img_dir}.')
 
     #optional resampling (if done, sub-directory with resampled masks will be created)
     resampled = None
@@ -97,19 +102,19 @@ def main():
     #add additional approximation (convh, outl)
     fit_method = args.fit
     mask_str = args.filter_str if args.filter_str else ''
-    grain_size_step(args.img_dir,filters,fit_method=fit_method,mute=mute,tar_dir=tar_dir,mask_str=mask_str)    
+    grain_size_step(img_dir,filters,fit_method=fit_method,mute=mute,tar_dir=tar_dir,mask_str=mask_str)    
     if resampled == True:
         grain_size_step(resample_path,filters,fit_method=fit_method,mute=True,tar_dir=tar_dir,mask_str=mask_str)
     
     #optional scaling of grains
     if args.resolution:
-        scaling_step(args.img_dir,args.resolution,mute=mute,tar_dir=tar_dir)
+        scaling_step(img_dir,args.resolution,mute=mute,tar_dir=tar_dir)
         if resampled == True:
             scaling_step(resample_path,args.resolution,gsd_str='resampled_grains',mute=True,tar_dir=tar_dir)
 
     #gsd analysis
-    print ('>> ImageGrains: Calculating grain size distributions and uncertainties for ',args.img_dir)
-    gsd_step(args.img_dir,args,mute=mute,tar_dir=tar_dir)
+    print ('>> ImageGrains: Calculating grain size distributions and uncertainties for ',img_dir)
+    gsd_step(img_dir,args,mute=mute,tar_dir=tar_dir)
     if resampled == True:
         print('>> Calculating grain size distributions and uncertainties for ',resample_path)
         gsd_step(resample_path,args,mute=mute,tar_dir=tar_dir)
@@ -134,8 +139,12 @@ def segmentation_step(args,mute=False,tar_dir=''):
 
     #segmentation example plot
     if not args.skip_plots:
+        if args.out_dir:
+            img_dir = args.out_dir
+        else:
+            img_dir = args.img_dir
         for model_id in model_ids:
-            imgs,_,preds = data_loader.dataset_loader(Path(args.img_dir),pred_str=f'{model_id}')
+            imgs,_,preds = data_loader.dataset_loader(Path(img_dir),pred_str=f'{model_id}')
             if len(imgs) == 1:
                 pred_plot = plt.figure(figsize=(10,10))
                 plotting.plot_single_img_pred(imgs[0],preds[0])
@@ -150,7 +159,7 @@ def segmentation_step(args,mute=False,tar_dir=''):
             if tar_dir != '':
                 out_dir = Path(tar_dir)/ f'{model_id}_prediction_examples.png'
             else:
-                out_dir = Path(args.img_dir)/ f'{model_id}_prediction_examples.png'
+                out_dir = Path(img_dir)/ f'{model_id}_prediction_examples.png'
             pred_plot.savefig(out_dir,dpi=300)
             if args.save_composites:
                 print('>> Saving composite images...')
@@ -159,13 +168,19 @@ def segmentation_step(args,mute=False,tar_dir=''):
                     file_id = Path(img).stem
                     plotting.plot_single_img_pred(img,pred,file_id=file_id)
                     if tar_dir != '':
-                        out_dir2 = Path(tar_dir)/ f'{file_id}_{model_id}_composite.png'
+                        out_dir2 = Path(tar_dir)/ f'/composite_plots/'
+                        os.makedirs(out_dir2,exist_ok=True)
                     else:
-                        out_dir2 = Path(args.img_dir)/ f'{file_id}_{model_id}_composite.png'
-                    pred_plot_i.savefig(out_dir2,dpi=300)
+                        out_dir2 = Path(img_dir)/ f'/composite_plots/'
+                        os.makedirs(out_dir2,exist_ok=True)
+                    pred_plot_i.savefig(f'{out_dir2}{file_id}_{model_id}_composite.png',dpi=300)
     return
 
-def resampling_step(args,filters,mute=False,tar_dir=''):    
+def resampling_step(args,filters,mute=False,tar_dir=''):
+    if args.out_dir:
+        img_dir = args.out_dir
+    else:
+        img_dir = args.img_dir    
     if args.grid_resample:
         method = 'wolman'
         grid_size= int(args.grid_resample)
@@ -177,8 +192,8 @@ def resampling_step(args,filters,mute=False,tar_dir=''):
         n_rand = args.random_resample
         if mute == False:
             print('>> Resampling grains with a random number of points with a maximum of ',args.random_resample,' points.')
-    _,_,masks= data_loader.dataset_loader(args.img_dir)
-    
+    _,_,masks= data_loader.dataset_loader(img_dir)
+
     for _,mask in enumerate(masks):
         #get ID from file name
         mask_id = Path(mask).stem
@@ -195,7 +210,7 @@ def resampling_step(args,filters,mute=False,tar_dir=''):
             #save resampled mask to file
             if not tar_dir:
                 #resampled_dir = args.img_dir+'/Resampled_grains/'
-                resampled_dir = Path(args.img_dir)/'Resampled_grains/'
+                resampled_dir = Path(img_dir)/'Resampled_grains/'
                 os.makedirs(resampled_dir, exist_ok=True)
                 #io.imsave(resampled_dir + mask_id +f'_{method}_resampled.tif',grid_resampled)
             else:

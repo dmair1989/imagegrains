@@ -218,10 +218,10 @@ return_results=False,save_masks=True,mute=False,model_id=''):
                 if save_masks == True:
                     if tar_dir:
                         os.makedirs(Path(tar_dir), exist_ok=True)
-                        filepath = Path(tar_dir) / f'/{img_id}_{model_id}_pred.tif'
+                        filepath = Path(tar_dir) / f'{img_id}_{model_id}_pred.tif'
                         #io.imsave(tar_dir+'/'+img_id+'_'+model_id+'_pred.tif',masks)
                     else:
-                        filepath = Path(image_path) / f'/{img_id}_{model_id}_pred.tif'
+                        filepath = Path(image_path) / f'{img_id}_{model_id}_pred.tif'
                     io.imsave(str(filepath),masks)
                 if return_results == True:
                     mask_l.append(masks)
