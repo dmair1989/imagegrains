@@ -1,16 +1,14 @@
-#https://github.com/actions/starter-workflows/blob/main/ci/python-publish.yml
-#https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries
-name: tests
+name: tests and deploy
 
 on:
-  #push:
-  #  branches:
-  #    - main
-  #  tags:
-   #   - "v*" # Push events to matching v*
-  #pull_request:
-  #  branches:
- #     - main
+  push:
+    branches:
+      - main
+    tags:
+      - "v*" # Push events to matching v*
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -50,13 +48,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install hatch
-          pip install -U setuptools setuptools_scm wheel twine
+          python3 pip install --upgrade build
+          python3 pip install --upgrade twine
       - name: Build and publish
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_TEST_TOKEN }}
         run: |
             git tag
-            hatch build
+            python3 -m build
             twine upload dist/*
