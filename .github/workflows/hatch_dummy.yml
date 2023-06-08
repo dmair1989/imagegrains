@@ -38,5 +38,5 @@ jobs:
           HATCH_INDEX_AUTH: ${{ secrets.PYPI_TEST_TOKEN }}
         run: |
          git tag
-         build
+         python -m build
          twine upload --repository testpypi dist/*          
