@@ -36,20 +36,33 @@ and activate it with:
 conda activate imagegrains
 ```
 
-Then install the package using:
+Then install the package using (currently only available via github):
 
 ```text
-pip install git+https://www.github.com/dmair1989/imagegrains.git
+pip install git+https://github.com/dmair1989/imagegrains.git
+```  
+
+If you have trouble building fron the repository, make sure you have ```git``` [installed](https://github.com/git-guides/install-git) and in your path (this can be tricky on [windows](https://stackoverflow.com/questions/26620312/installing-git-in-path-with-github-client-for-windows)).   
+   
+If you still have trouble, you can install the dependencies manually and use the jupyter notebooks in ```/notebooks``` to run the software and locally import the python files (i.e., by making sure the notebooks and files from ```src/imagegrains/``` are in the same folder and by changing any import statemenst ```from imagegrains import``` to ```import```). The dependencies are:
+
+```text
+cellpose
+matplotlib
+scikit-image
+pandas
+scanpy
+jupyter lab
 ```
 
 If you want access to the cellpose GUI for retraining use:
 
 ```text
-pip install "imagegrains[gui]"
+python -m pip install cellpose[gui]
 ```
 
-This installs by default the cellpose packaage (```python -m pip install cellpose[gui]```).
-
+This installs by default the cellpose package (```python -m pip install cellpose[gui]```).  
+  
 By default, cellpose will run on the CPU. To use a GPU version, you will have to make sure you have a GPU compatible PyTorch version. For this:
 
 1. Uninstall the PyTorch version that gets installed by default with Cellpose:
@@ -73,7 +86,7 @@ conda activate imagegrains
 ```
 Then execute
 ```text
-python -m imagegrains --img_dir PATH:/to/images
+python -m imagegrains --img_dir F:/(REPLACE WITH PATH TO FOLDER OF JPGs) --model_dir F:/models/full_set_1.170223(REPLACE WITH PATH TO DOWNLOADED MODEL)
 ```
 This will run the main application with the default settings on images in the provided location. You can use ```--help``` to see all input options. Alternatively, you can run the jupyter notebooks in ```/notebooks``` in their order. They offer more options and information for most workflow steps. Of course, any modules and functions can be combined in custom scripts or notebooks.
 
