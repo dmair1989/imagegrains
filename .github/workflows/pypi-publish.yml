@@ -50,7 +50,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install hatch
           pip install -U setuptools setuptools_scm wheel twine
       - name: Build and publish
         env:
@@ -58,5 +58,5 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
             git tag
-            python setup.py sdist bdist_wheel
+            hatch build
             twine upload dist/*
