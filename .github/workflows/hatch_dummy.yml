@@ -1,0 +1,25 @@
+name: hatch_dummy
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install hatch
+          pip install -U setuptools setuptools_scm wheel twine
+      - name: Build and publish
+        env:
+          HATCH_INDEX_REPO: "https://test.pypi.org/legacy/"
+          HATCH_INDEX_USER: __token__
+          HATCH_INDEX_AUTH: ${{ secrets.PYPI_API_TOKEN }}
+        run: 
+          hatch build
+          hatch publish -r -u -a
+          
