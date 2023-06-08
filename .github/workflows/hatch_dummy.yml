@@ -33,6 +33,5 @@ jobs:
           HATCH_INDEX_AUTH: ${{ secrets.PYPI_TEST_TOKEN }}
         run: |
           hatch version "v0.7.91"
-          hatch build
           hatch publish
           
