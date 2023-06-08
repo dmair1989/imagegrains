@@ -20,6 +20,7 @@ jobs:
           HATCH_INDEX_USER: __token__
           HATCH_INDEX_AUTH: ${{ secrets.PYPI_TEST_TOKEN }}
         run: |
+          hatch version
           hatch build
           hatch publish -r -u -a
           
