@@ -32,7 +32,12 @@ jobs:
 
       - name: Test
         run: pytest --color=yes
-    
+      
+  deploy:
+    needs: [test]
+    runs-on: ubuntu-latest
+    if: contains(github.ref, 'tags')
+    steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
