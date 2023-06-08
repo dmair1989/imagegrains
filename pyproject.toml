@@ -19,7 +19,8 @@ dependencies = [
     "matplotlib",
     "scikit-image",
     "pandas",
-    "scanpy"
+    "scanpy",
+    "jupyterlab"
 ]
 
 [tool.hatch.version]
