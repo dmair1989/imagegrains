@@ -19,7 +19,7 @@ jobs:
           HATCH_INDEX_REPO: "https://test.pypi.org/legacy/"
           HATCH_INDEX_USER: __token__
           HATCH_INDEX_AUTH: ${{ secrets.PYPI_TEST_TOKEN }}
-        run: 
+        run: |
           hatch build
           hatch publish -r -u -a
           
