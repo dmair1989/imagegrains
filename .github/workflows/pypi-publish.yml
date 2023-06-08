@@ -1,14 +1,14 @@
 name: tests and deploy
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*" # Push events to matching v*
-  pull_request:
-    branches:
-      - main
+  #push:
+   # branches:
+   #   - main
+    #tags:
+    #  - "v*" # Push events to matching v*
+  #pull_request:
+   # branches:
+    #  - main
   workflow_dispatch:
 
 jobs:
