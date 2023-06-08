@@ -1,7 +1,8 @@
-name: Publish to PyPI.org
+name: Publish to PyPI
 on:
   release:
     types: [published]
+  workflow_dispatch:
     
 jobs:
   deploy:
@@ -9,10 +10,10 @@ jobs:
     if: contains(github.ref, 'tags')
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v3
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.8"
       - run: python3 -m pip install --upgrade build && python3 -m build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
