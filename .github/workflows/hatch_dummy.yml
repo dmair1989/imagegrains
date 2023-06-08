@@ -1,11 +1,7 @@
-name: hatch_dummy
+name: Publish to PyPI.org
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - 'v*'
-  workflow_dispatch:
+  release:
+    types: [published]
     
 jobs:
   deploy:
@@ -17,26 +13,9 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set output
-        id: vars
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - name: Check output
-        env:
-          RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
-        run: |
-          echo $RELEASE_VERSION
-          echo ${{ steps.vars.outputs.tag }}
-          
-      - name: Install dependencies
-        run: |
-          pip install --upgrade build
-          pip install --upgrade twine
-      - name: Build and publish
-        env:
-          HATCH_INDEX_REPO: "https://test.pypi.org/legacy/"
-          HATCH_INDEX_USER: __token__
-          HATCH_INDEX_AUTH: ${{ secrets.PYPI_TEST_TOKEN }}
-        run: |
-         git tag
-         python -m build
-         twine upload --repository testpypi dist/*          
+      - run: python3 -m pip install --upgrade build && python3 -m build
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
