@@ -26,11 +26,17 @@ dependencies = [
 [tool.hatch.version]
 source = "vcs"
 
+[tool.hatch.metadata.hooks.vcs.urls]
+Homepage = "https://github.com/dmair1989/imagegrains"
+source_archive = "https://github.com/dmair1989/imagegrains/archive/{commit_hash}.zip"
+
 # extras
 # https://peps.python.org/pep-0621/#dependencies-optional-dependencies
 [project.optional-dependencies]
 test = ["pytest>=6.0"]
 gui = ["cellpose[gui]"]
+
+
 
 [project.urls]
 homepage = "https://github.com/dmair1989/imagegrains"
