@@ -15,12 +15,12 @@ authors = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "cellpose",
-    "matplotlib",
-    "scikit-image",
-    "pandas",
-    "scanpy",
-    "jupyterlab"
+    "cellpose>=2.2.2",
+    "matplotlib>=3.7.1",
+    "scikit-image>=0.21.0",
+    "pandas>=2.0.2",
+    "scanpy>=1.9.3",
+    "jupyterlab>=4.0.2"
 ]
 
 [tool.hatch.version]
