@@ -77,9 +77,16 @@ ImageGrains is organised in 3 main modules for *Segmentation*, *Grain size measu
 ```text
 conda activate imagegrains
 ```
-Then execute
+Then download the pretrained models and demo data by executing:
+
 ```text
-python -m imagegrains --img_dir F:/(REPLACE WITH PATH TO FOLDER OF JPGs) --model_dir F:/models/full_set_1.170223(REPLACE WITH PATH TO DOWNLOADED MODEL)
+python -m imagegrains --download_data True
+```
+
+To start an analysis from the console run:
+
+```text
+python -m imagegrains --img_dir F:/REPLACE_WITH_PATH_TO_FOLDER_OF_IMAGES_(JPEG)
 ```
 This will run the main application with the default settings on images in the provided location. You can use ```--help``` to see all input options. Alternatively, you can run the jupyter notebooks in ```/notebooks``` in their order. They offer more options and information for most workflow steps. Of course, any modules and functions can be combined in custom scripts or notebooks.
 
