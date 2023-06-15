@@ -4,6 +4,8 @@
 
 A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the [*Cellpose*](https://github.com/mouseland/cellpose) algorithm, designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained segmentation models from our [data](https://doi.org/10.5281/zenodo.8005771) are available or custom models can be trained (see paper for details).
 
+<img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/example.png?raw=true" align="center">
+
 ## Citation  
 
 If you use software and/or data from here in your research, please cite the following works:  
@@ -27,7 +29,7 @@ The easiest way to install the software is by using the conda package manager. I
 To install the software, open an anaconda prompt / command prompt, then create a new environment with:
 
 ```text
-conda create --name imagegrains -c conda-forge python=3.8 imagecodecs nomkl 
+conda create --name imagegrains -c conda-forge python=3.8 imagecodecs 
 ```
 
 and activate it with:
@@ -36,23 +38,10 @@ and activate it with:
 conda activate imagegrains
 ```
 
-Then install the package using (currently only available via github):
+Then install the package using
 
 ```text
-pip install git+https://github.com/dmair1989/imagegrains.git
-```  
-
-If you have trouble building fron the repository, make sure you have ```git``` [installed](https://github.com/git-guides/install-git) and in your path (this can be tricky on [windows](https://stackoverflow.com/questions/26620312/installing-git-in-path-with-github-client-for-windows)).   
-   
-If you still have trouble, you can install the dependencies manually and use the jupyter notebooks in ```/notebooks``` to run the software and locally import the python files (i.e., by making sure the notebooks and files from ```src/imagegrains/``` are in the same folder and by changing any import statemenst ```from imagegrains import``` to ```import```). The dependencies are:
-
-```text
-cellpose
-matplotlib
-scikit-image
-pandas
-scanpy
-jupyter lab
+pip install imagegrains
 ```
 
 If you want access to the cellpose GUI for retraining use:
@@ -63,7 +52,7 @@ python -m pip install cellpose[gui]
 
 This installs by default the cellpose package (```python -m pip install cellpose[gui]```).  
   
-By default, cellpose will run on the CPU. To use a GPU version, you will have to make sure you have a GPU compatible PyTorch version. For this:
+By default, cellpose will run on the CPU. To use a GPU version on Windows or Linux, you will have to make sure you have a GPU compatible PyTorch version. For this:
 
 1. Uninstall the PyTorch version that gets installed by default with Cellpose:
 
@@ -75,8 +64,8 @@ By default, cellpose will run on the CPU. To use a GPU version, you will have to
 
         conda install pytorch torchvision cudatoolkit=11.3 -c pytorch
 
-
-Details and more installation options of cellpose (including GPU versions for Windows and Linux) are found [here](https://github.com/mouseland/cellpose#installation).
+If you work on a Mac you can try to install the Cellpose package manually with experimental [M1 support](https://cellpose.readthedocs.io/en/latest/installation.html#m1-mac-installation).
+Details and more installation options of cellpose (including GPU versions for Windows and Linux) are also found [here](https://github.com/mouseland/cellpose#installation).
 
 ## How does it work?
 
@@ -110,3 +99,30 @@ To analyze the GSD, use the jupyter notebook ```notebooks/3_gsd_analysis.ipynb``
 ### Training of custom models
 
 If you want to train your own models, you can use the jupyter notebook ```notebooks/4_model_training.ipynb```, you can use the [Cellpose GUI](https://www.cellpose.org/) (start it with ```python -m cellpose```) or train via [console](https://cellpose.readthedocs.io/en/latest/train.html) with the full funcitionality of Cellpose. To train custom models, you will first need manually annotated ground truth data ("labels"). This can be done either with the Cellpose GUI or with any dedicated annotation tool. We used the [labkit plugin](https://imagej.net/Labkit) for ImageJ. Please note, that each grain has to have a unique class value.
+
+
+## Troubleshooting  
+  
+- If you have problems with the pip installation, you can also install the package directly from the repository with. If you have trouble building fron the repository, make sure you have ```git``` [installed](https://github.com/git-guides/install-git) and in your path (this can be tricky on [windows](https://stackoverflow.com/questions/26620312/installing-git-in-path-with-github-client-for-windows)). To install from the repository, use:
+
+```text
+pip install git+https://github.com/dmair1989/imagegrains.git
+```  
+   
+
+- If you still have trouble, you can install the dependencies manually and use the jupyter notebooks in ```/notebooks``` to run the software and locally import the python files (i.e., by making sure the notebooks and files from ```src/imagegrains/``` are in the same folder and by changing any import statement ```from imagegrains import``` to ```import```). The dependencies are:
+
+```text
+cellpose
+matplotlib
+scikit-image
+pandas
+scanpy
+jupyter lab
+```
+
+- If you run into problems with  OpenMP and libiomp5, you can try to create the environment using the ```nomkl``` package (more details [here](https://stackoverflow.com/questions/53014306/error-15-initializing-libiomp5-dylib-but-found-libiomp5-dylib-already-initial)) before installing imagegrains with:
+
+```text
+conda create --name imagegrains -c conda-forge python=3.8 imagecodecs nomkl 
+```
