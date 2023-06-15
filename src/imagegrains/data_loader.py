@@ -3,6 +3,68 @@ import pandas as pd
 from pathlib import Path
 from glob import glob
 from natsort import natsorted
+import urllib.request
+
+def download_files(tar_path = None):
+    if not tar_path:
+        homepath = Path.home().joinpath('imagegrains')
+    else:
+        homepath = Path(tar_path)
+
+    nb_list = ['1_image_segmentation.ipynb',
+                '2_grain_sizes.ipynb',
+                '3_gsd_analysis.ipynb',
+                '4_train_cellpose_model.ipynb',
+                'complete_imagegrains_analysis.ipynb']
+    fh_test_list = ['4_P1060348_3.jpg', '4_P1060348_3_mask.tif']
+    fh_train_list = ['1_P1060330_1.jpg',
+                    '1_P1060330_1_mask.tif',
+                    '2_P1060338_0.jpg',
+                    '2_P1060338_0_mask.tif',
+                    '3_P1060343_3.jpg',
+                    '3_P1060343_3_mask.tif',
+                    '5_P1060351_2.jpg',
+                    '5_P1060351_2_mask.tif',
+                    '6_P1060355_0.jpg',
+                    '6_P1060355_0_mask.tif',
+                    '7_P1060359_3.jpg',
+                    '7_P1060359_3_mask.tif']
+    dem_dat_list = ['FH_resolutions.csv', 'OM_err.csv', 'SI_err.csv','K1/K1_C2_385.jpg', 'K1_field_measurement.csv']
+    model_list = ['fh_boosted_1.170223', 'full_set_1.170223']
+
+    os.makedirs(homepath, exist_ok=True)
+    url = "https://raw.githubusercontent.com/dmair1989/imagegrains/main/"
+    os.makedirs(homepath.joinpath('notebooks'), exist_ok=True)
+    for nb in nb_list:
+        try:
+            urllib.request.urlretrieve(f'{url}/notebooks/{nb}', homepath.joinpath('notebooks',nb))
+        except:
+            continue
+    os.makedirs(homepath.joinpath('demo_data','FH','test'), exist_ok=True)
+    for file in fh_test_list:
+        try:
+            urllib.request.urlretrieve(f'{url}/demo_data/FH/test/{file}', homepath.joinpath('demo_data','FH','test',file))
+        except:
+            continue
+    os.makedirs(homepath.joinpath('demo_data','FH','train'), exist_ok=True)
+    for file in fh_train_list:
+        try:
+            urllib.request.urlretrieve(f'{url}/demo_data/FH/train/{file}', homepath.joinpath('demo_data','FH','train',file))
+        except:
+            continue
+    os.makedirs(homepath.joinpath('demo_data','K1'), exist_ok=True)
+    for file in dem_dat_list:
+        try:
+            urllib.request.urlretrieve(f'{url}/demo_data/{file}', homepath.joinpath('demo_data',file))
+        except:
+            continue
+    os.makedirs(homepath.joinpath('models'), exist_ok=True)
+    for model in model_list:
+        try:
+            urllib.request.urlretrieve(f'{url}/models/{model}', homepath.joinpath('models',model))
+        except:
+            continue
+    return homepath
 
 def find_data(image_path,mask_str='mask',im_str='',im_format='jpg',mask_format='tif'):
     """

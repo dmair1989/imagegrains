@@ -181,6 +181,7 @@ return_results=False,save_masks=True,mute=False,model_id=''):
     img_l (list 2D array lists (optional, default = [])) - Input images
 
     """
+    image_path = str(Path(image_path).as_posix()) #ensure that Path is a string for cellpose classes
     mask_l,flow_l,styles_l,id_list,img_l = [],[],[],[],[]
     try:
         #file_list = natsorted(glob(image_path+'/*'+filter_str+'*.'+image_format))
@@ -188,48 +189,48 @@ return_results=False,save_masks=True,mute=False,model_id=''):
         if mute== False:
             print('Predicting for ',image_path,'...')
         count=0
-        #for _,im in tqdm(enumerate(file_list), desc=image_path,unit='image',colour='CYAN'):               
-        for idx in tqdm(range(len(file_list)), desc=image_path,unit='image',colour='CYAN'):
-            img= io.imread(str(file_list[idx]))
-            img_id = Path(file_list[idx]).stem
+        for file in tqdm(file_list,desc=str(image_path),unit='image',colour='CYAN'):
+        #for idx in trange(len(file_list), desc=image_path,unit='image',colour='CYAN'):               
+        #for idx, file in enumerate(tqdm(file_list)):
+            img= io.imread(str(file))
+            img_id = Path(file).stem
             #img_id = file_list[im_idx].split('\\')[len(file_list[im_idx].split('\\'))-1].split('.')[0]
-            if any(x in img_id for x in ['flow','flows','masks','mask','pred']):
+            if any(x in img_id for x in ['flow','flows','masks','mask','pred','composite']):
                 continue
+            if config:
+                try:
+                    eval_str = ''
+                    for key,val in config.items():
+                        if not eval_str:
+                            i_str=f'{key}={val}'
+                        else:
+                            i_str=f',{key}={val}'
+                        eval_str+=i_str
+                    exec(f'masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels, {eval_str})')
+                except AttributeError:
+                    print('Config file is not formatted correctly. Please check the documentation for more information.')
+                except SyntaxError:
+                    print('Diameter,rescale,min_size,channels are not allowed to be overwritten.')
             else:
-                if config:
-                    try:
-                        eval_str = ''
-                        for key,val in config.items():
-                            if not eval_str:
-                                i_str=f'{key}={val}'
-                            else:
-                                i_str=f',{key}={val}'
-                            eval_str+=i_str
-                        exec(f'masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels, {eval_str})')
-                    except AttributeError:
-                        print('Config file is not formatted correctly. Please check the documentation for more information.')
-                    except SyntaxError:
-                        print('Diameter,rescale,min_size,channels are not allowed to be overwritten.')
+                masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels); 
+            if save_masks == False and return_results == False:
+                print('Saving and returning of results were switched of - therefore mask saving was turned on!')
+                save_masks = True
+            if save_masks == True:
+                if tar_dir:
+                    os.makedirs(Path(tar_dir), exist_ok=True)
+                    #filepath = Path(tar_dir) / f'{img_id}_{model_id}_pred.tif'
+                    io.imsave(f'{tar_dir}/{img_id}_{model_id}_pred.tif',masks)
                 else:
-                    masks, flows, styles = model.eval(img, diameter=diameter,rescale=rescale,min_size=min_size,channels=channels) 
-                if save_masks == False and return_results == False:
-                    print('Saving and returning of results were switched of - therefore mask saving was turned on!')
-                    save_masks = True
-                if save_masks == True:
-                    if tar_dir:
-                        os.makedirs(Path(tar_dir), exist_ok=True)
-                        filepath = Path(tar_dir) / f'{img_id}_{model_id}_pred.tif'
-                        #io.imsave(tar_dir+'/'+img_id+'_'+model_id+'_pred.tif',masks)
-                    else:
-                        filepath = Path(image_path) / f'{img_id}_{model_id}_pred.tif'
-                    io.imsave(str(filepath),masks)
-                if return_results == True:
-                    mask_l.append(masks)
-                    flow_l.append(flows)
-                    styles_l.append(styles)
-                    id_list.append(img_id)
-                    img_l = [file_list[x] for x in range(len(file_list))]
-                count+=1
+                    #filepath = Path(image_path) / f'{img_id}_{model_id}_pred.tif'
+                    io.imsave(f'{image_path}/{img_id}_{model_id}_pred.tif',masks)
+            if return_results == True:
+                mask_l.append(masks)
+                flow_l.append(flows)
+                styles_l.append(styles)
+                id_list.append(img_id)
+                img_l = [file_list[x] for x in range(len(file_list))]
+            count+=1
         if mute== False:
             print('Sucessfully created predictions for',count,'image(s).')
     except KeyboardInterrupt:
@@ -263,6 +264,8 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,model_id='')
 
     """
     mask_ll,flow_ll,styles_ll,list_of_id_lists,=[],[],[],[]
+    found_wdir = False
+    working_directory = None
     try:
         dirs = next(os.walk(Path(image_path)))[1]
     except:
@@ -271,18 +274,23 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,model_id='')
         dirs=[Path(f'{image_path}/')]
     for dir in dirs:
         if dir=='train':
-            #working_directory = image_path+'/'+str(dir)+'/'
-            working_directory = Path(image_path) / f'/{dir}/'
+            working_directory = Path(image_path).joinpath(dir)
+            #working_directory = f'{image_path}/{str(dir)}/'
+            found_wdir
         elif dir=='test':
-            #working_directory = image_path+'/'+str(dir)+'/'
-            working_directory = Path(image_path) / f'/{dir}/'
+            working_directory = Path(image_path).joinpath(dir)
+            found_wdir = True
         elif do_subfolders == True:
-            #working_directory = image_path+'/'+str(dir)+'/'
-            working_directory = Path(image_path) / f'/{dir}/'
+            working_directory = Path(image_path).joinpath(dir)
+            found_wdir = True
+        elif found_wdir == False:
+            working_directory = Path(image_path)
+        if not working_directory:
+            continue
         else:
-            working_directory = image_path
-        check_l = natsorted(glob(f'{working_directory}/*.{image_format}'))
+            check_l = natsorted(glob(f'{working_directory}/*.{image_format}'))
         if len(check_l)>0:
+            working_directory = str(Path(working_directory).as_posix()) #ensure that working directory is a string for cellpose classes
             mask_l_i,flow_l_i,styles_l_i,id_list_i,_ = predict_folder(working_directory,model,image_format=image_format,channels=channels,diameter=diameter,
             min_size=min_size,rescale=rescale,config=config,tar_dir=tar_dir,return_results=return_results,save_masks=save_masks,mute=mute,model_id=model_id)
             if return_results==True:
@@ -344,14 +352,15 @@ rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfo
     all_results (dict (optional, default = {})) - dict containing output from helper.prediction.predict_dataset().
     
     """
-    if '.' in model_dir:
+    model_dir = str(Path(model_dir).as_posix())
+    if '.' in str(model_dir):
         model_list = [model_dir]
         model_id_list = [Path(model_dir).stem]
     else:
         model_list,model_id_list = models_from_zoo(model_dir)
     all_results= {}
     for m_idx in range(len(model_list)):
-        model = models.CellposeModel(gpu=use_GPU,pretrained_model=model_list[m_idx])
+        model = models.CellposeModel(gpu=use_GPU,pretrained_model=str(model_list[m_idx]))
         model_id = model_id_list[m_idx]
         print(model_id,'found...')
         if configuration:
@@ -371,7 +380,8 @@ rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfo
         else:
             config = None
         if type(DIR_PATHS) != list:
-            DIR_PATHS = [DIR_PATHS] 
+            DIR_PATHS = [DIR_PATHS]
+        DIR_PATHS = [str(Path(DIR_PATHS[idx]).as_posix()) for idx in range(len(DIR_PATHS))]
         for d_idx in range(len(DIR_PATHS)):
             all_mask_l,all_flow_l,all_styles_l,all_id_list = predict_dataset(DIR_PATHS[d_idx],model,
             image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,config=config,tar_dir=tar_dir,

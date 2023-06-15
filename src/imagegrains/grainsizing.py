@@ -649,6 +649,7 @@ def re_scale_dataset(data_path,resolution= None, camera_parameters= None, gsd_fo
     rescaled_l (list) - grain size distributions to rescale
 
     """
+    data_path = str(Path(data_path).as_posix())
     gsds = data_loader.load_grain_set(data_path, gsd_format = gsd_format, gsd_str=gsd_str)
     rescaled_l = []
     for idx,gsd in enumerate(gsds):
@@ -705,7 +706,7 @@ def scale_grains(df,resolution='', file_id='', gsd_path ='', camera_parameters= 
     if not file_id:
         try:
             file_id = Path(gsd_path).stem
-            target_dir = str(Path(gsd_path).parent)
+            parent_dir = str(Path(gsd_path).parent)
             #file_id = gsd_path.split('\\')[len(gsd_path.split('\\'))-1].split('.')[0]
             #target_dir = gsd_path.split(str(file_id))[0]
         except ValueError:
@@ -738,12 +739,9 @@ def scale_grains(df,resolution='', file_id='', gsd_path ='', camera_parameters= 
     if save_gsds == True:
         if tar_dir:
             os.makedirs(Path(tar_dir), exist_ok=True)
-            filepath = Path(f'{tar_dir}/{file_id}_re_scaled.csv')
-            #df.to_csv(tar_dir+'/'+str(file_id)+'_re_scaled.csv',sep=',')
+            df.to_csv(f'{tar_dir}/{str(file_id)}_re_scaled.csv',sep=',')
         else:
-            filepath = Path(f'{file_id}_re_scaled.csv')
-            #df.to_csv(target_dir+'/'+str(file_id)+'_re_scaled.csv',sep=',')
-        df.to_csv(filepath,sep=',')
+            df.to_csv(f'{parent_dir}/{str(file_id)}_re_scaled.csv',sep=',')
     if return_results == False:
         df = []
     return df
@@ -800,9 +798,9 @@ def dataset_object_size(gsds,tar_dir='',save_results=True):
         mean_l.append(np.mean(dfi['ell: b-axis (px)']))
     res_df = pd.DataFrame(list(zip(id_l,min_l,max_l,med_l,mean_l)),columns=['file_id','min','max','med','mean'])
     if save_results ==True:
-        os.makedirs(Path(tar_dir), exist_ok=True)
-        filepath= Path(tar_dir)/'dataset_object_size.csv'
-        res_df.to_csv(filepath,sep=',')
+        if tar_dir:
+            os.makedirs(Path(tar_dir), exist_ok=True)
+        res_df.to_csv(f'{Path(tar_dir)}/dataset_object_size.csv',sep=',')
     return res_df
 
 def map_grain_res_to_img(imgs,pred_grains,pred_res_props,pred_ids,m_string=None,p_string=None):
@@ -961,7 +959,7 @@ def summary_statistics(files,id_list,res_list=None,res_dict=None,sep=',',unit='m
                         'unit':unit,'axis':axis,'method':method,'grain approximation':approximation},index=[i])], axis=0)
     summary_df = summary_df.round(decimals=2)
     if save_summary:
-        filepath = Path(f'{Path(files[0]).parents[1]}/{data_id}_summary_{method}_{approximation}.csv')
-        summary_df.to_csv(filepath,sep=',',index=False)
+        summary_filepath = Path(f'{Path(files[0]).parents[1]}/{data_id}_summary_{method}_{approximation}.csv')
+        summary_df.to_csv(summary_filepath,sep=',',index=False)
         #summary_df.to_csv(str(Path(files[0]).parents[1])+'/'+str(data_id)+'_summary_'+method+'_'+approximation+'.csv',sep=',',index=False)
     return summary_df
