@@ -436,7 +436,10 @@ def export_grain_outline(masks,img=None,props=None,method='mask_outline', tar_di
         if mute == False:
             print('No ID given: Generating random ID...')
         file_id = str(np.random.randint(1000,2000))
-    tar_dir = Path(tar_dir)/ f'/{file_id}/'
+    if tar_dir != '':
+        tar_dir = str(Path(tar_dir).as_posix())
+    tar_dir = f'{tar_dir}/{file_id}/'
+    #tar_dir = Path(tar_dir)/ f'/{file_id}/'
     os.makedirs(tar_dir, exist_ok=True)
     if not props:
         if mute == False:
@@ -474,8 +477,7 @@ def export_grain_outline(masks,img=None,props=None,method='mask_outline', tar_di
                 x_arr.append(xi)
                 y_arr.append(yi)
             df = pd.DataFrame({'x':x_arr,'y':y_arr})
-            filepath = Path(tar_dir)/ f'/{file_id}_{str(props_i.label)}_mask_outline.csv'
-            df.to_csv(filepath,index=False)
+            df.to_csv(f'{tar_dir}/{file_id}_{str(props_i.label)}_mask_outline.csv',index=False)
         #plt.imshow(image_slice,extent=[minx,maxx,maxy,miny])
         if plot_summary == True:
             plt.imshow(image_slice,extent=[minx,maxx,maxy,miny])
@@ -707,6 +709,7 @@ def scale_grains(df,resolution='', file_id='', gsd_path ='', camera_parameters= 
         try:
             file_id = Path(gsd_path).stem
             parent_dir = str(Path(gsd_path).parent)
+            parent_dir = str(Path(parent_dir).as_posix())
             #file_id = gsd_path.split('\\')[len(gsd_path.split('\\'))-1].split('.')[0]
             #target_dir = gsd_path.split(str(file_id))[0]
         except ValueError:
@@ -737,7 +740,8 @@ def scale_grains(df,resolution='', file_id='', gsd_path ='', camera_parameters= 
     except KeyError:
         pass
     if save_gsds == True:
-        if tar_dir:
+        if tar_dir != '':
+            tar_dir = str(Path(tar_dir).as_posix())
             os.makedirs(Path(tar_dir), exist_ok=True)
             df.to_csv(f'{tar_dir}/{str(file_id)}_re_scaled.csv',sep=',')
         else:

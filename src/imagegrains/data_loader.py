@@ -64,7 +64,7 @@ def download_files(tar_path = None):
             urllib.request.urlretrieve(f'{url}/models/{model}', homepath.joinpath('models',model))
         except:
             continue
-    return homepath
+    return Path(homepath).as_posix()
 
 def find_data(image_path,mask_str='mask',im_str='',im_format='jpg',mask_format='tif'):
     """

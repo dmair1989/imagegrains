@@ -264,6 +264,14 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,model_id='')
 
     """
     mask_ll,flow_ll,styles_ll,list_of_id_lists,=[],[],[],[]
+    if type(model) != models.CellposeModel:
+        try:
+            model_path = str(Path(model).as_posix())
+            model = models.CellposeModel(gpu=True, pretrained_model=model_path)
+            if not model_id:
+                model_id = Path(model_path).stem
+        except:
+            print("Model not found. Please check the path to the model.")
     found_wdir = False
     working_directory = None
     try:
@@ -461,11 +469,15 @@ def eval_set(imgs,lbls,preds,data_id='',tar_dir='',thresholds = [0.5, 0.55, 0.6,
 
         eval_results[idx] = {'id':img_id,'img':img, 'ap':ap, 'iout':iout,}
     if save_results==True:
-        if tar_dir:
+        if tar_dir != '':
             os.makedirs(Path(tar_dir), exist_ok=True)
-            export = Path(tar_dir)/ f'/{data_id}_eval_res.pkl'
+            export = f'{tar_dir}/{data_id}_eval_res.pkl'
         else:
-            export = f'{data_id}_eval_res.pkl'
+            try:
+                parent_dir = str(Path(imgs[0]).parent.parent.as_posix())
+                export = f'{parent_dir}/{data_id}_eval_res.pkl'
+            except:
+                export = f'{data_id}_eval_res.pkl'
         with open(str(export), 'wb') as f:
             pickle.dump(eval_results, f)
     if return_results == True:

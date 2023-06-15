@@ -438,7 +438,7 @@ def get_MC_percentiles(res_list,CI_bounds=[2.5,97.5],mute=True):
 
 
 def dataset_uncertainty(gsds=None,inp_dir=None,gsd_id=None,grain_str='_grains',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=0.1,length_err=1,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
-MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,tar_tir='',return_results=False,res_dict=None,sfm_type='',id_string=''):
+MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,tar_dir='',return_results=False,res_dict=None,sfm_type='',id_string=''):
     """
     Calculate uncertainty of a dataset of GSDs
 
@@ -461,7 +461,7 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,tar_
     avg_res (list (optional, default = None)): list of average results
     mute (bool (optional, default = False)): mute output
     save_results (bool (optional, default = True)): save results
-    tar_tir (str (optional, default = '')): path to save results
+    tar_dir (str (optional, default = '')): path to save results
     return_results (bool (optional, default = False)): return results
     res_dict (dict (optional, default = None)): dictionary of results
     sfm_type (str (optional, default = '')): type of sfm
@@ -473,6 +473,7 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,tar_
     """
     if inp_dir:
         #gsds = natsorted(glob(inp_dir+'/*'+grain_str+'*.csv'))
+        inp_dir = str(Path(inp_dir).as_posix())
         gsds = natsorted(glob(f'{Path(inp_dir)}/*{grain_str}*.csv'))
     if not gsds:
         print('No GSD(s) provided!')
@@ -506,7 +507,7 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,tar_
             avg_res_i = 1
         if inp_dir:
             med_list, upper_CI, lower_CI, gsd_list, gsd_id = gsd_uncertainty(inp_path=gsds[idx],sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
-            sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,tar_tir=tar_tir,return_results=True,sfm_type=sfm_type,id_string=id_string)
+            sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,tar_dir=tar_dir,return_results=True,sfm_type=sfm_type,id_string=id_string)
         else:
             if not gsd_id:
                 gsd_id_i = str(idx)
@@ -519,13 +520,13 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=None,mute=False,save_results=True,tar_
                     res_dict[str(gsd_id)]=[[], [], [], []]
             else:
                 med_list, upper_CI, lower_CI, gsd_list, _ = gsd_uncertainty(gsd=gsds[idx],gsd_id=gsd_id_i,sep=sep,column_name=column_name,conv_factor=conv_factor,method=method,scale_err=scale_err_i,length_err=length_err_i,
-                sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,tar_tir=tar_tir,return_results=True,sfm_type=sfm_type,id_string=id_string)
+                sfm_error=sfm_error_i,num_it=num_it,CI_bounds=CI_bounds, MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res_i,mute=mute,save_results=save_results,tar_dir=tar_dir,return_results=True,sfm_type=sfm_type,id_string=id_string)
                 if return_results==True:
                     res_dict[str(gsd_id_i)]=[med_list, upper_CI, lower_CI, gsd_list]
     return res_dict
 
 def gsd_uncertainty(gsd=None,gsd_id='',inp_path='',sep=',',column_name='',conv_factor=1,method='bootstrapping',scale_err=0.1,length_err=1,sfm_error=None,num_it=1000,CI_bounds=[2.5,97.5],
-MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,tar_tir='',return_results=True,sfm_type='',id_string=''):
+MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,tar_dir='',return_results=True,sfm_type='',id_string=''):
     """
     Calculate uncertainty of a GSD. Wrapper for calculate.gsd_uncertainty.
 
@@ -548,7 +549,7 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,tar_ti
     avg_res (list (optional, default = None)): list of average results
     mute (bool (optional, default = False)): mute output
     save_results (bool (optional, default = True)): save results
-    tar_tir (str, Path (optional, default = '')): path to save results
+    tar_dir (str, Path (optional, default = '')): path to save results
     return_results (bool (optional, default = False)): return results
     sfm_type (str (optional, default = '')): type of sfm
 
@@ -595,10 +596,11 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,save_results=False,tar_ti
         med_list, upper_CI, lower_CI, gsd_list = uncertainty(gsd,method=method,scale_err=scale_err,length_err=length_err,
         sfm_error=sfm_error,num_it=num_it,CI_bounds=CI_bounds,MC_method=MC_method,MC_cutoff=MC_cutoff,avg_res=avg_res,mute=mute,sfm_type=sfm_type)
         if save_results == True:
-            if tar_tir:
-                os.makedirs(Path(tar_tir), exist_ok=True)
-                out_dir = tar_tir
-            elif not tar_tir:
+            if tar_dir != '':
+                tar_dir = str(Path(tar_dir).as_posix())
+                os.makedirs(Path(tar_dir), exist_ok=True)
+                out_dir = tar_dir
+            elif tar_dir == '':
                 if not inp_path or len(inp_path)==0:
                     out_dir = os.getcwd()
                 elif inp_path:
