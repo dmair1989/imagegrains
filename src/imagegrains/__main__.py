@@ -10,6 +10,7 @@ from imagegrains import data_loader, plotting
 
 def main():
     parser = argparse.ArgumentParser(description='ImageGrains')
+    parser.add_argument('--download_data', default=None, type=bool, help='Download models and example data')
     parser.add_argument('--img_dir', default=None, type=str, help='Input directory for images to segment')
     parser.add_argument('--skip_plots', default=False, type=bool, help='Skip the overview plots')
 
@@ -44,10 +45,17 @@ def main():
     try:
         args = parser.parse_args()
     except:
+        print('>> Error parsing arguments. Please check the help for more information.')
         parser.print_help()
         exit()
 
     mute = False if args.mute_output else True
+
+    if args.download_data:
+        print('>> Downloading example data and models...')
+        install_path = data_loader.download_files()
+        print(f'>> Download to {install_path} successful.')
+        exit()
 
     if args.img_dir == None or os.path.exists(args.img_dir) == False:
         print('>> Please specify a valid input directory for images to segment.')
@@ -58,11 +66,10 @@ def main():
         print('>> Skipping segmentation and only measuring grains for already existing masks.')
 
     if args.model_dir == None and skip_segmentation==False:
-        if mute == False:
-            print('>> No model specified. Using default model.')
+        print('>> No model specified. Using default model.')
         #parent = str(Path(os.getcwd()).parent)
-        parent = Path(os.getcwd()).parent
-        args.model_dir = Path(parent / '/models/full_set_1.170223')
+        parent = Path(Path.home() / 'imagegrains')
+        args.model_dir = Path(parent / 'models' / 'full_set_1.170223')
         if os.path.exists(args.model_dir) == False:
             print('>> Default model not found. Please provide a valid model path or re-download the default models.')
             exit()
@@ -74,7 +81,7 @@ def main():
         segmentation_step(args,mute=mute,tar_dir=tar_dir)
     
     #grain size estimation
-    ## catch out_dir here by replacing args.img_dir with out_dir if provided
+    ## catch out_dir here by replacing img_dir with out_dir if provided
     if args.out_dir:
         img_dir = args.out_dir
     else:
@@ -132,7 +139,7 @@ def segmentation_step(args,mute=False,tar_dir=''):
                                     image_format=args.img_type,use_GPU=args.gpu,diameter=args.diameter, min_size=args.min_size,
                                         mute=mute,return_results=False,save_masks=True)
 
-    if '.' in args.model_dir:
+    if '.' in str(args.model_dir):
         model_ids = [Path(args.model_dir).stem]
     else:
         _,model_ids = segmentation_helper.models_from_zoo(args.model_dir)
@@ -151,9 +158,9 @@ def segmentation_step(args,mute=False,tar_dir=''):
             elif len(imgs) > 6:
                 rng = default_rng()
                 numbers = rng.choice(len(imgs), size=6, replace=False)
-                imgs = [imgs[x] for x in numbers]
-                preds = [preds[x] for x in numbers]
-                pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {model_id}")
+                imgs_rand = [imgs[x] for x in numbers]
+                preds_rand = [preds[x] for x in numbers]
+                pred_plot = plotting.inspect_predictions(imgs_rand,preds_rand,title=f"Segmentation examples for {model_id}")
             else:
                 pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {model_id}")
             if tar_dir != '':
@@ -168,12 +175,11 @@ def segmentation_step(args,mute=False,tar_dir=''):
                     file_id = Path(img).stem
                     plotting.plot_single_img_pred(img,pred,file_id=file_id)
                     if tar_dir != '':
-                        out_dir2 = Path(tar_dir)/ f'/composite_plots/'
+                        out_dir2 = Path(tar_dir)
                         os.makedirs(out_dir2,exist_ok=True)
                     else:
-                        out_dir2 = Path(img_dir)/ f'/composite_plots/'
-                        os.makedirs(out_dir2,exist_ok=True)
-                    pred_plot_i.savefig(f'{out_dir2}{file_id}_{model_id}_composite.png',dpi=300)
+                        out_dir2 = Path(img_dir)
+                    pred_plot_i.savefig(f'{out_dir2}/{file_id}_{model_id}_composite.png',dpi=300)
     return
 
 def resampling_step(args,filters,mute=False,tar_dir=''):
@@ -237,7 +243,7 @@ def scaling_step(img_dir,resolution,mute=False,gsd_str='_grains',tar_dir=''):
         if type(res) == float:
             _ = grainsizing.re_scale_dataset(img_dir,resolution=res,gsd_str=gsd_str,save_gsds=True, tar_dir=tar_dir)
         if mute == False:
-                print('>> Scaled grains with a resolutiomn of',res,'mm/px.')
+                print('>> Scaled grains with a resolution of',res,'mm/px.')
     except ValueError:
         pass
     if os.path.exists(resolution) == True:        
