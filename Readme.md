@@ -24,7 +24,7 @@ If you use ImageGrains to calculate percentile uncertainties please also cite:
 
 ## Local installation  
 
-The easiest way to install the software is by using the conda package manager. If you do not have conda installed, please follow the instructions on the [conda website](https://docs.conda.io/en/latest/miniconda.html).  
+The easiest way to install the software is by using the conda package manager. If you do not have conda installed, please follow the instructions on the [conda website](https://docs.conda.io/en/latest/miniconda.html). If you encounter problems during installation, have a look [here](https://github.com/dmair1989/imagegrains/blob/main/Readme.md#troubleshooting). If these methods do not solve them, please open an issue.  
 
 To install the software, open an anaconda prompt / command prompt, then create a new environment with:
 
