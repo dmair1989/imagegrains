@@ -2,7 +2,7 @@
 ![build](https://github.com/dmair1989/imagegrains/actions/workflows/ci.yml/badge.svg)
 [![coverage](https://coveralls.io/repos/github/dmair1989/imagegrains/badge.svg?branch=main)](https://coveralls.io/github/dmair1989/imagegrains?branch=main)  
 
-A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the [*Cellpose*](https://github.com/mouseland/cellpose) algorithm, designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained segmentation models from our [data](https://doi.org/10.5281/zenodo.8005771) are available or custom models can be trained (see paper for details).
+A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the [*Cellpose*](https://github.com/mouseland/cellpose) algorithm, designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained segmentation models from our [data](https://doi.org/10.5281/zenodo.8005771) are available or custom models can be trained (see [paper](https://doi.org/10.31223/X51H31) for details).
 
 <img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/example.png?raw=true" align="center">
 
@@ -10,7 +10,7 @@ A software library for segmenting and measuring of sedimentary particles in imag
 
 If you use software and/or data from here in your research, please cite the following works:  
 
-- Mair, D., Henrique, A., Prado, D., Garefalakis, P., Witz, G., and Schlunegger, F. (submitted): Automated finding, segmenting, and measuring of grains in images of fluvial sediments – the potential of transfer learning in deep neural networks.
+- Mair, D., Henrique, A., Prado, D., Garefalakis, P., Witz, G., and Schlunegger, F. (submitted): Automated finding, segmenting, and measuring of grains in images of fluvial sediments – the potential of transfer learning in deep neural networks, <https://doi.org/10.31223/X51H31>.
 
 - Stringer, C.A., Pachitariu, M., (2021). Cellpose: a generalist algorithm for cellular segmentation. Nat Methods 18, 100–106. <https://doi.org/10.1038/s41592-020-01018-x>.
 
