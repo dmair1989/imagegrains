@@ -1,6 +1,10 @@
 # ImageGrains  <img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/logo_2.png?raw=true" width="100" title="logo" alt="logo" align="left">
 ![build](https://github.com/dmair1989/imagegrains/actions/workflows/ci.yml/badge.svg)
-[![coverage](https://coveralls.io/repos/github/dmair1989/imagegrains/badge.svg?branch=main)](https://coveralls.io/github/dmair1989/imagegrains?branch=main)  
+[![coverage](https://coveralls.io/repos/github/dmair1989/imagegrains/badge.svg?branch=main)](https://coveralls.io/github/dmair1989/imagegrains?branch=main)
+[![PyPI version](https://badge.fury.io/py/imagegrains.svg)](https://badge.fury.io/py/imagegrains)
+![PyPI - Wheel](https://img.shields.io/pypi/wheel/imagegrains)
+![PyPI - License](https://img.shields.io/pypi/l/imagegrains?color=green)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/dmair1989/imagegrains)
 
 A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the [*Cellpose*](https://github.com/mouseland/cellpose) algorithm, designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained segmentation models from our [data](https://doi.org/10.5281/zenodo.8005771) are available or custom models can be trained (see [paper](https://doi.org/10.31223/X51H31) for details).
 
