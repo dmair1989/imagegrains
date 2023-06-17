@@ -1,8 +1,12 @@
 # ImageGrains  <img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/logo_2.png?raw=true" width="100" title="logo" alt="logo" align="left">
 ![build](https://github.com/dmair1989/imagegrains/actions/workflows/ci.yml/badge.svg)
-[![coverage](https://coveralls.io/repos/github/dmair1989/imagegrains/badge.svg?branch=main)](https://coveralls.io/github/dmair1989/imagegrains?branch=main)  
+[![coverage](https://coveralls.io/repos/github/dmair1989/imagegrains/badge.svg?branch=main)](https://coveralls.io/github/dmair1989/imagegrains?branch=main)
+[![PyPI version](https://badge.fury.io/py/imagegrains.svg)](https://badge.fury.io/py/imagegrains)
+![PyPI - Wheel](https://img.shields.io/pypi/wheel/imagegrains)
+![PyPI - License](https://img.shields.io/pypi/l/imagegrains?color=green)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/dmair1989/imagegrains)
 
-A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the [*Cellpose*](https://github.com/mouseland/cellpose) algorithm, designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained segmentation models from our [data](https://doi.org/10.5281/zenodo.8005771) are available or custom models can be trained (see paper for details).
+A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with the [*Cellpose*](https://github.com/mouseland/cellpose) algorithm, designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained segmentation models from our [data](https://doi.org/10.5281/zenodo.8005771) are available or custom models can be trained (see [paper](https://doi.org/10.31223/X51H31) for details).
 
 <img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/example.png?raw=true" align="center">
 
@@ -10,7 +14,7 @@ A software library for segmenting and measuring of sedimentary particles in imag
 
 If you use software and/or data from here in your research, please cite the following works:  
 
-- Mair, D., Henrique, A., Prado, D., Garefalakis, P., Witz, G., and Schlunegger, F. (submitted): Automated finding, segmenting, and measuring of grains in images of fluvial sediments – the potential of transfer learning in deep neural networks.
+- Mair, D., Henrique, A., Prado, D., Garefalakis, P., Witz, G., and Schlunegger, F. (submitted): Automated finding, segmenting, and measuring of grains in images of fluvial sediments – the potential of transfer learning in deep neural networks, <https://doi.org/10.31223/X51H31>.
 
 - Stringer, C.A., Pachitariu, M., (2021). Cellpose: a generalist algorithm for cellular segmentation. Nat Methods 18, 100–106. <https://doi.org/10.1038/s41592-020-01018-x>.
 
@@ -24,7 +28,7 @@ If you use ImageGrains to calculate percentile uncertainties please also cite:
 
 ## Local installation  
 
-The easiest way to install the software is by using the conda package manager. If you do not have conda installed, please follow the instructions on the [conda website](https://docs.conda.io/en/latest/miniconda.html).  
+The easiest way to install the software is by using the conda package manager. If you do not have conda installed, please follow the instructions on the [conda website](https://docs.conda.io/en/latest/miniconda.html). If you encounter problems during installation, have a look [here](https://github.com/dmair1989/imagegrains/blob/main/Readme.md#troubleshooting). If these methods do not solve them, please open an issue.  
 
 To install the software, open an anaconda prompt / command prompt, then create a new environment with:
 
@@ -73,9 +77,16 @@ ImageGrains is organised in 3 main modules for *Segmentation*, *Grain size measu
 ```text
 conda activate imagegrains
 ```
-Then execute
+Then download the pretrained models and demo data by executing:
+
 ```text
-python -m imagegrains --img_dir F:/(REPLACE WITH PATH TO FOLDER OF JPGs) --model_dir F:/models/full_set_1.170223(REPLACE WITH PATH TO DOWNLOADED MODEL)
+python -m imagegrains --download_data True
+```
+
+To start an analysis from the console run:
+
+```text
+python -m imagegrains --img_dir F:/REPLACE_WITH_PATH_TO_FOLDER_OF_IMAGES_(JPEG)
 ```
 This will run the main application with the default settings on images in the provided location. You can use ```--help``` to see all input options. Alternatively, you can run the jupyter notebooks in ```/notebooks``` in their order. They offer more options and information for most workflow steps. Of course, any modules and functions can be combined in custom scripts or notebooks.
 
