@@ -291,7 +291,6 @@ def plot_single_img_pred(image,mask,file_id=None, show_n=False, save=False, tar_
             out_dir = f'{str(Path(image).parent)}/prediction_masks/'
             os.makedirs(out_dir, exist_ok=True)
         plt.savefig(f'{out_dir}/{Path(mask).stem}_seg_overlay.png',dpi=300,pad_inches=0)
-    plt.ion()
     return
 
 def save_pred_overlays(imgs,preds,save=True,show_n=False,mute=False,tar_dir='',show=False):
