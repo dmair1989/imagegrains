@@ -151,7 +151,7 @@ def segmentation_step(args,mute=False,tar_dir=''):
         else:
             img_dir = args.img_dir
         for model_id in model_ids:
-            imgs,_,preds = data_loader.dataset_loader(Path(img_dir),pred_str=f'{model_id}')
+            imgs,_,preds = data_loader.dataset_loader(Path(img_dir),pred_str=f'{model_id}',image_format=args.img_type)
             if len(imgs) == 1:
                 pred_plot = plt.figure(figsize=(10,10))
                 plotting.plot_single_img_pred(imgs[0],preds[0])
