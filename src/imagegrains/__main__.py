@@ -26,7 +26,7 @@ def main():
     seg_args.add_argument('--save_composites', default=False, type=bool, help='Save a composite of all images and segmentation masks as .png files.')
 
     gs_args=parser.add_argument_group('Grain size estimation')
-    gs_args.add_argument('--filter_str', type=str, default=None, help='Filter mask files with optional strin (default: None.')
+    gs_args.add_argument('--filter_str', type=str, default=None, help='Filter mask files with optional string (default: None.')
     gs_args.add_argument('--min_grain_size', type=float, default=None, help='Minimum grain size in pixels to consider for grain size estimation (default: None); grains with a fitted ellipse smaller than this size will be ignored.')
     gs_args.add_argument('--edge_filter', type=float, default=None, help = 'Edge filter to remove grains close to the image boundary (default: None).')
     gs_args.add_argument('--switch_filters_off', type=bool, default=False, help = 'Switch off all filters for grain sizing (default: False).')
@@ -179,7 +179,7 @@ def segmentation_step(args,mute=False,tar_dir=''):
                         os.makedirs(out_dir2,exist_ok=True)
                     else:
                         out_dir2 = Path(img_dir)
-                    pred_plot_i.savefig(f'{out_dir2}/{file_id}_{model_id}_composite.png',dpi=300)
+                    pred_plot_i.savefig(f'{out_dir2}/{file_id}_{model_id}_composite.png',dpi=300,bbox_inches='tight')
     return
 
 def resampling_step(args,filters,mute=False,tar_dir=''):

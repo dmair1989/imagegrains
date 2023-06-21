@@ -264,25 +264,11 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
 
 def plot_single_img_pred(image,mask,file_id=None, show_n=False, save=False, tar_dir='',show=False):
     if file_id == None:
-        file_id = Path(image).stem
+        file_id = Path(img).stem
     else:
         file_id = file_id
-    img = io.imread(str(image))
-    lbl = io.imread(str(mask))
-    if show == False:
-        plt.ioff()
-    colors = mask_cmap(lbl)
-    masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
-    plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
-    plt.axis('off')
-    if show_n == True and file_id:
-        n = np.unique(label(lbl))
-        plt.title(f'{file_id} (n={len(n)})')
-    elif file_id:
-        plt.title(f'{file_id}')
-    elif show_n == True:
-        n = np.unique(label(lbl))
-        plt.title(f'n={len(n)}')
+    img = io.imread(image)
+    lbl = io.imread(mask)
     if save == True:
         if tar_dir != '':
             out_dir = f'{tar_dir}/prediction_masks/' 
@@ -290,8 +276,23 @@ def plot_single_img_pred(image,mask,file_id=None, show_n=False, save=False, tar_
         else:
             out_dir = f'{str(Path(image).parent)}/prediction_masks/'
             os.makedirs(out_dir, exist_ok=True)
-        plt.savefig(f'{out_dir}/{Path(mask).stem}_seg_overlay.png',dpi=300,pad_inches=0)
-    return
+        tar_dir = out_dir
+    with plt.ioff():
+        colors = mask_cmap(lbl)
+        masks = label2rgb(label(lbl), image=img, bg_label=0,colors=colors)
+        plt.imshow(mark_boundaries(masks, label(lbl), color=(1,0,0), mode='thick'))
+        plt.axis('off')
+        if show_n == True and file_id:
+            n = np.unique(label(lbl))
+            plt.title(f'{file_id} (n={len(n)})')
+        elif file_id:
+            plt.title(f'{file_id}')
+        elif show_n == True:
+            n = np.unique(label(lbl))
+            plt.title(f'n={len(n)}')
+        plt.tight_layout()
+        if save == True:
+            plt.savefig(f'{tar_dir}/{file_id}_seg_overlay.png',dpi=300) 
 
 def save_pred_overlays(imgs,preds,save=True,show_n=False,mute=False,tar_dir='',show=False):
     if mute == False:
