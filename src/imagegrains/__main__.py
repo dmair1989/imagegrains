@@ -23,7 +23,7 @@ def main():
     seg_args.add_argument('--diameter', default=None, type=float, help='Mean grain diameter in pixels to rescale images to; default is None, which leads to automated size estimation')
     seg_args.add_argument('--min_size', default=0, type=float, help='Minimum object diameter in pixels to segement; default is 15 pixels')
     seg_args.add_argument('--skip_segmentation', default=False, type=bool, help='Skip segmentation and only calculate grain size distributions for already existing masks.')
-    seg_args.add_argument('--save_composites', default=False, type=bool, help='Save a composite of all images and segmentation masks as .png files.')
+    seg_args.add_argument('--save_composites', default=True, type=bool, help='Save a composite of all images and segmentation masks as .png files.')
 
     gs_args=parser.add_argument_group('Grain size estimation')
     gs_args.add_argument('--filter_str', type=str, default=None, help='Filter mask files with optional string (default: None.')
@@ -168,7 +168,11 @@ def segmentation_step(args,mute=False,tar_dir=''):
             else:
                 out_dir = Path(img_dir)/ f'{model_id}_prediction_examples.png'
             pred_plot.savefig(out_dir,dpi=300)
-            if args.save_composites:
+            if not args.save_composites:
+                do_composites = True
+            else:
+                do_composites = args.save_composites
+            if do_composites == True:
                 print('>> Saving composite images...')
                 for img,pred in zip(imgs,preds):
                     pred_plot_i = plt.figure(figsize=(10,10))
