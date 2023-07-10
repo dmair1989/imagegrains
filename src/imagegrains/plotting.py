@@ -264,7 +264,7 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
 
 def plot_single_img_pred(image,mask,file_id=None, show_n=False, save=False, tar_dir='',show=False):
     if file_id == None:
-        file_id = Path(img).stem
+        file_id = Path(image).stem
     else:
         file_id = file_id
     img = io.imread(image)
