@@ -26,6 +26,7 @@ def main():
     seg_args.add_argument('--save_composites', default=True, type=bool, help='Save a composite of all images and segmentation masks as .png files.')
 
     gs_args=parser.add_argument_group('Grain size estimation')
+    gs_args.add_argument('--skip_grainsize', type=bool, default=False, help='Skip grain size estimation and only segment grains.')
     gs_args.add_argument('--filter_str', type=str, default=None, help='Filter mask files with optional string (default: None.')
     gs_args.add_argument('--min_grain_size', type=float, default=None, help='Minimum grain size in pixels to consider for grain size estimation (default: None); grains with a fitted ellipse smaller than this size will be ignored.')
     gs_args.add_argument('--edge_filter', type=float, default=None, help = 'Edge filter to remove grains close to the image boundary (default: None).')
@@ -64,6 +65,10 @@ def main():
     skip_segmentation = True if args.skip_segmentation else False
     if mute == False and skip_segmentation == True:
         print('>> Skipping segmentation and only measuring grains for already existing masks.')
+    
+    skip_grainsize = True if args.skip_grainsize else False
+    if mute == False and skip_grainsize == True:
+        print('>> Skipping grain size estimation and only segmenting images.')
 
     if args.model_dir == None and skip_segmentation==False:
         print('>> No model specified. Using default model.')
@@ -79,6 +84,10 @@ def main():
     #segmentation
     if skip_segmentation == False:
         segmentation_step(args,mute=mute,tar_dir=tar_dir)
+    
+    if skip_grainsize == True:
+        print('>> Skipping grain size estimation.')
+        exit()
     
     #grain size estimation
     ## catch out_dir here by replacing img_dir with out_dir if provided
