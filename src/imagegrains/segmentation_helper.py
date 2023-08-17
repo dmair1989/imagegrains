@@ -574,3 +574,56 @@ def get_stats_for_run(pred_list,res_list,titles,p_string_list,labels,test_idxs_l
             entry = get_stats_for_res(sorted,res_list[j])
         res_stats.loc[j] = [titles[j]]+entry
     return res_stats
+
+def get_style_vectors(do_inference=True, tar_dir='', model='default', im_paths=None, mute = True,res_file=None):
+    if model == 'default':
+        homepath = Path.home().joinpath('imagegrains')
+        model = f'{homepath}/models/full_set_1.170223'
+    if not model:
+        try:
+            homepath = Path.home().joinpath('imagegrains')
+            model = f'{homepath}/models/full_set_1.170223'
+        except:
+            pass
+    if tar_dir:
+        os.makedirs(tar_dir, exist_ok=True)
+    if do_inference == True:
+        if im_paths:
+            print(f'Running inference for styles with {Path(model).name}...')
+            model = models.CellposeModel(gpu=True,pretrained_model=model)
+            res=[predict_folder(im_paths[i],model,min_size=-1,tar_dir=tar_dir,return_results=True, mute=mute) for i in range(len(im_paths))]
+
+            train_styles= [res[0][2][i] for i in range(len(res[0][2]))]
+            trainnames = [res[0][3][i] for i in range(len(res[0][2]))]
+            res_dict = {'train':train_styles, 'train_ids':trainnames}
+            if im_paths: 
+                test_styles= [res[1][2][i] for i in range(len(res[1][2]))]
+                testnames = [res[1][3][i] for i in range(len(res[1][2]))]
+                res_dict['test']=test_styles
+                res_dict['test_ids']=testnames
+            with open(f'res_tSNE.pkl', 'wb') as handle:
+                pickle.dump(res_dict, handle)
+        else: 
+            print('No path to images provided!')
+            return [],[],[],[]
+    else:
+        if not res_file:
+            try: 
+                homepath = homepath = Path.home().joinpath('imagegrains')
+                res_file = f'{homepath}/demo_data/res_tSNE.pkl'
+            except:
+                print('Could not find file with style vectors!')
+        res_file=Path(res_file).as_posix()
+        pkl_file = open(f'{res_file}', 'rb')
+        tres = pickle.load(pkl_file)
+        
+        train_styles = tres['train']
+        trainnames = tres['train_ids']
+        try:
+            test_styles = tres['test']
+            testnames = tres['test_ids']
+        except:
+            test_styles = []
+            testnames = []
+        pkl_file.close()
+    return train_styles, trainnames, test_styles, testnames

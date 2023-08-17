@@ -29,7 +29,7 @@ def download_files(tar_path = None):
                     '6_P1060355_0_mask.tif',
                     '7_P1060359_3.jpg',
                     '7_P1060359_3_mask.tif']
-    dem_dat_list = ['FH_resolutions.csv', 'OM_err.csv', 'SI_err.csv','K1/K1_C2_385.jpg', 'K1_field_measurement.csv']
+    dem_dat_list = ['FH_resolutions.csv', 'OM_err.csv', 'SI_err.csv','K1/K1_C2_385.jpg', 'K1_field_measurement.csv', 'res_tSNE.pkl']
     model_list = ['fh_boosted_1.170223', 'full_set_1.170223']
 
     os.makedirs(homepath, exist_ok=True)
