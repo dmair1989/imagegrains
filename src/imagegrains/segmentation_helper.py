@@ -458,7 +458,11 @@ def eval_set(imgs,lbls,preds,data_id='',tar_dir='',thresholds = [0.5, 0.55, 0.6,
         y_pred = io.imread(str(preds[idx]))
 
         if filters:
-            _, y_true = grainsizing.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
+            if np.unique(label(y_true)).any() > 0: #check if labels are empty
+                print('!Empty labels for image: ',lbls[idx],' - check if predictions were passed as labels!')
+                continue
+            else:
+                _, y_true = grainsizing.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
             if np.unique(label(y_pred)).any() > 0: #check if prediction is empty
                 _, y_pred = grainsizing.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
                 ap,_,_,_,iout,_ =  eval_image(y_true,y_pred, thresholds=thresholds)

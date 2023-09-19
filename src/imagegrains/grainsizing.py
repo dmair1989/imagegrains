@@ -485,7 +485,7 @@ def export_grain_outline(masks,img=None,props=None,method='mask_outline', tar_di
             plt.imshow(mask_image,extent=[minx,maxx,maxy,miny],alpha= .5) 
             plt.axis('off')
         #notice the different coordinate systems
-        # coordinates returned by skimage.find_contours()  always lie at array center (.5!) https://scikit-image.org/docs/0.16.x/api/skimage.measure.html#skimage.measure.find_contours    
+        # coordinates returned by skimage.find_contours()  always lie at array cell center (.5!) https://scikit-image.org/docs/0.16.x/api/skimage.measure.html#skimage.measure.find_contours    
             if padding == False:
                 for contour in contours:
                     plt.plot(contour[:, 1]-.5+minx, contour[:, 0]-.5+miny,'-c',linewidth=1.5)
@@ -501,7 +501,7 @@ def filter_grains(labels,properties,filters,mask,mute=True):
 
     Parameters
     ----------
-    labels (array) - labeled image
+    labels (array) - labelled image
     properties (list) - list of properties to be extracted from the labeled image
     filters (dict) - dictionary with filter settings
     mask (array) - mask image
@@ -540,8 +540,8 @@ def filter_grains(labels,properties,filters,mask,mute=True):
         bad_grains = [x for x in grains_df['label'].values if x not in filtered['label'].values]
         if mute==False:
             print(len(filtered),' grains after filtering')
-        for label in bad_grains:
-            mask[labels == label]=0
+        for lbx in bad_grains:
+            mask[labels == lbx]=0
         return filtered,mask
 
 def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset=None,n_rand=100,mute=False):
