@@ -12,3 +12,9 @@ notebooks/*.csv
 ell
 _1
 tSNE_clustering.ipynb
+
+# figures
+*.png
+*.jpg
+*.tif
+*.csv
