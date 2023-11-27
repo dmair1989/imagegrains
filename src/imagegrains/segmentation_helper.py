@@ -428,7 +428,7 @@ def eval_image(y_true,y_pred,thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8,
 
 def eval_set(imgs,lbls,preds,data_id='',tar_dir='',thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],
     filters={'edge':[False,.05],'px_cutoff':[False,10]},filter_props=['label','area','centroid','major_axis_length','minor_axis_length'],
-    save_results=True,return_results=True,return_test_idx=False):
+    save_results=True,return_results=True,return_test_idx=False,mute=True):
     """
     Evaluates a set of images with eval_image. Saves results to a pkl file.
 
@@ -461,14 +461,16 @@ def eval_set(imgs,lbls,preds,data_id='',tar_dir='',thresholds = [0.5, 0.55, 0.6,
             if np.unique(label(y_true)).any() > 0: #check if labels are not empty
                 _, y_true = grainsizing.filter_grains(labels=y_true,properties=filter_props,filters=filters,mask=y_true)
             else:
-                print('!Empty labels for image: ',lbls[idx],' - check if predictions were passed as labels!')
+                if mute == False:
+                    print('!Empty labels for image: ',lbls[idx],' - check if predictions were passed as labels!')
                 continue
                 
             if np.unique(label(y_pred)).any() > 0: #check if prediction is not empty
                 _, y_pred = grainsizing.filter_grains(labels=y_pred,properties=filter_props,filters=filters,mask=y_pred)
                 ap,_,_,_,iout,_ =  eval_image(y_true,y_pred, thresholds=thresholds)
             else:
-                print('! Empty prediction for image: ',preds[idx],' !')
+                if mute == False:
+                    print('! Empty prediction for image: ',preds[idx],' !')
                 iout = []
                 ap = np.zeros(len(thresholds))
 
