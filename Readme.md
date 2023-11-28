@@ -73,7 +73,7 @@ Details and more installation options of cellpose (including GPU versions for Wi
 
 ## How does it work?
 
-ImageGrains is organised in 3 main modules for *Segmentation*, *Grain size measurements* and *Grain size distribution (GSD) analysis* (see below). The most basic option is to run ImageGrains from the console by first activating the enviromnent
+ImageGrains is organised in 3 main modules for *Segmentation*, *Grain size measurements* and *Grain size distribution (GSD) analysis* (see below). The most basic option is to run ImageGrains from the console by first activating the enviromnent:
 ```text
 conda activate imagegrains
 ```
@@ -93,7 +93,7 @@ This will run the main application with the default settings on images in the pr
 ### Workflow  
 
 <img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/workflow.png?raw=true" width="550" title="wf" alt="wf" align="center">  
-The main concept of ImageGrains is to first segment grains in images, then to measure and scale them with the respective image resolution before finally estimating the uncertainty on an image base. The whole workflow is designed to use individual images or a set of images in specific folder. During the processing steps, all intermediate outputs can be stored.
+The main concept of ImageGrains is to first segment grains in images, then to measure and scale them with the respective image resolution before finally estimating the uncertainty on an image base. The whole workflow is designed to use individual images or a set of images in a specific folder. During the processing steps, all intermediate outputs can be stored.
 
 ### Segmentation of own images
 
@@ -114,7 +114,7 @@ If you want to train your own models, you can use the jupyter notebook ```notebo
 
 ## Troubleshooting  
   
-- If you have problems with the pip installation, you can also install the package directly from the repository with. If you have trouble building fron the repository, make sure you have ```git``` [installed](https://github.com/git-guides/install-git) and in your path (this can be tricky on [windows](https://stackoverflow.com/questions/26620312/installing-git-in-path-with-github-client-for-windows)). To install from the repository, use:
+- If you have problems with the pip installation, you can also install the package directly from the repository. If you have trouble building from the repository, make sure you have ```git``` [installed](https://github.com/git-guides/install-git) and to have it in your path (this can be tricky on [Windows](https://stackoverflow.com/questions/26620312/installing-git-in-path-with-github-client-for-windows)). To install from the repository, use:
 
 ```text
 pip install git+https://github.com/dmair1989/imagegrains.git
