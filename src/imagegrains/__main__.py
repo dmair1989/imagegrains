@@ -97,7 +97,7 @@ def main():
         img_dir = args.img_dir
 
     #set filters
-    filters = filters= {'edge':[True,.1],'px_cutoff':[True,12]}
+    filters = {'edge':[True,.1],'px_cutoff':[True,12]}
     if args.min_grain_size:
         filters['px_cutoff'] = [True,args.min_grain_size]
     if args.edge_filter:

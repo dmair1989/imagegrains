@@ -14,13 +14,13 @@ A software library for segmenting and measuring of sedimentary particles in imag
 
 If you use software and/or data from here in your research, please cite the following works:  
 
-- Mair, D., Henrique, A., Prado, D., Garefalakis, P., Witz, G., and Schlunegger, F. (submitted): Automated finding, segmenting, and measuring of grains in images of fluvial sediments – the potential of transfer learning in deep neural networks, <https://doi.org/10.31223/X51H31>.
+- Mair, D., Witz, G., Do Prado, A.H., Garefalakis, P. & Schlunegger, F. (2023) Automated detecting, segmenting and measuring of grains in images of fluvial sediments: The potential for large and precise data from specialist deep learning models and transfer learning. Earth Surface Processes and Landforms, 1–18. <https://doi.org/10.1002/esp.5755>.
 
 - Stringer, C.A., Pachitariu, M., (2021). Cellpose: a generalist algorithm for cellular segmentation. Nat Methods 18, 100–106. <https://doi.org/10.1038/s41592-020-01018-x>.
 
 If you use the human-in-the-loop approach for training custom models (see below), please also cite:  
 
-- Pachitariu, M. & Stringer, C. (2022): Cellpose 2.0: how to train your own model. Nat Methods 19, 1634–1641. <https://doi.org/10.1038/s41592-022-01663-4>.
+- Pachitariu, M. & Stringer, C. (2022): Cellpose 2.0: how to train your own model. Nat. Methods 19, 1634–1641. <https://doi.org/10.1038/s41592-022-01663-4>.
 
 If you use ImageGrains to calculate percentile uncertainties please also cite:
 
