@@ -550,3 +550,14 @@ def plot_gsd_deltas(uncert_res,gsd,baseline,perc_range=np.arange(0.01,1.01,0.01)
         plt.plot(x,y,color=color,linewidth=1)
         if uncert_median == True:
             plt.plot(xmed,ymed,color=color,linewidth=1)
+
+def do_composite(img,pred,img_dir,file_id,model_id='',tar_dir=''):
+    pred_plot_i = plt.figure(figsize=(10,10))
+    plot_single_img_pred(img,pred,file_id=file_id)
+    if tar_dir != '':
+        out_dir2 = Path(tar_dir)
+        os.makedirs(out_dir2,exist_ok=True)
+    else:
+        out_dir2 = Path(img_dir)
+    pred_plot_i.savefig(f'{out_dir2}/{file_id}_{model_id}_composite.png',dpi=300,bbox_inches='tight',pad_inches = 0)
+    return

@@ -1,4 +1,4 @@
-import os,pickle
+import os,pickle, cv2
 from pathlib import Path
 from cellpose import io
 from tqdm import tqdm
@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from cellpose import metrics, models, io
-from imagegrains import grainsizing, data_loader
+from imagegrains import grainsizing, data_loader, plotting
 
 def check_labels(labels,tar_dir='',lbl_str='_mask',mask_format='tif'):
     """
@@ -399,6 +399,33 @@ rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfo
                 all_results[f'{model_id}_{d_idx}']=dataset_res
     return all_results
 
+def combine_preds(preds1,preds2,imgs,tar_dir='',model_id='',filters=None,threshold=150,mute=True,do_composites=True):
+    if tar_dir != '':
+        os.makedirs(tar_dir,exist_ok=True) 
+    for p_1,p_2,img in zip(preds1,preds2,imgs):
+        #load preds for small grains
+        masks1 = io.imread(p_1)
+        #load preds for large grains
+        masks2 = io.imread(p_2)
+        file_id = Path(img).stem
+        #filter first with normal quality filters and then split along size_threshold
+        m1,_ = grainsizing.filter_by_threshold_size(masks1,mute=True,filters=filters,threshold=threshold,remove='large')
+        m2,props2 = grainsizing.filter_by_threshold_size(masks2,mute=True,filters=filters,threshold=threshold,remove='small')
+        #adapt label numbers to ensure no duplicates
+        m1 = np.where(m1 > 0, m1 + np.max(props2['label']), m1) # use not length but max value!
+        #combine masks
+        combined = np.where(m2 == 0, m2 + m1, m2) #simple priority of large grains
+        if tar_dir == '':
+            data_path=Path(img).parent
+        else:
+            data_path = tar_dir
+        filename_i = f'{data_path}/{file_id}_combined_{model_id}_pred.tif'
+        cv2.imwrite(filename_i, combined)
+        if do_composites == True:
+            plotting.do_composite(img,filename_i,data_path,file_id,model_id=f'{model_id}_combined', tar_dir=tar_dir)
+        if mute == False:
+            print(file_id)
+    return 
 
 def eval_image(y_true,y_pred,thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):
     """

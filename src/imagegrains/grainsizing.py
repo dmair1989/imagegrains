@@ -967,3 +967,24 @@ def summary_statistics(files,id_list,res_list=None,res_dict=None,sep=',',unit='m
         summary_df.to_csv(summary_filepath,sep=',',index=False)
         #summary_df.to_csv(str(Path(files[0]).parents[1])+'/'+str(data_id)+'_summary_'+method+'_'+approximation+'.csv',sep=',',index=False)
     return summary_df
+
+def filter_by_threshold_size(masks,properties=['equivalent_diameter_area','feret_diameter_max','eccentricity','label','area','minor_axis_length','major_axis_length','centroid','local_centroid'],
+                    filters=None,mute=True,threshold=150,remove='small',metric='equivalent_diameter_area'):
+    masks,num = label(masks,return_num=True)
+    if filters and num > 0:
+        _, masks = filter_grains(labels=masks,properties=properties,filters=filters,mask=masks,mute=mute)
+        m1=masks.copy()        
+    else:
+        print('empty preds!')
+        return
+    props_df = pd.DataFrame(regionprops_table(masks,properties=properties))
+    if remove == 'small':
+        filtered = props_df[props_df[metric] < threshold]
+    elif remove == 'large':
+        filtered = props_df[props_df[metric] > threshold]
+    bad_grains = [x for x in props_df['label'].values if x in filtered['label'].values]
+    if mute == False:
+        print(f'{len(props_df)-len(bad_grains)} kept: {len(bad_grains)} {remove} grains of {len(props_df)} removed.')
+    for i in bad_grains:
+        m1[m1 == i]=0
+    return m1,props_df
