@@ -1,6 +1,5 @@
 # ImageGrains  <img src="https://github.com/dmair1989/ImageGrains/blob/main/illustrations/logo_2.png?raw=true" width="100" title="logo" alt="logo" align="left">
 ![build](https://github.com/dmair1989/imagegrains/actions/workflows/ci.yml/badge.svg)
-[![coverage](https://coveralls.io/repos/github/dmair1989/imagegrains/badge.svg?branch=main)](https://coveralls.io/github/dmair1989/imagegrains?branch=main)
 [![PyPI version](https://badge.fury.io/py/imagegrains.svg)](https://badge.fury.io/py/imagegrains)
 ![PyPI - Wheel](https://img.shields.io/pypi/wheel/imagegrains)
 ![PyPI - License](https://img.shields.io/pypi/l/imagegrains?color=green)
