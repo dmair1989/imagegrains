@@ -159,7 +159,7 @@ def inspect_predictions(imgs,preds,lbls=None,title='',tar_dir='',save_fig=False)
     else:
         fig = plt.figure(figsize=(len(imgs)*2,len(imgs)*0.66), dpi=300)
         rows = 2
-    for k in range(len(imgs)):
+    for k in range(len(preds)):
         img = io.imread(str(imgs[k]))
         plt.subplot(rows,len(imgs),k+1)
         plt.imshow(img)
@@ -237,7 +237,7 @@ def show_masks_set(masks,images,show_ap50=False,showmap=False,res_dict=None,show
         img = io.imread(str(images[k]))
         lbl = io.imread(str(masks[k]))
         colors = mask_cmap(lbl)
-        rows = int(len(images)/9)
+        rows = int(len(images)/9)+1
         rows = 1 if rows == 0 else rows
         plt.subplot(rows,9,k+1)
         

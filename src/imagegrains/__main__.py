@@ -17,7 +17,7 @@ def main():
     seg_args=parser.add_argument_group('Segmentation')
     seg_args.add_argument('--mute_output', default=None, type=bool, help='Mute console output. If True, example plots will not be saved.')
     seg_args.add_argument('--out_dir', default=None, type=str, help='Output directory for segmented images; if not specified, the images will be saved in the same directory as the input images')
-    seg_args.add_argument('--img_type', default='jpg', type=str, help='Image type to segment; by default the the script will look for .jpg files. Alternatively, .tif and .png files can be segmented.')
+    seg_args.add_argument('--img_type', default='jpg', type=str, help='Image type to segment; by default the the script will look for .jpg files. Alternatively, .tif, .tiff or .png files can be segmented. Please ensure that no previous result files are present in the input directory.')
     seg_args.add_argument('--model_dir', default=None, type=str, help='Segemntation model to use; if not specified, the default model is used')
     seg_args.add_argument('--gpu', default=True, type=bool, help='use GPU')
     seg_args.add_argument('--diameter', default=None, type=float, help='Mean grain diameter in pixels to rescale images to; default is None, which leads to automated size estimation')
@@ -142,7 +142,7 @@ def segmentation_step(args,mute=False,tar_dir=''):
             print('>> Using GPU: ',torch.cuda.get_device_name(0))
         elif torch.cuda.is_available() == False and mute== False:
             print('>> GPU not available - check if correct pytorch version is installed. Using CPU instead.')
-
+    imgs,_,_ = data_loader.dataset_loader(Path(args.img_dir),image_format=args.img_type)
     print('>> ImageGrains: Segmenting ',args.img_type,' images in ',args.img_dir)
     _ = segmentation_helper.batch_predict(args.model_dir,args.img_dir,tar_dir=tar_dir,
                                     image_format=args.img_type,use_GPU=args.gpu,diameter=args.diameter, min_size=args.min_size,
@@ -160,8 +160,15 @@ def segmentation_step(args,mute=False,tar_dir=''):
         else:
             img_dir = args.img_dir
         for model_id in model_ids:
-            imgs,_,preds = data_loader.dataset_loader(Path(img_dir),pred_str=f'{model_id}',image_format=args.img_type)
-            if len(imgs) == 1:
+            _,_,preds = data_loader.dataset_loader(Path(img_dir),pred_str=f'{model_id}',image_format=args.img_type)
+            if len(imgs) != len(preds):
+                preds_sorted = segmentation_helper.map_preds_to_imgs(preds,imgs,p_string=f'_{model_id}')
+                if preds_sorted:
+                    preds = preds_sorted 
+            if len(imgs) == 0:
+                print('>> No valid images found. Please review image file format.')
+                exit()
+            elif len(imgs) == 1:
                 pred_plot = plt.figure(figsize=(10,10))
                 plotting.plot_single_img_pred(imgs[0],preds[0])
             elif len(imgs) > 6:

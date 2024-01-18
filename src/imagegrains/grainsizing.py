@@ -122,9 +122,10 @@ return_results=False,save_results=True,image_res=None,set_id=None):
     #for idx,x_i in tqdm(enumerate(file_list),desc=str(data_dir),unit='file',colour='MAGENTA',position=0,leave=True):
     for idx in tqdm(range(len(file_list)),desc=str(set_id),unit='file',colour='MAGENTA',position=0,leave=True):
         file_id = Path(file_list[idx]).stem
-        if 'flow' in file_id: #catch flow representation files frpm cp
-            if idx==0:
-                print('Skipping flow representation files - use mask_str to filter files')
+        #if 'flow' in file_id: #catch flow representation files frpm cp
+        if not any(x in file_id for x in ['pred','preds','mask','masks']):
+            if idx==0 and mute ==False:
+                print('Skipping tif file that is no grain mask')
             continue
         else:
             #file_id = x_i.split('\\')[len(x_i.split('\\'))-1].split('.')[0]

@@ -335,14 +335,14 @@ def models_from_zoo(model_dir,use_GPU=True):
     #model_id_list = [model_list[i].split('\\')[len(model_list[i].split('\\'))-1].split('.')[0] for i in range(len(model_list))]
     return model_list,model_id_list
 
-def batch_predict(model_dir,DIR_PATHS,configuration=None,image_format='jpg',use_GPU=True,channels=[0,0],diameter=None,min_size=15,
+def batch_predict(model_dir,dir_paths,configuration=None,image_format='jpg',use_GPU=True,channels=[0,0],diameter=None,min_size=15,
 rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfolders=False):
     """
     Wrapper for helper.prediction.predict_dataset() that can do predictions on the same dataset for multiple models from a directory (`model_dir`).
 
     Parameters:
     ------------
-    DIR_PATHS (list of str, Path) - list of images to segment 
+    dir_paths (list of str, Path) - list of images to segment 
     model_dir (str, Path) - model directory 
     use_GPU (bool (optional, default=True)) - GPU flag
     configuration (dict or list of dicts (optional, default = None))
@@ -387,11 +387,11 @@ rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfo
                     pass
         else:
             config = None
-        if type(DIR_PATHS) != list:
-            DIR_PATHS = [DIR_PATHS]
-        DIR_PATHS = [str(Path(DIR_PATHS[idx]).as_posix()) for idx in range(len(DIR_PATHS))]
-        for d_idx in range(len(DIR_PATHS)):
-            all_mask_l,all_flow_l,all_styles_l,all_id_list = predict_dataset(DIR_PATHS[d_idx],model,
+        if type(dir_paths) != list:
+            dir_paths = [dir_paths]
+        dir_paths = [str(Path(dir_paths[idx]).as_posix()) for idx in range(len(dir_paths))]
+        for d_idx in range(len(dir_paths)):
+            all_mask_l,all_flow_l,all_styles_l,all_id_list = predict_dataset(dir_paths[d_idx],model,
             image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,config=config,tar_dir=tar_dir,
             return_results=return_results,save_masks=save_masks,mute=mute,do_subfolders=do_subfolders,model_id=model_id)
             if return_results == True:
