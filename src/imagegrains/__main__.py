@@ -13,6 +13,7 @@ def main():
     parser.add_argument('--download_data', default=None, type=bool, help='Download models and example data')
     parser.add_argument('--img_dir', default=None, type=str, help='Input directory for images to segment')
     parser.add_argument('--skip_plots', default=False, type=bool, help='Skip the overview plots')
+    parser.add_argument('--keep_crs', default=True, type=bool, help='If True, keep georeferencing in case of tif/tiff files for sgementation.')
 
     seg_args=parser.add_argument_group('Segmentation')
     seg_args.add_argument('--mute_output', default=None, type=bool, help='Mute console output. If True, example plots will not be saved.')
@@ -83,7 +84,7 @@ def main():
 
     #segmentation
     if skip_segmentation == False:
-        segmentation_step(args,mute=mute,tar_dir=tar_dir)
+        segmentation_step(args,mute=mute,tar_dir=tar_dir,keep_crs=keep_crs)
     
     if skip_grainsize == True:
         print('>> Skipping grain size estimation.')
@@ -136,7 +137,7 @@ def main():
         gsd_step(resample_path,args,mute=mute,tar_dir=tar_dir)
 
 
-def segmentation_step(args,mute=False,tar_dir=''):
+def segmentation_step(args,mute=False,tar_dir='',keep_crs=True):
     if args.gpu == True:
         if torch.cuda.is_available() == True and mute == False:
             print('>> Using GPU: ',torch.cuda.get_device_name(0))
@@ -152,6 +153,24 @@ def segmentation_step(args,mute=False,tar_dir=''):
         model_ids = [Path(args.model_dir).stem]
     else:
         _,model_ids = segmentation_helper.models_from_zoo(args.model_dir)
+    
+    #Keep Georeferencing
+    if args.keep_crs == True:
+        if any(x in args.img_type for x in ['tif','tiff']):
+            if args.out_dir:
+                img_dir = args.out_dir
+            else:
+                img_dir = args.img_dir
+            for model_id in model_ids:
+                _,_,preds = data_loader.dataset_loader(Path(img_dir),pred_str=f'{model_id}',image_format=args.img_type)
+                if len(imgs) != len(preds):
+                    imgs_new= []
+                    for i in imgs:
+                        if not 'pred' in i:
+                            imgs_new.append(i)
+                    imgs = imgs_new
+                    preds = segmentation_helper.map_preds_to_imgs(preds,imgs,p_string=f'_{model_id}')
+                segmentation_helper.keep_tif_crs(imgs,preds)
 
     #segmentation example plot
     if not args.skip_plots:

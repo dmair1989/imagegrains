@@ -1,4 +1,4 @@
-import os,pickle, cv2
+import os,pickle, cv2, shutil
 from pathlib import Path
 from cellpose import io
 from tqdm import tqdm
@@ -661,3 +661,31 @@ def get_style_vectors(do_inference=True, tar_dir='', model='default', im_paths=N
             testnames = []
         pkl_file.close()
     return train_styles, trainnames, test_styles, testnames
+
+def keep_tif_crs(imgs,preds):
+    try: 
+        from osgeo import gdal
+        gdal.UseExceptions()
+        try:
+            for im,pr in zip(imgs,preds):
+                #copy tfw file if existing
+                src_tfw = f'{Path(im).parent.as_posix()}/{Path(im).stem}.tfw'
+                tar_tfw = f'{Path(pr).parent.as_posix()}/{Path(pr).stem}.tfw'
+                shutil.copy(src_tfw,tar_tfw)
+                #copy georeference if existing
+                dataset = gdal.Open(im)
+                projection   = dataset.GetProjection()
+                geotransform = dataset.GetGeoTransform()
+                #update metadata
+                dataset2 = gdal.Open(pr, gdal.GA_Update)    
+                dataset2.SetProjection( projection )
+                dataset2.SetGeoTransform( geotransform )             
+                #close raster files
+                dataset = None
+                dataset2 = None
+        except:
+            print('>> Georeference of tif/tiff files incomplete. Predictions might not be correctly referenced.')
+            pass
+    except ModuleNotFoundError:
+        print('>> GDAL not installed. Please install GDAL to keep CRS info for GeoTIFF files.')
+        pass
