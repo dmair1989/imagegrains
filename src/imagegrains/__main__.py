@@ -84,7 +84,7 @@ def main():
 
     #segmentation
     if skip_segmentation == False:
-        segmentation_step(args,mute=mute,tar_dir=tar_dir,keep_crs=keep_crs)
+        segmentation_step(args,mute=mute,tar_dir=tar_dir,keep_crs=args.keep_crs)
     
     if skip_grainsize == True:
         print('>> Skipping grain size estimation.')
@@ -155,7 +155,7 @@ def segmentation_step(args,mute=False,tar_dir='',keep_crs=True):
         _,model_ids = segmentation_helper.models_from_zoo(args.model_dir)
     
     #Keep Georeferencing
-    if args.keep_crs == True:
+    if keep_crs == True:
         if any(x in args.img_type for x in ['tif','tiff']):
             if args.out_dir:
                 img_dir = args.out_dir
