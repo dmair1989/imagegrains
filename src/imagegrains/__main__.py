@@ -237,9 +237,14 @@ def resampling_step(args,filters,mute=False,tar_dir=''):
         n_rand = args.random_resample
         if mute == False:
             print('>> Resampling grains with a random number of points with a maximum of ',args.random_resample,' points.')
-    _,_,masks= data_loader.dataset_loader(img_dir)
-
-    for _,mask in enumerate(masks):
+    _,_,masks_raw= data_loader.dataset_loader(img_dir)
+    #filter for predictions
+    masks = []
+    for mask_i in masks_raw:
+        if any(x in mask_i for x in ['pred','preds']):
+            masks.append(mask_i)
+    #resample
+    for mask in masks:
         #get ID from file name
         mask_id = Path(mask).stem
         if 'flow' in mask_id: #catch flow representations from potentially present from training
@@ -256,13 +261,12 @@ def resampling_step(args,filters,mute=False,tar_dir=''):
             if not tar_dir:
                 #resampled_dir = args.img_dir+'/Resampled_grains/'
                 resampled_dir = Path(img_dir)/'Resampled_grains/'
-                os.makedirs(resampled_dir, exist_ok=True)
                 #io.imsave(resampled_dir + mask_id +f'_{method}_resampled.tif',grid_resampled)
             else:
                 #resampled_dir = tar_dir +'/Resampled_grains/'
                 resampled_dir = Path(tar_dir)/'Resampled_grains/' 
-                os.makedirs(resampled_dir, exist_ok=True)
                 #io.imsave(resampled_dir + mask_id+f'_{method}_resampled.tif',grid_resampled)
+            os.makedirs(resampled_dir, exist_ok=True)
             filepath = resampled_dir / f'{mask_id}_{method}_resampled.tif'
             io.imsave(str(filepath),grid_resampled)
     return resampled_dir
