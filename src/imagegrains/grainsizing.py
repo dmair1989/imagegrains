@@ -545,7 +545,7 @@ def filter_grains(labels,properties,filters,mask,mute=True):
             mask[labels == lbx]=0
         return filtered,mask
 
-def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset=None,n_rand=100,mute=False):
+def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset=None,n_rand=100,mute=False,snapping=''):
     """
     Resamples masks to a regular grid.
 
@@ -579,6 +579,8 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
     else:
         edge_offset = .1
     kept_grains = []
+    #grid resampling
+    zero_nodes = []
     if method == 'wolman':
         if grid_size:
             grid_size = grid_size
@@ -595,6 +597,9 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
                 y=yy[ii][ki]
                 a=lbs[(x-1).astype(int):x.astype(int),(y-1).astype(int):y.astype(int)]
                 kept_grains.append(a[0][0])
+                if a[0][0] == 0:
+                    zero_nodes.append((x,y))
+    #random resampling
     if method == 'random':
         xx = np.random.randint((0+w*edge_offset),(w-w*edge_offset),n_rand)
         yy = np.random.randint((0+h*edge_offset),(h-h*edge_offset),n_rand)
@@ -603,7 +608,31 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
         for ii in range(len(yy)):
             a=lbs[(xx[ii]-1).astype(int):xx[ii].astype(int),(yy[ii]-1).astype(int):yy[ii].astype(int)]
             kept_grains.append(a[0][0])
-    grains_df = pd.DataFrame(regionprops_table(label(masks)))
+            if a[0][0] == 0:
+                    zero_nodes.append((xx[ii],yy[ii]))
+    grains_df = pd.DataFrame(regionprops_table(label(masks),properties = ['label','coords']))
+    #use nearest grain for empty nodes (optional)
+    if snapping == 'nearest_outline':
+        if mute == False:
+            print(f'Snapping to: {snapping}.')
+        zero_nodes=np.array(zero_nodes)
+        snap_grains = []
+        for node in zero_nodes:
+            dist2 = h+w
+            for row in range(len(grains_df)):
+                nodes = np.array(grains_df['coords'][row])
+                if len(nodes) < 16:
+                    continue
+                else:
+                    nodes = np.asarray(nodes)
+                    deltas = nodes - node
+                    dist = np.einsum('ij,ij->i', deltas, deltas)
+                    if dist.min() < dist2:
+                        dist2 = dist.min()
+                        best_label=grains_df['label'][row]
+            snap_grains.append(best_label)
+        kept_grains += snap_grains
+    #remove grains
     bad_grains = [x for x in grains_df['label'] if x not in kept_grains]
     resampled = masks.copy()
     for lb in range(len(bad_grains)):

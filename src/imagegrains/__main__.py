@@ -35,6 +35,7 @@ def main():
     gs_args.add_argument('--fit', type=str, default=None, help='Additional approximation for grains (default: None); options are convex hull (convex_hull) or outline (mask_outline).')
     gs_args.add_argument('--grid_resample', default=None, help = 'Resample images with a grid with a given resolution in pixel (default: None). Equivalent ot a digital Wolman grid.')
     gs_args.add_argument('--random_resample', default=None, help = 'Resample image with a random number of points (default: None).')
+    gs_args.add_argument('--resample_snapping', default=None, help = 'If grains are resampled, snapping to the closest grain can be enabled, i.e., by using the "nearest_outline" (default = None).')
     gs_args.add_argument('--resolution', default=None, help = 'Image resolution to scale grain sizes to in mm/px (default: None). If a value is provided, the grain sizes will be scaled to the given resolution. Alternatively, can provided as path to a csv file with image_specific resolutions (see template). For estimating the image resolution from camera parameters see the preprocessing notebook.')
 
     gsd_args=parser.add_argument_group('GSD analysis')
@@ -59,6 +60,8 @@ def main():
         print(f'>> Download to {install_path} successful.')
         exit()
 
+    tar_dir = '' if args.out_dir == None else args.out_dirs
+
     if args.img_dir == None or os.path.exists(args.img_dir) == False:
         print('>> Please specify a valid input directory for images to segment.')
         exit()
@@ -79,8 +82,6 @@ def main():
         if os.path.exists(args.model_dir) == False:
             print('>> Default model not found. Please provide a valid model path or re-download the default models.')
             exit()
-    
-    tar_dir = '' if args.out_dir == None else args.out_dir
 
     #segmentation
     if skip_segmentation == False:
@@ -113,7 +114,7 @@ def main():
     #optional resampling (if done, sub-directory with resampled masks will be created)
     resampled = None
     if args.grid_resample or args.random_resample:
-        resample_path = resampling_step(args,filters,mute=mute,tar_dir=tar_dir)
+        resample_path = resampling_step(args,filters,mute=mute,tar_dir=tar_dir,resample_snapping=args.resample_snapping)
         resampled = True 
     
     #add additional approximation (convh, outl)
@@ -221,7 +222,7 @@ def segmentation_step(args,mute=False,tar_dir='',keep_crs=True):
                     pred_plot_i.savefig(f'{out_dir2}/{file_id}_{model_id}_composite.png',dpi=300,bbox_inches='tight',pad_inches = 0)
     return
 
-def resampling_step(args,filters,mute=False,tar_dir=''):
+def resampling_step(args,filters,mute=False,tar_dir='',resample_snapping=None):
     if args.out_dir:
         img_dir = args.out_dir
     else:
@@ -254,9 +255,9 @@ def resampling_step(args,filters,mute=False,tar_dir=''):
             mask = io.imread(str(mask))
             #resample mask to grid
             if method == 'wolman':
-                grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,method = method, grid_size=grid_size,mute=True)
+                grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,method = method, grid_size=grid_size,mute=True,snapping=resample_snapping)
             else:
-                grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,mute=True,method=method,n_rand=n_rand)
+                grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,mute=True,method=method,n_rand=n_rand,snapping=resample_snapping)
             #save resampled mask to file
             if not tar_dir:
                 #resampled_dir = args.img_dir+'/Resampled_grains/'
