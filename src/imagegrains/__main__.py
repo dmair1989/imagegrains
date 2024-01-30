@@ -25,6 +25,8 @@ def main():
     seg_args.add_argument('--min_size', default=0, type=float, help='Minimum object diameter in pixels to segement; default is 15 pixels')
     seg_args.add_argument('--skip_segmentation', default=False, type=bool, help='Skip segmentation and only calculate grain size distributions for already existing masks.')
     seg_args.add_argument('--save_composites', default=True, type=bool, help='Save a composite of all images and segmentation masks as .png files.')
+    seg_args.add_argument('--second_diameter', default=None, type=float, help='Enables a two-step segmentation that will combine predictions at two different scales. It will use `diameter` (default: None) and expects the `second_diameter` to be >> `diamter`. Predictions are combined on a pixel basis.')
+    seg_args.add_argument('--comb_threshold',default=None, type=float, help='If predictions from two scales are combined, this threshold (default=150) defines the cutoff above which grains from predictions with `second_diameter` will be used. Larger grains are prioritized.')
 
     gs_args=parser.add_argument_group('Grain size estimation')
     gs_args.add_argument('--skip_grainsize', type=bool, default=False, help='Skip grain size estimation and only segment grains.')
@@ -85,7 +87,7 @@ def main():
 
     #segmentation
     if skip_segmentation == False:
-        segmentation_step(args,mute=mute,tar_dir=tar_dir,keep_crs=args.keep_crs)
+        segmentation_step(args,mute=mute,tar_dir=tar_dir)
     
     if skip_grainsize == True:
         print('>> Skipping grain size estimation.')
@@ -114,7 +116,7 @@ def main():
     #optional resampling (if done, sub-directory with resampled masks will be created)
     resampled = None
     if args.grid_resample or args.random_resample:
-        resample_path = resampling_step(args,filters,mute=mute,tar_dir=tar_dir,resample_snapping=args.resample_snapping)
+        resample_path = resampling_step(args,filters,mute=mute,tar_dir=tar_dir)
         resampled = True 
     
     #add additional approximation (convh, outl)
@@ -138,24 +140,48 @@ def main():
         gsd_step(resample_path,args,mute=mute,tar_dir=tar_dir)
 
 
-def segmentation_step(args,mute=False,tar_dir='',keep_crs=True):
+def segmentation_step(args,mute=False,tar_dir=''):
+    keep_crs = True if args.keep_crs else False
     if args.gpu == True:
         if torch.cuda.is_available() == True and mute == False:
             print('>> Using GPU: ',torch.cuda.get_device_name(0))
         elif torch.cuda.is_available() == False and mute== False:
             print('>> GPU not available - check if correct pytorch version is installed. Using CPU instead.')
-    imgs,_,_ = data_loader.dataset_loader(Path(args.img_dir),image_format=args.img_type)
-    print('>> ImageGrains: Segmenting ',args.img_type,' images in ',args.img_dir)
-    _ = segmentation_helper.batch_predict(args.model_dir,args.img_dir,tar_dir=tar_dir,
-                                    image_format=args.img_type,use_GPU=args.gpu,diameter=args.diameter, min_size=args.min_size,
-                                        mute=mute,return_results=False,save_masks=True)
-
+    
     if '.' in str(args.model_dir):
         model_ids = [Path(args.model_dir).stem]
     else:
         _,model_ids = segmentation_helper.models_from_zoo(args.model_dir)
+
+    imgs,_,_ = data_loader.dataset_loader(Path(args.img_dir),image_format=args.img_type)
+    second_diameter = None if not args.second_diameter else args.second_diameter
+    if not second_diameter:
+        print('>> ImageGrains: Segmenting ',args.img_type,' images in ',args.img_dir)
+        _ = segmentation_helper.batch_predict(args.model_dir,args.img_dir,tar_dir=tar_dir,
+                                        image_format=args.img_type,use_GPU=args.gpu,diameter=args.diameter, min_size=args.min_size,
+                                            mute=mute,return_results=False,save_masks=True)
+    else:
+        print('>> ImageGrains: Segmenting ',args.img_type,' images in ',args.img_dir,'with diameter =',args.second_diameter)
+        path1 = f'{args.out_dir}/diam{int(second_diameter)}' if args.out_dir else f'{args.img_dir}/diam{int(second_diameter)}'
+        os.makedirs(path1,exist_ok=True)
+        _ = segmentation_helper.batch_predict(args.model_dir,args.img_dir,tar_dir=path1,
+                                        image_format=args.img_type,use_GPU=args.gpu,diameter=args.second_diameter, min_size=args.min_size,
+                                            mute=mute,return_results=False,save_masks=True)
+        print('>> ... and with diameter =',args.diameter)
+        path2 = f'{args.out_dir}/diam{args.diameter}' if args.out_dir else f'{args.img_dir}/diam{args.diameter}'
+        os.makedirs(path2,exist_ok=True)
+        _ = segmentation_helper.batch_predict(args.model_dir,args.img_dir,tar_dir=path2,
+                                            image_format=args.img_type,use_GPU=args.gpu,diameter=args.diameter, min_size=args.min_size,
+                                                mute=mute,return_results=False,save_masks=True)
+        #Combine scales
+        print('>> ImageGrains: Combining predictions...')
+        _,_,preds_large= data_loader.dataset_loader(path1)
+        _,_,preds_small= data_loader.dataset_loader(path2)
+        threshold = 150 if not args.comb_threshold else args.comb_threshold
+        for model_id in model_ids:
+            segmentation_helper.combine_preds(preds_small,preds_large,imgs,model_id=model_id,threshold=threshold)    
     
-    #Keep Georeferencing
+    #keep Georeferencing
     if keep_crs == True:
         if any(x in args.img_type for x in ['tif','tiff']):
             if args.out_dir:
@@ -173,12 +199,9 @@ def segmentation_step(args,mute=False,tar_dir='',keep_crs=True):
                     preds = segmentation_helper.map_preds_to_imgs(preds,imgs,p_string=f'_{model_id}')
                 segmentation_helper.keep_tif_crs(imgs,preds)
 
-    #segmentation example plot
+    #segmentation example/Composite plot
     if not args.skip_plots:
-        if args.out_dir:
-            img_dir = args.out_dir
-        else:
-            img_dir = args.img_dir
+        img_dir = args.out_dir if args.out_dir else args.img_dir
         for model_id in model_ids:
             _,_,preds = data_loader.dataset_loader(Path(img_dir),pred_str=f'{model_id}',image_format=args.img_type)
             if len(imgs) != len(preds):
@@ -222,7 +245,7 @@ def segmentation_step(args,mute=False,tar_dir='',keep_crs=True):
                     pred_plot_i.savefig(f'{out_dir2}/{file_id}_{model_id}_composite.png',dpi=300,bbox_inches='tight',pad_inches = 0)
     return
 
-def resampling_step(args,filters,mute=False,tar_dir='',resample_snapping=None):
+def resampling_step(args,filters,mute=False,tar_dir=''):
     if args.out_dir:
         img_dir = args.out_dir
     else:
@@ -232,12 +255,12 @@ def resampling_step(args,filters,mute=False,tar_dir='',resample_snapping=None):
         grid_size= int(args.grid_resample)
         if mute == False:
             print('>> Resampling grains with a grid with a resolution of ',args.grid_resample,' pixels.')
-
     elif args.random_resample:
         method = 'random'
         n_rand = args.random_resample
         if mute == False:
             print('>> Resampling grains with a random number of points with a maximum of ',args.random_resample,' points.')
+    resample_snapping = None if not args.resample_snapping else args.resample_snapping
     _,_,masks_raw= data_loader.dataset_loader(img_dir)
     #filter for predictions
     masks = []
