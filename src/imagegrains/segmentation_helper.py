@@ -273,7 +273,7 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,model_id='')
         except:
             print("Model not found. Please check the path to the model.")
     found_wdir = False
-    working_directory = None
+    working_directories = []
     try:
         dirs = next(os.walk(Path(image_path)))[1]
     except:
@@ -282,21 +282,15 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,model_id='')
         dirs=[Path(f'{image_path}/')]
     for dir in dirs:
         if dir=='train':
-            working_directory = Path(image_path).joinpath(dir)
-            #working_directory = f'{image_path}/{str(dir)}/'
-            found_wdir
+            working_directories.append(Path(image_path).joinpath(dir))
         elif dir=='test':
-            working_directory = Path(image_path).joinpath(dir)
-            found_wdir = True
+            working_directories.append(Path(image_path).joinpath(dir))
         elif do_subfolders == True:
-            working_directory = Path(image_path).joinpath(dir)
-            found_wdir = True
-        elif found_wdir == False:
-            working_directory = Path(image_path)
-        if not working_directory:
-            continue
-        else:
-            check_l = natsorted(glob(f'{working_directory}/*.{image_format}'))
+            working_directories.append(Path(image_path).joinpath(dir))
+        if not working_directories:
+            working_directories= [Path(image_path)]
+    for working_directory in working_directories:
+        check_l = natsorted(glob(f'{working_directory}/*.{image_format}'))
         if len(check_l)>0:
             working_directory = str(Path(working_directory).as_posix()) #ensure that working directory is a string for cellpose classes
             mask_l_i,flow_l_i,styles_l_i,id_list_i,_ = predict_folder(working_directory,model,image_format=image_format,channels=channels,diameter=diameter,
@@ -309,6 +303,7 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,model_id='')
                     list_of_id_lists.append(id_list_i[idx])
         else:
             continue
+    
     return mask_ll,flow_ll,styles_ll,list_of_id_lists
 
 def models_from_zoo(model_dir,use_GPU=True):
@@ -399,10 +394,10 @@ rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfo
                 all_results[f'{model_id}_{d_idx}']=dataset_res
     return all_results
 
-def combine_preds(preds1,preds2,imgs,tar_dir='',model_id='',filters=None,threshold=150,mute=True,do_composites=True):
+def combine_preds(preds_small,preds_large,imgs,tar_dir='',model_id='',filters=None,threshold=150,mute=True,do_composites=True):
     if tar_dir != '':
-        os.makedirs(tar_dir,exist_ok=True) 
-    for p_1,p_2,img in zip(preds1,preds2,imgs):
+        os.makedirs(tar_dir,exist_ok=True)
+    for p_1,p_2,img in zip(preds_small,preds_large,imgs):
         #load preds for small grains
         masks1 = io.imread(p_1)
         #load preds for large grains
@@ -411,20 +406,23 @@ def combine_preds(preds1,preds2,imgs,tar_dir='',model_id='',filters=None,thresho
         #filter first with normal quality filters and then split along size_threshold
         m1,_ = grainsizing.filter_by_threshold_size(masks1,mute=True,filters=filters,threshold=threshold,remove='large')
         m2,props2 = grainsizing.filter_by_threshold_size(masks2,mute=True,filters=filters,threshold=threshold,remove='small')
-        #adapt label numbers to ensure no duplicates
-        m1 = np.where(m1 > 0, m1 + np.max(props2['label']), m1) # use not length but max value!
-        #combine masks
-        combined = np.where(m2 == 0, m2 + m1, m2) #simple priority of large grains
-        if tar_dir == '':
-            data_path=Path(img).parent
+        if not any(x is None for x in [m1,m2,props2['label']]):
+            #adapt label numbers to ensure no duplicates
+            m1 = np.where(m1 > 0, m1 + np.max(props2['label']), m1) # use not length but max value!
+            #combine masks
+            combined = np.where(m2 == 0, m2 + m1, m2) #simple priority of large grains
+            if tar_dir == '':
+                data_path=Path(img).parent
+            else:
+                data_path = tar_dir
+            filename_i = f'{data_path}/{file_id}_{model_id}_combined_pred.tif'
+            cv2.imwrite(filename_i, combined)
+            if do_composites == True:
+                plotting.do_composite(img,filename_i,data_path,file_id,model_id=f'{model_id}_combined', tar_dir=tar_dir)
+            if mute == False:
+                print(file_id)
         else:
-            data_path = tar_dir
-        filename_i = f'{data_path}/{file_id}_combined_{model_id}_pred.tif'
-        cv2.imwrite(filename_i, combined)
-        if do_composites == True:
-            plotting.do_composite(img,filename_i,data_path,file_id,model_id=f'{model_id}_combined', tar_dir=tar_dir)
-        if mute == False:
-            print(file_id)
+            print(f'Could not combine preds for {file_id} due to an empty prediction!')
     return 
 
 def eval_image(y_true,y_pred,thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):
