@@ -154,10 +154,10 @@ def inspect_predictions(imgs,preds,lbls=None,title='',tar_dir='',save_fig=False)
     """
     
     if lbls:
-        fig = plt.figure(figsize=(len(imgs)*2,len(imgs)), dpi=300)
+        fig = plt.figure(figsize=(len(imgs)*2,len(imgs)))
         rows = 3
     else:
-        fig = plt.figure(figsize=(len(imgs)*2,len(imgs)*0.66), dpi=300)
+        fig = plt.figure(figsize=(len(imgs)*2,len(imgs)*0.66))
         rows = 2
     for k in range(len(preds)):
         img = io.imread(str(imgs[k]))
