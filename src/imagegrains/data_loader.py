@@ -224,6 +224,25 @@ def load_from_folders(image_directory,label_directory='',pred_directory='',image
         print('Could not load any images and/or masks.')
     return imgs,lbls,preds
 
+def assert_work_dirs(data_dir,do_subfolders=False):
+    working_directories = []
+    try:
+        dirs = next(os.walk(Path(data_dir)))[1]
+    except StopIteration:
+        dirs=[Path(f'{data_dir}/')]
+    if not dirs:
+        dirs=[Path(f'{data_dir}/')]
+    for dir in dirs:
+        if dir=='train':
+            working_directories.append(Path(data_dir).joinpath(dir))
+        elif dir=='test':
+            working_directories.append(Path(data_dir).joinpath(dir))
+        elif do_subfolders == True:
+            working_directories.append(Path(data_dir).joinpath(dir))
+        if not working_directories:
+            working_directories= [Path(data_dir)]
+    return working_directories
+
 def load_eval_res(name,file_path=''):
     """
     Loads evaluation results from a pkl file.

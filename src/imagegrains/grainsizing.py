@@ -42,30 +42,11 @@ return_results=False,save_results=True,do_subfolders=False):
     ids_l (list) - list of file_ids
 
     """
-    working_directory = None
-    try:
-        dirs = next(os.walk(Path(data_dir)))[1]
-    except StopIteration:
-        dirs=[]
-        working_directory = Path(data_dir)
     res_grains_l,res_props_l,ids_l = [],[],[]
-    counter = 0
-    for idx in range(len(dirs)+1):
-        if idx < len(dirs):
-            if 'train' in dirs[idx]:
-                #working_directory = data_dir+'/'+str(dirs[idx])
-                working_directory = Path(f'{Path(data_dir)}/{dirs[idx]}')
-            elif 'test' in dirs[idx]:
-                #working_directory = data_dir+'/'+str(dirs[idx])
-                working_directory = Path(f'{Path(data_dir)}/{dirs[idx]}')
-            elif do_subfolders == True:
-                #working_directory = data_dir+'/'+str(dirs[idx])
-                working_directory = Path(f'{Path(data_dir)}/{dirs[idx]}')
-            elif not working_directory:
-                continue
-        elif idx == len(dirs) and counter==0:
-            working_directory = Path(data_dir)
-        if working_directory:
+    working_directories = data_loader.assert_work_dirs(data_dir,do_subfolders=do_subfolders)
+    for working_directory in working_directories:
+        check_l = natsorted(glob(f'{working_directory}/*.{mask_format}'))
+        if len(check_l)>0:
             res_grains_i,res_props_i,ids_i= grains_in_dataset(data_dir=working_directory,mask_format=mask_format,mask_str=mask_str,
             tar_dir=tar_dir,filters=filters,mute=mute,outline_threshold=outline_threshold,properties=properties,fit_method=fit_method,
             return_results=return_results,save_results=save_results)
@@ -75,7 +56,8 @@ return_results=False,save_results=True,do_subfolders=False):
                     res_props_l.append(props)
                     ids_l.append(id)
             working_directory = None
-            counter += 1
+        else:
+            continue
     return res_grains_l,res_props_l,ids_l
 
 def grains_in_dataset(inp_list=None,data_dir=None,mask_format='tif',mask_str='',tar_dir='',filters=None,mute=False,outline_threshold=.5,

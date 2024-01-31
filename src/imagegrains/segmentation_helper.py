@@ -272,23 +272,7 @@ return_results=False,save_masks=True,mute=False,do_subfolders=False,model_id='')
                 model_id = Path(model_path).stem
         except:
             print("Model not found. Please check the path to the model.")
-    found_wdir = False
-    working_directories = []
-    try:
-        dirs = next(os.walk(Path(image_path)))[1]
-    except:
-        dirs=[Path(f'{image_path}/')]
-    if not dirs:
-        dirs=[Path(f'{image_path}/')]
-    for dir in dirs:
-        if dir=='train':
-            working_directories.append(Path(image_path).joinpath(dir))
-        elif dir=='test':
-            working_directories.append(Path(image_path).joinpath(dir))
-        elif do_subfolders == True:
-            working_directories.append(Path(image_path).joinpath(dir))
-        if not working_directories:
-            working_directories= [Path(image_path)]
+    working_directories = data_loader.assert_work_dirs(image_path,do_subfolders=do_subfolders)
     for working_directory in working_directories:
         check_l = natsorted(glob(f'{working_directory}/*.{image_format}'))
         if len(check_l)>0:
