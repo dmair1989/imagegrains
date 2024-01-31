@@ -22,8 +22,7 @@ dependencies = [
     "scanpy >= 1.9.0",
     "jupyterlab >= 4.0.0",
     "opentsne",
-    "leidenalg",
-    "gdal"
+    "leidenalg"
 ]
 
 [tool.hatch.version]
