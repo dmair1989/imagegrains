@@ -983,10 +983,12 @@ def summary_statistics(files,id_list,res_list=None,res_dict=None,sep=',',unit='m
 def filter_by_threshold_size(masks,properties=['equivalent_diameter_area','feret_diameter_max','eccentricity','label','area','minor_axis_length','major_axis_length','centroid','local_centroid'],
                     filters=None,mute=True,threshold=150,remove='small',metric='equivalent_diameter_area'):
     masks,num = label(masks,return_num=True)
-    if filters:
-        _, masks = filter_grains(labels=masks,properties=properties,filters=filters,mask=masks,mute=mute)
-    mask_new=masks.copy()
+    mask_new=None
+    props_df=None
     if num > 0:
+        if filters:
+            _, masks = filter_grains(labels=masks,properties=properties,filters=filters,mask=masks,mute=mute)
+        mask_new=masks.copy()
         props_df = pd.DataFrame(regionprops_table(masks,properties=properties))
         if remove == 'small':
             filtered = props_df[props_df[metric] < threshold]
@@ -1000,6 +1002,4 @@ def filter_by_threshold_size(masks,properties=['equivalent_diameter_area','feret
     else:
         if mute == False:
             print('empty preds!')
-        mask_new=None
-        props_df=None
     return mask_new,props_df

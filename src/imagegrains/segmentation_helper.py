@@ -390,7 +390,7 @@ def combine_preds(preds_small,preds_large,imgs,tar_dir='',model_id='',filters=No
         #filter first with normal quality filters and then split along size_threshold
         m1,_ = grainsizing.filter_by_threshold_size(masks1,mute=True,filters=filters,threshold=threshold,remove='large')
         m2,props2 = grainsizing.filter_by_threshold_size(masks2,mute=True,filters=filters,threshold=threshold,remove='small')
-        if not any(x is None for x in [m1,m2,props2['label']]):
+        if not any(x is None for x in [m1,m2,props2]):
             #adapt label numbers to ensure no duplicates
             m1 = np.where(m1 > 0, m1 + np.max(props2['label']), m1) # use not length but max value!
             #combine masks
