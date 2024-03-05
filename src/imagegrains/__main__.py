@@ -243,6 +243,7 @@ def segmentation_step(args,mute=False,tar_dir=''):
                     else:
                         out_dir2 = Path(img_dir)
                     pred_plot_i.savefig(f'{out_dir2}/{file_id}_{model_id}_composite.png',dpi=300,bbox_inches='tight',pad_inches = 0)
+                    plt.close()
     return
 
 def resampling_step(args,filters,mute=False,tar_dir=''):

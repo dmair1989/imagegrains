@@ -372,12 +372,13 @@ def all_grains_plot(masks,elements,props=None, image =None,
     plt.tight_layout()
     return
 
-def plot_single_img_mask(img, mask,file_id):
+def plot_single_img_mask(img, mask,file_id=None):
     colors = mask_cmap(mask)
     masks = label2rgb(label(mask), image=img, bg_label=0,colors=colors)
     plt.imshow(mark_boundaries(masks, label(mask), color=(1,0,0), mode='thick'))
     plt.axis('off')
-    plt.title(file_id)
+    if file_id:
+        plt.title(file_id)
 
 def single_grain_plot(mask,elements,props=None, image =None, fit_res =None,
                         fit_method ='convex_hull',do_fit= False,
