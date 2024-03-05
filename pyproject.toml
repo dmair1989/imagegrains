@@ -11,7 +11,7 @@ readme = "Readme.md"
 requires-python = ">=3.8"
 license = { text = "BSD 3-Clause License" }
 authors = [
-    { email = "david.mair@unibe.at", name = "David Mair, Guillaume Witz" },
+    { email = "david.mair@unibe.ch", name = "David Mair, Guillaume Witz" },
 ]
 dynamic = ["version"]
 dependencies = [
