@@ -35,7 +35,7 @@ def main():
     gs_args.add_argument('--edge_filter', type=float, default=None, help = 'Edge filter to remove grains close to the image boundary (default: None).')
     gs_args.add_argument('--switch_filters_off', type=bool, default=False, help = 'Switch off all filters for grain sizing (default: False).')
     gs_args.add_argument('--fit', type=str, default=None, help='Additional approximation for grains (default: None); options are convex hull (convex_hull) or outline (mask_outline).')
-    gs_args.add_argument('--grid_resample', default=None, help = 'Resample images with a grid with a given resolution in pixel (default: None). Equivalent ot a digital Wolman grid.')
+    gs_args.add_argument('--grid_resample', default=None, help = 'Resample images with a grid with a given resolution in pixel (default: None). Equivalent to a digital Wolman grid.')
     gs_args.add_argument('--random_resample', default=None, help = 'Resample image with a random number of points (default: None).')
     gs_args.add_argument('--resample_snapping', default=None, help = 'If grains are resampled, snapping to the closest grain can be enabled, i.e., by using the "nearest_outline" (default = None).')
     gs_args.add_argument('--resolution', default=None, help = 'Image resolution to scale grain sizes to in mm/px (default: None). If a value is provided, the grain sizes will be scaled to the given resolution. Alternatively, can provided as path to a csv file with image_specific resolutions (see template). For estimating the image resolution from camera parameters see the preprocessing notebook.')

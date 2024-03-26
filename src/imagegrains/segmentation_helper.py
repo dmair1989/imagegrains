@@ -163,7 +163,7 @@ return_results=False,save_masks=True,mute=False,model_id=''):
     model_id (str (optional, default = '')) - optional model name that will be written into output file names
 
     Parameters that can be handed down explicitly to `CellposeModel.eval()`, 
-    see https://cellpose.readthedocs.io/en/latest/api.html#id5 :
+    see https://cellpose.readthedocs.io/en/latest/api.html#id25 :
 
     channels (list (optional, default [0,0]))
     diameter (float (optional, default None))
