@@ -152,14 +152,14 @@ properties=['label','area','orientation','minor_axis_length','major_axis_length'
     props (list) - list of dictionaries containing the results
     
     """
-    masks,num = label(masks,return_num=True)
+    _,num = label(masks,return_num=True)
     if mute==False:
         print(file_id,':',str(num),' grains found')
     if filters and num > 0:
         res_, masks = filter_grains(labels=masks,properties=properties,filters=filters,mask=masks)
         if mute==False:
             print(f'{len(res_)} grains after filtering')
-    props = regionprops(label(masks))
+    props = regionprops(masks)
     props_df = pd.DataFrame(regionprops_table(masks,properties=properties))
     if any(x in fit_method for x in ['convex_hull','mask_outline']):
         if mute== False:
@@ -222,9 +222,9 @@ def compile_ax_stats(grains,props=None,fit_res=None,fit_method='convex_hull',pad
     
     """
     if not props:
-        props = regionprops(label(grains))
+        props = regionprops(grains)
     if export_results == True:
-        props_df = pd.DataFrame(regionprops_table(label(grains),properties=properties))
+        props_df = pd.DataFrame(regionprops_table(grains),properties=properties)
     if not fit_method:
         print('Fitted axes not found: Attempting axes fit for',fit_method,'...')
         a_list,b_list,a_coords,b_coords = fit_grain_axes(props,method=fit_method,padding_size=padding_size,outline_threshold=outline_threshold,mute=mute,file_id=file_id)
@@ -263,9 +263,9 @@ def ell_stats(masks,export_results=True,properties=[
     props (list) - list of dictionaries containing the results
 
     """
-    props = regionprops(label(masks))
+    props = regionprops(masks)
     if export_results == True:
-        props_df = pd.DataFrame(regionprops_table(label(masks),properties=properties))
+        props_df = pd.DataFrame(regionprops_table(masks),properties=properties)
         return props, props_df
     else:
         return props
@@ -427,8 +427,8 @@ def export_grain_outline(masks,img=None,props=None,method='mask_outline', tar_di
     if not props:
         if mute == False:
             print('No regionprops found: Finding grains...') 
-        props = regionprops(label(masks))
-    for _idx,props_i in enumerate(props):
+        props = regionprops(masks)
+    for _,props_i in enumerate(props):
         if method == 'convex_hull':
             mask = props_i.convex_image
         if method == 'mask_outline':
@@ -553,7 +553,7 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
     w,h = masks.shape[0],masks.shape[1]
     if mute==False:
         print('image shape:',h,'x',w)
-    lbs = label(masks)
+    lbs = masks
     if filters:
         edge_offset = filters['edge'][1]
     elif edge_offset:
@@ -592,7 +592,7 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
             kept_grains.append(a[0][0])
             if a[0][0] == 0:
                     zero_nodes.append((xx[ii],yy[ii]))
-    grains_df = pd.DataFrame(regionprops_table(label(masks),properties = ['label','coords']))
+    grains_df = pd.DataFrame(regionprops_table(masks,properties = ['label','coords']))
     #use nearest grain for empty nodes (optional)
     if snapping == 'nearest_outline':
         if mute == False:
@@ -982,7 +982,7 @@ def summary_statistics(files,id_list,res_list=None,res_dict=None,sep=',',unit='m
 
 def filter_by_threshold_size(masks,properties=['equivalent_diameter_area','feret_diameter_max','eccentricity','label','area','minor_axis_length','major_axis_length','centroid','local_centroid'],
                     filters=None,mute=True,threshold=150,remove='small',metric='equivalent_diameter_area'):
-    masks,num = label(masks,return_num=True)
+    _,num = label(masks,return_num=True)
     mask_new=None
     props_df=None
     if num > 0:
