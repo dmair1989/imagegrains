@@ -37,6 +37,7 @@ def main():
     gs_args.add_argument('--fit', type=str, default=None, help='Additional approximation for grains (default: None); options are convex hull (convex_hull) or outline (mask_outline).')
     gs_args.add_argument('--grid_resample', default=None, help = 'Resample images with a grid with a given resolution in pixel (default: None). Equivalent to a digital Wolman grid.')
     gs_args.add_argument('--random_resample', default=None, help = 'Resample image with a random number of points (default: None).')
+    gs_args.add_argument('--centerpoint_resample', default=None, help = 'Set to True for resampling grains for grain at image centers (default: None).')
     gs_args.add_argument('--resample_snapping', default=None, help = 'If grains are resampled, snapping to the closest grain can be enabled, i.e., by using the "nearest_outline" (default = None).')
     gs_args.add_argument('--resolution', default=None, help = 'Image resolution to scale grain sizes to in mm/px (default: None). If a value is provided, the grain sizes will be scaled to the given resolution. Alternatively, can provided as path to a csv file with image_specific resolutions (see template). For estimating the image resolution from camera parameters see the preprocessing notebook.')
 
@@ -115,7 +116,7 @@ def main():
 
     #optional resampling (if done, sub-directory with resampled masks will be created)
     resampled = None
-    if args.grid_resample or args.random_resample:
+    if args.grid_resample or args.random_resample or args.centerpoint_resample:
         resample_path = resampling_step(args,filters,mute=mute,tar_dir=tar_dir)
         resampled = True 
     
@@ -261,6 +262,10 @@ def resampling_step(args,filters,mute=False,tar_dir=''):
         n_rand = args.random_resample
         if mute == False:
             print('>> Resampling grains with a random number of points with a maximum of ',args.random_resample,' points.')
+    elif args.centerpoint_resample:
+        method = 'centerpoint'
+        if mute == False:
+            print('>> Resampling grains for grain at image centers.')
     resample_snapping = None if not args.resample_snapping else args.resample_snapping
     _,_,masks_raw= data_loader.dataset_loader(img_dir)
     #filter for predictions
@@ -280,8 +285,10 @@ def resampling_step(args,filters,mute=False,tar_dir=''):
             #resample mask to grid
             if method == 'wolman':
                 grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,method = method, grid_size=grid_size,mute=True,snapping=resample_snapping)
-            else:
+            elif method == 'random':
                 grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,mute=True,method=method,n_rand=n_rand,snapping=resample_snapping)
+            else:
+                grid_resampled,_,_ = grainsizing.resample_masks(mask,filters=filters,mute=True,method=method,snapping=resample_snapping)
             #save resampled mask to file
             if not tar_dir:
                 #resampled_dir = args.img_dir+'/Resampled_grains/'

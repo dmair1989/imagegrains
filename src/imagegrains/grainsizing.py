@@ -539,6 +539,7 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
     grid_size (int (optional, default = None)) - grid size in px
     edge_offset (float (optional, default = None)) - edge offset
     n_rand (int (optional, default = 100)) - number of random samples
+    snapping (str (optional, default = '')) - Allows snapping to closes grain if resampling point is not on a grain. Use 'nearest_outline' to snap to the closest point on the nearest outline. 
 
     Returns
     -------
@@ -548,6 +549,8 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
     -------
     wolman - resamples the masks to a regular grid
     random - resamples the masks to a random grid
+    centerpoint - returns one grain in the image center
+     
     
     """
     w,h = masks.shape[0],masks.shape[1]
@@ -592,15 +595,24 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
             kept_grains.append(a[0][0])
             if a[0][0] == 0:
                     zero_nodes.append((xx[ii],yy[ii]))
+    #centerpoint resampling
+    if method == 'centerpoint':
+        xx,yy = int(h/2),int(w/2)
+        if mute==False:
+            print(f'keeping only grains at {xx},{yy}.')
+        kept_grains.append(lbs[xx][yy])
+        if lbs[xx][yy] == 0:
+                zero_nodes.append((xx,yy))
     grains_df = pd.DataFrame(regionprops_table(masks,properties = ['label','coords']))
     #use nearest grain for empty nodes (optional)
     if snapping == 'nearest_outline':
+        best_label = None
         if mute == False:
             print(f'Snapping to: {snapping}.')
         zero_nodes=np.array(zero_nodes)
         snap_grains = []
         for node in zero_nodes:
-            dist2 = h+w
+            dist2 = (h+w)*2
             for row in range(len(grains_df)):
                 nodes = np.array(grains_df['coords'][row])
                 if len(nodes) < 16:
@@ -612,7 +624,10 @@ def resample_masks(masks,filters=None,method='wolman',grid_size=None,edge_offset
                     if dist.min() < dist2:
                         dist2 = dist.min()
                         best_label=grains_df['label'][row]
-            snap_grains.append(best_label)
+            if not best_label:
+                continue
+            else:
+                snap_grains.append(best_label)
         kept_grains += snap_grains
     #remove grains
     bad_grains = [x for x in grains_df['label'] if x not in kept_grains]
