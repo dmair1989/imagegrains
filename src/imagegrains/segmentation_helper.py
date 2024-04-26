@@ -607,21 +607,27 @@ def get_style_vectors(do_inference=True, tar_dir='', model='default', im_paths=N
         if im_paths:
             print(f'Running inference for styles with {Path(model).name}...')
             model = models.CellposeModel(gpu=True,pretrained_model=model)
-            res=[predict_folder(im_paths[i],model,min_size=-1,tar_dir=tar_dir,return_results=True, mute=mute) for i in range(len(im_paths))]
+            test_styles,train_styles,testnames,trainnames,testpaths,trainpaths = [],[],[],[],[],[]
+            for path in im_paths:
+                _,_,styles,ids,imgs=predict_folder(path,model,min_size=-1,return_results=True, mute=True)
+                for styli,idi,imgi in zip(styles,ids,imgs):
+                    imgi = Path(imgi).as_posix()
+                    if '/test' in imgi:
+                        test_styles.append(styli)
+                        testnames.append(idi)
+                        testpaths.append(imgi)
+                    else:
+                        train_styles.append(styli)
+                        trainnames.append(idi)
+                        trainpaths.append(imgi)
 
-            train_styles= [res[0][2][i] for i in range(len(res[0][2]))]
-            trainnames = [res[0][3][i] for i in range(len(res[0][2]))]
-            res_dict = {'train':train_styles, 'train_ids':trainnames}
-            if im_paths: 
-                test_styles= [res[1][2][i] for i in range(len(res[1][2]))]
-                testnames = [res[1][3][i] for i in range(len(res[1][2]))]
-                res_dict['test']=test_styles
-                res_dict['test_ids']=testnames
-            with open(f'res_tSNE.pkl', 'wb') as handle:
+            res_dict = {'train':train_styles, 'train_ids':trainnames,'train_paths':trainpaths,
+                        'test':test_styles,'test_ids':testnames,'test_paths':testpaths}
+            with open(f'{tar_dir}/res_tSNE.pkl', 'wb') as handle:
                 pickle.dump(res_dict, handle)
         else: 
             print('No path to images provided!')
-            return [],[],[],[]
+            return [],[],[],[],[],[]
     else:
         if not res_file:
             try: 
@@ -635,14 +641,15 @@ def get_style_vectors(do_inference=True, tar_dir='', model='default', im_paths=N
         
         train_styles = tres['train']
         trainnames = tres['train_ids']
+        trainpaths = tres['trainpaths']
         try:
             test_styles = tres['test']
             testnames = tres['test_ids']
+            testpaths = tres['test_paths']
         except:
-            test_styles = []
-            testnames = []
+            test_styles,testnames,testpaths = [],[],[]
         pkl_file.close()
-    return train_styles, trainnames, test_styles, testnames
+    return train_styles, trainnames, trainpaths, test_styles, testnames,testpaths
 
 def keep_tif_crs(imgs,preds):
     try: 
