@@ -641,13 +641,18 @@ def get_style_vectors(do_inference=True, tar_dir='', model='default', im_paths=N
         
         train_styles = tres['train']
         trainnames = tres['train_ids']
-        trainpaths = tres['trainpaths']
+        
         try:
             test_styles = tres['test']
             testnames = tres['test_ids']
-            testpaths = tres['test_paths']
         except:
-            test_styles,testnames,testpaths = [],[],[]
+            test_styles,testnames= [],[]
+        
+        try:
+            testpaths = tres['test_paths']
+            trainpaths = tres['train_paths']
+        except:
+            trainpaths,testpaths = [],[]
         pkl_file.close()
     return train_styles, trainnames, trainpaths, test_styles, testnames,testpaths
 
