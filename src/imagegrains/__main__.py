@@ -112,7 +112,7 @@ def main():
     if mute == False:
         print(f'Filter configuratiuon: {filters}')
 
-    print(f'>> ImageGrains: Measuring grains for masks in {img_dir}.')
+    print(f'>> ImageGrains: Measuring grains for masks in {img_dir}...')
 
     #optional resampling (if done, sub-directory with resampled masks will be created)
     resampled = None
@@ -203,6 +203,10 @@ def segmentation_step(args,mute=False,tar_dir=''):
     #segmentation example/Composite plot
     if not args.skip_plots:
         img_dir = args.out_dir if args.out_dir else args.img_dir
+        if not args.save_composites:
+            do_composites = True
+        else:
+            do_composites = args.save_composites
         for model_id in model_ids:
             _,_,preds = data_loader.dataset_loader(Path(img_dir),pred_str=f'{model_id}',image_format=args.img_type)
             if len(imgs) != len(preds):
@@ -212,26 +216,23 @@ def segmentation_step(args,mute=False,tar_dir=''):
             if len(imgs) == 0:
                 print('>> No valid images found. Please review image file format.')
                 exit()
-            elif len(imgs) == 1:
-                pred_plot = plt.figure(figsize=(10,10))
-                plotting.plot_single_img_pred(imgs[0],preds[0])
-            elif len(imgs) > 6:
-                rng = default_rng()
-                numbers = rng.choice(len(imgs), size=6, replace=False)
-                imgs_rand = [imgs[x] for x in numbers]
-                preds_rand = [preds[x] for x in numbers]
-                pred_plot = plotting.inspect_predictions(imgs_rand,preds_rand,title=f"Segmentation examples for {model_id}")
-            else:
-                pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {model_id}")
-            if tar_dir != '':
-                out_dir = Path(tar_dir)/ f'{model_id}_prediction_examples.png'
-            else:
-                out_dir = Path(img_dir)/ f'{model_id}_prediction_examples.png'
-            pred_plot.savefig(out_dir,dpi=300)
-            if not args.save_composites:
-                do_composites = True
-            else:
-                do_composites = args.save_composites
+            if do_composites != True:
+                if len(imgs) == 1:
+                    pred_plot = plt.figure(figsize=(10,10))
+                    plotting.plot_single_img_pred(imgs[0],preds[0])
+                elif len(imgs) > 6:
+                    rng = default_rng()
+                    numbers = rng.choice(len(imgs), size=6, replace=False)
+                    imgs_rand = [imgs[x] for x in numbers]
+                    preds_rand = [preds[x] for x in numbers]
+                    pred_plot = plotting.inspect_predictions(imgs_rand,preds_rand,title=f"Segmentation examples for {model_id}")
+                else:
+                    pred_plot = plotting.inspect_predictions(imgs,preds,title=f"Segmentation examples for {model_id}")
+                if tar_dir != '':
+                    out_dir = Path(tar_dir)/ f'{model_id}_prediction_examples.png'
+                else:
+                    out_dir = Path(img_dir)/ f'{model_id}_prediction_examples.png'
+                pred_plot.savefig(out_dir,dpi=300)
             if do_composites == True:
                 print('>> Saving composite images...')
                 for img,pred in zip(imgs,preds):
@@ -244,7 +245,8 @@ def segmentation_step(args,mute=False,tar_dir=''):
                     else:
                         out_dir2 = Path(img_dir)
                     pred_plot_i.savefig(f'{out_dir2}/{file_id}_{model_id}_composite.png',dpi=300,bbox_inches='tight',pad_inches = 0)
-                    plt.close()
+                    plt.clf(pred_plot_i)
+                    plt.close(pred_plot_i)
     return
 
 def resampling_step(args,filters,mute=False,tar_dir=''):
