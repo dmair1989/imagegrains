@@ -245,7 +245,7 @@ def segmentation_step(args,mute=False,tar_dir=''):
                     else:
                         out_dir2 = Path(img_dir)
                     pred_plot_i.savefig(f'{out_dir2}/{file_id}_{model_id}_composite.png',dpi=300,bbox_inches='tight',pad_inches = 0)
-                    plt.clf(pred_plot_i)
+                    plt.clf()
                     plt.close(pred_plot_i)
     return
 
