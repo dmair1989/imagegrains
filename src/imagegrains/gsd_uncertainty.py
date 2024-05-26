@@ -641,10 +641,12 @@ MC_method='truncnorm',MC_cutoff=0,avg_res=1,mute=False,sfm_type=''):
         gsd_list = [np.percentile(gsd, p, axis=0) for p in range(100)]
     else:
         gsd_list = np.zeros(100)
-    if not med_list:
-        med_list = np.zeros(100)
-        upper_CI = np.zeros(100)
-        lower_CI = np.zeros(100)
+    if med_list is not None:
+        if len(med_list) <1:
+            med_list = np.zeros(100)
+            med_list = np.zeros(100)
+            upper_CI = np.zeros(100)
+            lower_CI = np.zeros(100)
     #gsd_list=[]
     #for p in range(100):    
     #    inp = np.percentile(gsd,p)
