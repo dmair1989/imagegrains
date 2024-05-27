@@ -8,14 +8,13 @@ build-backend = "hatchling.build"
 name = "imagegrains"
 description = "A software library for segmenting and measuring of sedimentary particles in images"
 readme = "Readme.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = { text = "BSD 3-Clause License" }
 authors = [
     { email = "david.mair@unibe.ch", name = "David Mair, Guillaume Witz" },
 ]
 dynamic = ["version"]
 dependencies = [
-    "imagecodecs == 2023.3.16",
     "cellpose == 2.3.2",
     "matplotlib >= 3.6.0, < 3.7.2",
     "scikit-image >= 0.20.0",
