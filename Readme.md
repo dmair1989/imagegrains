@@ -33,7 +33,7 @@ The easiest way to install the software is by using the conda package manager. I
 To install the software, open an anaconda prompt / command prompt, then create a new environment with:
 
 ```text
-conda create --name imagegrains -c conda-forge python=3.8 imagecodecs 
+conda create --name imagegrains -c conda-forge python=3.9 imagecodecs 
 ```
 
 and activate it with:
