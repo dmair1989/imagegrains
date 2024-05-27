@@ -15,7 +15,7 @@ authors = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "imagecodecs == 2023.3.16",
+    "imagecodecs == 2023.9.18",
     "cellpose == 2.3.2",
     "matplotlib >= 3.6.0, < 3.7.2",
     "scikit-image >= 0.20.0",
