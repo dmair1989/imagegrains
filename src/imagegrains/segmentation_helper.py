@@ -1,12 +1,14 @@
 import os,pickle, cv2, shutil
+import numpy as np
+import pandas as pd
+
 from pathlib import Path
 from cellpose import io
 from tqdm import tqdm
 from glob import glob
 from natsort import natsorted
 from skimage.measure import label, regionprops_table
-import numpy as np
-import pandas as pd
+from tifffile import imsave
 
 from cellpose import metrics, models, io
 from imagegrains import grainsizing, data_loader, plotting
@@ -378,35 +380,104 @@ rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfo
                 all_results[f'{model_id}_{d_idx}']=dataset_res
     return all_results
 
-def combine_preds(preds_small,preds_large,imgs,tar_dir='',model_id='',filters=None,threshold=150,mute=True,do_composites=True):
+def combine_preds(preds_small,preds_large,imgs,tar_dir='',model_id='',filters=None,threshold=150,mute=True,
+                  do_composites=True,remove_intersecting=False,stack_3D=False,file_name=''):
     if tar_dir != '':
         os.makedirs(tar_dir,exist_ok=True)
-    for p_1,p_2,img in zip(preds_small,preds_large,imgs):
-        #load preds for small grains
-        masks1 = io.imread(p_1)
-        #load preds for large grains
-        masks2 = io.imread(p_2)
-        file_id = Path(img).stem
-        #filter first with normal quality filters and then split along size_threshold
-        m1,_ = grainsizing.filter_by_threshold_size(masks1,mute=True,filters=filters,threshold=threshold,remove='large')
-        m2,props2 = grainsizing.filter_by_threshold_size(masks2,mute=True,filters=filters,threshold=threshold,remove='small')
-        if not any(x is None for x in [m1,m2,props2]):
-            #adapt label numbers to ensure no duplicates
-            m1 = np.where(m1 > 0, m1 + np.max(props2['label']), m1) # use not length but max value!
+    if stack_3D==False:    
+        if type(imgs) == np.ndarray and imgs.ndim > 2:
+                print('Numpy.ndarray passed - trying 3D combination!')
+                stack_3D = True
+    print(f'Combining predictions for {len(imgs)} images:')
+    if stack_3D == True:
+        combine_3D(preds_small,preds_large,tar_dir=tar_dir,model_id=model_id,filters=filters,threshold=threshold,mute=mute,
+                  remove_intersecting=remove_intersecting,file_name=file_name)
+    else:
+        combine_2D(preds_small,preds_large,imgs,tar_dir=tar_dir,model_id=model_id,filters=filters,threshold=threshold,mute=mute,
+                  do_composites=do_composites,remove_intersecting=remove_intersecting)
+    return
+
+def combine_3D(preds_small,preds_large,tar_dir='',model_id='',filters=None,threshold=None,mute=True,
+                  remove_intersecting=False,file_name=''):
+    if type(preds_small) != np.ndarray:
+        print('No Numpy.ndarray passed - cannot do 3D!')
+        return
+    stack_list = []
+    conflict_list = []
+    if file_name != '':
+        file_id = file_name
+    else:
+        file_id = 'Stack_3D'
+        print('No file name provided - will use: Stack_3D!')
+    #adapt label numbers to ensure no duplicates in 3D
+    max_label = np.max(preds_large)
+    preds_small = np.where(preds_small > 0, preds_small + max_label, preds_small)
+    for masks1,masks2 in tqdm(zip(preds_small,preds_large),desc=str(file_name),unit='slice'):
+        if threshold != None:
+        #filter first with regular quality filters and then split along size_threshold
+            m1,_ = grainsizing.filter_by_threshold_size(masks1,mute=mute,filters=filters,threshold=threshold,remove='small')
+            m2,_ = grainsizing.filter_by_threshold_size(masks2,mute=mute,filters=filters,threshold=threshold,remove='large')
+        elif filters != None:
+        #filter first with regular quality filters 
+            _, m1 = grainsizing.filter_grains(labels=masks1, filters=filters,mask=masks1,mute=mute)
+            _, m2 = grainsizing.filter_grains(labels=masks1, filters=filters,mask=masks2,mute=mute)
+        else: 
+            m1 = masks1
+            m2 = masks2
+        if not any(x is None for x in [m1,m2]): 
             #combine masks
-            combined = np.where(m2 == 0, m2 + m1, m2) #simple priority of large grains
-            if tar_dir == '':
-                data_path=Path(img).parent
+            combined = np.where(m2 == 0, m2 + m1, m2) #simple priority for large grains
+            stack_list.append(combined)
+            if remove_intersecting == True:
+                m3 = np.where(m2 > 0, m1, m2) #create array for intersecting preds
+                conflicting_labels = np.unique(m3) #get labels of conflicting/intersecting grains
+                conflict_list= np.concatenate((conflict_list, conflicting_labels), axis=None)
+                conflict_list = np.unique(conflict_list)
+    new_stack = np.stack(stack_list)
+    if remove_intersecting == True:
+        for key in conflict_list:
+            new_stack[new_stack == key]=0  #remove entire grain for intersecting preds in 3D
+    if tar_dir == '':
+            data_path= Path.cwd().as_posix()
+    else:
+        data_path = tar_dir
+    filename_i = f'{data_path}/{file_id}_{model_id}_combined_pred.tif'
+    imsave(filename_i, new_stack)
+    return
+
+def combine_2D(preds_small,preds_large,imgs,tar_dir='',model_id='',filters=None,threshold=150,mute=True,
+                  do_composites=True,remove_intersecting=False):
+    for p_1,p_2,img in tqdm(zip(preds_small,preds_large,imgs),unit='image'):
+        #load preds for small grains
+            masks1 = io.imread(p_1)
+            #load preds for large grains
+            masks2 = io.imread(p_2)
+            file_id = Path(img).stem
+            #filter first with regular quality filters and then split along size_threshold
+            m1,_ = grainsizing.filter_by_threshold_size(masks1,mute=mute,filters=filters,threshold=threshold,remove='large')
+            m2,props2 = grainsizing.filter_by_threshold_size(masks2,mute=mute,filters=filters,threshold=threshold,remove='small')
+            if not any(x is None for x in [m1,m2,props2]):
+                #adapt label numbers to ensure no duplicates
+                m1 = np.where(m1 > 0, m1 + np.max(props2['label']), m1) # use not length but max value!
+                if remove_intersecting == True:
+                    m3 = np.where(m2 > 0, m1, m2) #create array for intersecting preds
+                    conflicting_labels = np.unique(m3) #get labels of conflicting/intersecting grains
+                    for key in conflicting_labels:
+                        m1[m1 == key]=0  #remove entire grain for intersecting preds from small preds
+                #combine masks
+                combined = np.where(m2 == 0, m2 + m1, m2) #simple priority for large grains
+                if tar_dir == '':
+                        data_path=Path(img).parent
+                else:
+                    data_path = tar_dir
+                filename_i = f'{data_path}/{file_id}_{model_id}_combined_pred.tif'
+                cv2.imwrite(filename_i, combined)
+                if do_composites == True:
+                    plotting.do_composite(img,filename_i,data_path,file_id,model_id=f'{model_id}_combined', tar_dir=tar_dir)
+                if mute == False:
+                    print(file_id)
             else:
-                data_path = tar_dir
-            filename_i = f'{data_path}/{file_id}_{model_id}_combined_pred.tif'
-            cv2.imwrite(filename_i, combined)
-            if do_composites == True:
-                plotting.do_composite(img,filename_i,data_path,file_id,model_id=f'{model_id}_combined', tar_dir=tar_dir)
-            if mute == False:
-                print(file_id)
-        else:
-            print(f'Could not combine preds for {file_id} due to an empty prediction!')
+                print(f'Could not combine preds for {file_id} due to an empty prediction!')
     return 
 
 def eval_image(y_true,y_pred,thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):
