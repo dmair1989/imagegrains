@@ -380,7 +380,7 @@ rescale=None,tar_dir='',return_results=False,save_masks=True,mute=False,do_subfo
                 all_results[f'{model_id}_{d_idx}']=dataset_res
     return all_results
 
-def combine_preds(preds_small,preds_large,imgs,tar_dir='',model_id='',filters=None,threshold=150,mute=True,
+def combine_preds(preds_small,preds_large,imgs,tar_dir='',model_id='',filters=None,threshold=None,mute=True,
                   do_composites=True,remove_intersecting=False,stack_3D=False,file_name=''):
     if tar_dir != '':
         os.makedirs(tar_dir,exist_ok=True)
