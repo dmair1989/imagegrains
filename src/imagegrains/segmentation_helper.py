@@ -122,7 +122,7 @@ def custom_train(image_path, pretrained_model = None,datstring = None,
         model_name = model_name
     else: 
         if not datstring:
-            datstring = '0815'
+            datstring = '000815'
         model_name = f'{model_name}.{datstring}'
     if not pretrained_model:
         model = models.CellposeModel(gpu=gpu,pretrained_model=None)
