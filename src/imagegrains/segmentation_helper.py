@@ -427,12 +427,14 @@ def combine_3D(preds_small,preds_large,tar_dir='',model_id='',filters=None,thres
         if not any(x is None for x in [m1,m2]): 
             #combine masks
             combined = np.where(m2 == 0, m2 + m1, m2) #simple priority for large grains
-            stack_list.append(combined)
             if remove_intersecting == True:
                 m3 = np.where(m2 > 0, m1, m2) #create array for intersecting preds
                 conflicting_labels = np.unique(m3) #get labels of conflicting/intersecting grains
                 conflict_list= np.concatenate((conflict_list, conflicting_labels), axis=None)
                 conflict_list = np.unique(conflict_list)
+        else:
+            combined = m1
+        stack_list.append(combined)
     new_stack = np.stack(stack_list)
     if remove_intersecting == True:
         for key in conflict_list:
@@ -466,18 +468,19 @@ def combine_2D(preds_small,preds_large,imgs,tar_dir='',model_id='',filters=None,
                         m1[m1 == key]=0  #remove entire grain for intersecting preds from small preds
                 #combine masks
                 combined = np.where(m2 == 0, m2 + m1, m2) #simple priority for large grains
-                if tar_dir == '':
-                        data_path=Path(img).parent
-                else:
-                    data_path = tar_dir
-                filename_i = f'{data_path}/{file_id}_{model_id}_combined_pred.tif'
-                cv2.imwrite(filename_i, combined)
-                if do_composites == True:
-                    plotting.do_composite(img,filename_i,data_path,file_id,model_id=f'{model_id}_combined', tar_dir=tar_dir)
-                if mute == False:
-                    print(file_id)
             else:
-                print(f'Could not combine preds for {file_id} due to an empty prediction!')
+                print(f'Could not combine preds for {file_id} due to an empty prediction! Using grains from one inferrence only.')
+                combined = m1
+            if tar_dir == '':
+                    data_path=Path(img).parent
+            else:
+                data_path = tar_dir
+            filename_i = f'{data_path}/{file_id}_{model_id}_combined_pred.tif'
+            cv2.imwrite(filename_i, combined)
+            if do_composites == True:
+                plotting.do_composite(img,filename_i,data_path,file_id,model_id=f'{model_id}_combined', tar_dir=tar_dir)
+            if mute == False:
+                print(file_id)
     return 
 
 def eval_image(y_true,y_pred,thresholds = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]):
