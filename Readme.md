@@ -6,6 +6,7 @@
 ![PyPI - License](https://img.shields.io/pypi/l/imagegrains?color=green)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/dmair1989/imagegrains)
 [![PyPI Downloads](https://static.pepy.tech/badge/imagegrains)](https://pepy.tech/projects/imagegrains)
+[![DOI](https://zenodo.org/badge/557725402.svg)](https://doi.org/10.5281/zenodo.21236403)
 
 A software library for segmenting and measuring of sedimentary particles in images. The segmentation is done with [*Cellpose-SAM*](https://github.com/mouseland/cellpose), designed for cell and nucleus segmentation in biomedical images. Its segmentation capability is transferred to geoscientific applications throurgh re-training of the model with images of sediment particles. Pretrained [segmentation models](https://doi.org/10.5281/zenodo.15309323) from our [data](https://doi.org/10.5281/zenodo.17866826) are available or custom models can be trained (see [paper](https://doi.org/10.1002/esp.5755) for details).
 
