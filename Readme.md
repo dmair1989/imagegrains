@@ -29,9 +29,9 @@ Try ImageGrains `2.0` with Cellpose-SAM in Colab with your own data in google dr
 
 If you use ImageGrains, please cite:
 
-- Mair, D., Witz, G., Do Prado, A., Garefalakis, P., Wild, A., Ville, F., Schuster, B., Horn, M., Österle, J., Fabbri, S. C., Litty, C., Achleitner, S., Leistner, S., Hiller, C., and Schlunegger, F.: ImageGrains 2.0: Improved precision and generalization for grain segmentation, Earth Surf. Dyn., 14, 527-551, <https://doi.org/10.5194/esurf-14-527-2026>.
+- Mair, D., Witz, G., Do Prado, A., Garefalakis, P., Wild, A., Ville, F., Schuster, B., Horn, M., Österle, J., Fabbri, S. C., Litty, C., Achleitner, S., Leistner, S., Hiller, C., and Schlunegger, F.: ImageGrains 2.0 (2026): Improved precision and generalization for grain segmentation, Earth Surf. Dyn., 14, 527-551, <https://doi.org/10.5194/esurf-14-527-2026>.
 
-- Pachitariu, M., Rariden, M., Stringer, C.. Cellpose-SAM: superhuman generalization for cellular segmentation. bioRxiv 2025.04.28.651001; <https://doi.org/10.1101/2025.04.28.651001>
+- Pachitariu, M., Rariden, M., Stringer, C.. Cellpose-SAM (2025): superhuman generalization for cellular segmentation. bioRxiv 2025.04.28.651001; <https://doi.org/10.1101/2025.04.28.651001>
 
 If you use legacy versions with Cellpose 2 (e.g., by using ImageGrains `1.x` or `IG1` models), please cite the Cellpose 1.0 paper:  
 
