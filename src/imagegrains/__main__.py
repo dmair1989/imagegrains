@@ -28,6 +28,7 @@ def main():
     seg_args.add_argument('--second_diameter', default=None, type=float, help='Enables a two-step segmentation that will combine predictions at two different scales. It will use `diameter` (default: None) and expects the `second_diameter` to be >> `diamter`. Predictions are combined on a pixel basis.')
     seg_args.add_argument('--comb_threshold',default=None, type=float, help='If predictions from two scales are combined, this threshold (default=150) defines the cutoff above which grains from predictions with `second_diameter` will be used. Larger grains are prioritized.')
     seg_args.add_argument('--max_size_fraction',default=0.4, type=float, help='Masks larger than max_size_fraction of total image size are removed.(default=0.4) defines the cutoff above which grains from predictions with `second_diameter` will be used. Larger grains are prioritized.')
+    seg_args.add_argument('--use_bfloat16',default=True, type=bool, help='If True, the model is using float16 precision, which might limit the number of objects to <65,535 per mask file. Set to False to use float32 precision.')
 
     gs_args=parser.add_argument_group('Grain size estimation')
     gs_args.add_argument('--skip_grainsize', type=bool, default=False, help='Skip grain size estimation and only segment grains.')
@@ -186,20 +187,20 @@ def segmentation_step(args,mute=False,tar_dir=''):
         print('>> ImageGrains: Segmenting ',args.img_type,' images in ',args.img_dir,'GPU:',args.gpu)
         _ = segmentation_helper.batch_predict(args.model_dir,args.img_dir,tar_dir=tar_dir,
                                         image_format=args.img_type,use_GPU=args.gpu,diameter=args.diameter, min_size=args.min_size,
-                                            mute=mute,return_results=False,save_masks=True,configuration=config)
+                                            mute=mute,return_results=False,save_masks=True,use_bfloat16=args.use_bfloat16,configuration=config)
     else:
         print('>> ImageGrains: Segmenting ',args.img_type,' images in ',args.img_dir,'with diameter =',args.second_diameter,args.img_dir,'GPU:',args.gpu)
         path1 = f'{args.out_dir}/diam{int(second_diameter)}' if args.out_dir else f'{args.img_dir}/diam{int(second_diameter)}'
         os.makedirs(path1,exist_ok=True)
         _ = segmentation_helper.batch_predict(args.model_dir,args.img_dir,tar_dir=path1,
                                         image_format=args.img_type,use_GPU=args.gpu,diameter=args.second_diameter, min_size=args.min_size,
-                                            mute=mute,return_results=False,save_masks=True,configuration=config)
+                                            mute=mute,return_results=False,save_masks=True,use_bfloat16=args.use_bfloat16,configuration=config)
         print('>> ... and with diameter =',args.diameter)
         path2 = f'{args.out_dir}/diam{args.diameter}' if args.out_dir else f'{args.img_dir}/diam{args.diameter}'
         os.makedirs(path2,exist_ok=True)
         _ = segmentation_helper.batch_predict(args.model_dir,args.img_dir,tar_dir=path2,
                                             image_format=args.img_type,use_GPU=args.gpu,diameter=args.diameter, min_size=args.min_size,
-                                                mute=mute,return_results=False,save_masks=True,configuration=config)
+                                                mute=mute,return_results=False,save_masks=True,use_bfloat16=args.use_bfloat16,configuration=config)
         #Combine scales
         print('>> ImageGrains: Combining predictions...')
         _,_,preds_large= data_loader.dataset_loader(path1)

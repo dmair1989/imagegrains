@@ -15,7 +15,7 @@ authors = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "cellpose >= 4.0.1",
+    "cellpose >= 4.0.9, < 4.3.0",
     "imagecodecs",
     "numpy <= 2.2",
     "matplotlib >= 3.7.1",

@@ -86,7 +86,7 @@ def check_im_label_pairs(img_list, lbl_list):
     return error_list
 
 def custom_train(image_path, pretrained_model = None,datstring = None,
-                lr = 0.2, nepochs = 1000,chan1 = 0, chan2= 0, gpu = True, batch_size = 8,
+                lr = 0.2, nepochs = 1000,chan1 = 0, chan2= 0, gpu = True, batch_size = 8, use_bfloat16 = True,
                 mask_filter = '_mask', rescale = False, save_each = False, return_model = False,
                 save_every = 100,model_name = None, label_check = True,cp_version=__cp_version__):
     
@@ -101,6 +101,7 @@ def custom_train(image_path, pretrained_model = None,datstring = None,
     return_model (bool(optional, default False)) - If True, the model is returned
     model_name (str(optional, default None)) - Name of the model.
     label_check (bool(optional, default True)) - If True, the labels are checked for the correct format and the images and labels are checked for correct pairing. If the labels are not in the correct format, they are renamed to the correct format. If the images and labels are not paired correctly, a list of images for which the labels are missing is returned.
+    use_bfloat16 (bool(optional, default True)) - If True, the model is trained using float16, which is faster but limits the number of objects to <65,535 per mask. Set to False for using float32, which allows for more objects but is slower.
 
     more parameters:
     https://cellpose.readthedocs.io/en/latest/api.html#cellpose.models.CellposeModel.train 
@@ -132,13 +133,13 @@ def custom_train(image_path, pretrained_model = None,datstring = None,
     if not model_name:
         model_name = 'new_model'
 
-    if not pretrained_model:
-        model = models.CellposeModel(gpu=gpu,pretrained_model=None)
-    else:
-        model = models.CellposeModel(gpu=gpu,pretrained_model=pretrained_model)
-
     if cp_version > 3:
         channels = None
+
+        if not pretrained_model:
+            model = models.CellposeModel(gpu=gpu,pretrained_model=None,use_bfloat16=use_bfloat16)
+        else:
+            model = models.CellposeModel(gpu=gpu,pretrained_model=pretrained_model,use_bfloat16=use_bfloat16)
 
     else:
         channels = [chan1,chan2]
@@ -149,6 +150,8 @@ def custom_train(image_path, pretrained_model = None,datstring = None,
             model = models.CellposeModel(gpu=gpu,model_type='nuclei')
         elif pretrained_model == 'cyto':
             model = models.CellposeModel(gpu=gpu,model_type='cyto')
+        if not pretrained_model:
+            model = models.CellposeModel(gpu=gpu,pretrained_model=None)
     
     try:
         model.train(train_data,train_labels,train_images,test_data,test_labels,test_images,channels =channels,
@@ -224,7 +227,7 @@ def predict_single_image(image_path, model,channels=[0,0], diameter=None,
 def predict_folder(image_path, model, image_format='jpg', filter_str='',
                    channels=[0,0], diameter=None, min_size=15, rescale=None,
                    config=None,tar_dir='', save_masks=True,return_results=True,
-                   mute=False, model_id=''):
+                   mute=False, model_id='',cp_version=__cp_version__):
     """
     This function takes in a directory containing images, and uses a pre-trained model to predict segmentation masks for the images.
     If `return_results` is `True` respective lists of 1D arrays for predicted *masks*, *flows* and *styles* 
@@ -244,6 +247,7 @@ def predict_folder(image_path, model, image_format='jpg', filter_str='',
     save_masks (bool(optional, default True)) - flag for saving predicted mask as `.tif` files in `tar_dir`
     mute (bool (optional, default=False)) - flag for muting console output
     model_id (str (optional, default = '')) - optional model name that will be written into output file names
+    use_bfloat16 (bool (optional, default=True)) - If True, the model is trained using float16 precision, which limits the number of objects to <65,535 per mask. Set to True for faster training.
 
     Parameters that can be handed down explicitly to `CellposeModel.eval()`, 
     see https://cellpose.readthedocs.io/en/latest/api.html#id25 :
@@ -291,7 +295,7 @@ def predict_folder(image_path, model, image_format='jpg', filter_str='',
                 mute=mute,
                 tar_dir=tar_dir,
                 model_id=model_id)
-            
+
             mask_l.append(mask)
             flow_l.append(flow)
             styles_l.append(style)
@@ -310,8 +314,8 @@ def predict_folder(image_path, model, image_format='jpg', filter_str='',
 
 def predict_dataset(image_path, model,image_format='jpg', channels=[0,0],
                     diameter=None, min_size=15, rescale=None, config=None, tar_dir='',
-                    return_results=False, save_masks=True, mute=False,
-                    do_subfolders=False, model_id='',use_gpu=True):
+                    return_results=False, save_masks=True, mute=False,use_bfloat16=True,
+                    do_subfolders=False, model_id='',use_gpu=True,cp_version=__cp_version__):
     """
     Wrapper for helper.prediction.predict_folder() for a dataset that is organised in subfolders (e.g., in directories named `train`,`test`)
 
@@ -343,7 +347,10 @@ def predict_dataset(image_path, model,image_format='jpg', channels=[0,0],
     if type(model) != models.CellposeModel:
         try:
             model_path = str(Path(model).as_posix())
-            model = models.CellposeModel(gpu=use_gpu, pretrained_model=model_path)
+            if cp_version > 3:
+                model = models.CellposeModel(gpu=use_gpu, pretrained_model=model_path, use_bfloat16=use_bfloat16)
+            else:
+                model = models.CellposeModel(gpu=use_gpu, pretrained_model=model_path)
             if not model_id:
                 model_id = Path(model_path).stem
         except Exception as err:
@@ -370,7 +377,7 @@ def predict_dataset(image_path, model,image_format='jpg', channels=[0,0],
     
     return mask_ll,flow_ll,styles_ll,list_of_id_lists
 
-def batch_predict(model_dir, dir_paths, configuration=None, image_format='jpg',
+def batch_predict(model_dir, dir_paths, configuration=None, image_format='jpg',use_bfloat16=True,
                   use_GPU=True, channels=[0,0], diameter=None, min_size=15,
                   rescale=None, tar_dir='', return_results=False, save_masks=True,
                   mute=False, do_subfolders=False, cp_version=__cp_version__):
@@ -416,7 +423,10 @@ def batch_predict(model_dir, dir_paths, configuration=None, image_format='jpg',
     all_results= {}
 
     for m_idx in range(len(model_list)):
-        model = models.CellposeModel(gpu=use_GPU,pretrained_model=str(model_list[m_idx]))
+        if cp_version > 3:
+            model = models.CellposeModel(gpu=use_GPU,pretrained_model=str(model_list[m_idx]),use_bfloat16=use_bfloat16)
+        else:
+            model = models.CellposeModel(gpu=use_GPU,pretrained_model=str(model_list[m_idx]))
         model_id = model_id_list[m_idx]
         print(model_id,'found...')
 
@@ -439,14 +449,15 @@ def batch_predict(model_dir, dir_paths, configuration=None, image_format='jpg',
         for d_idx in range(len(dir_paths)):
             all_mask_l,all_flow_l,all_styles_l,all_id_list = predict_dataset(dir_paths[d_idx],model,
             image_format=image_format,channels=channels,diameter=diameter,min_size=min_size,rescale=rescale,config=config,tar_dir=tar_dir,
-            return_results=return_results,save_masks=save_masks,mute=mute,do_subfolders=do_subfolders,model_id=model_id)
+            return_results=return_results,save_masks=save_masks,mute=mute,do_subfolders=do_subfolders,model_id=model_id,
+            use_bfloat16=use_bfloat16,use_gpu=use_GPU,cp_version=cp_version)
             if return_results == True:
                 dataset_res = {'masks':all_mask_l,'flows':all_flow_l,'styles':all_styles_l,'id':all_id_list}
                 all_results[f'{model_id}_{d_idx}']=dataset_res
 
     return all_results
 
-def models_from_zoo(model_dir, use_GPU=True,cp_version=__cp_version__):
+def models_from_zoo(model_dir, use_GPU=True,cp_version=__cp_version__,use_bfloat16=True):
     """
     Loads pre-trained cellpose model(s) from a folder.
 
@@ -454,6 +465,8 @@ def models_from_zoo(model_dir, use_GPU=True,cp_version=__cp_version__):
     ------------
     model_dir (str, Path) - model directory 
     use_GPU (bool (optional, default=True)) - GPU flag
+    cp_version (int (optional, default=__cp_version__)) - Cellpose version
+    use_bfloat16 (bool (optional, default=True)) - BFloat16 flag
 
     Returns
     ------------
@@ -468,7 +481,10 @@ def models_from_zoo(model_dir, use_GPU=True,cp_version=__cp_version__):
         model_list = natsorted(glob(f'{Path(model_dir)}/*.*'))
 
     try:
-        models.CellposeModel(gpu=use_GPU,pretrained_model=model_list[0])
+        if cp_version > 3:
+            model = models.CellposeModel(gpu=use_GPU,pretrained_model=model_list[0],use_bfloat16=use_bfloat16)  
+        else:
+            models.CellposeModel(gpu=use_GPU,pretrained_model=model_list[0])
     except:
         print('No cellpose model found in this directory.')
 
@@ -877,7 +893,7 @@ def get_stats_for_run(pred_list, res_list, titles,
     return res_stats
 
 def get_style_vectors(do_inference=True, tar_dir='', model='default', use_gpu=True,
-                      im_paths=None, mute = True,res_file=None,cp_version=__cp_version__):
+                      im_paths=None, mute = True,res_file=None,cp_version=__cp_version__,use_bfloat16=True):
     """
     Use to define.
     """
@@ -904,7 +920,10 @@ def get_style_vectors(do_inference=True, tar_dir='', model='default', use_gpu=Tr
     if do_inference == True:
         if im_paths:
             print(f'Running inference for styles with {Path(model).name}...')
-            model = models.CellposeModel(gpu=use_gpu,pretrained_model=model)
+            if cp_version > 3:
+                model = models.CellposeModel(gpu=use_gpu,pretrained_model=model,use_bfloat16=use_bfloat16)
+            else:
+                model = models.CellposeModel(gpu=use_gpu,pretrained_model=model)
             test_styles,train_styles,testnames,trainnames,testpaths,trainpaths = [],[],[],[],[],[]
 
             for path in im_paths:
