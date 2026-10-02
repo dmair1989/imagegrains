@@ -268,9 +268,9 @@ def segmentation_step(args,mute=False,tar_dir=''):
                     plotting.plot_single_img_pred(img,pred,file_id=file_id)
                     if tar_dir != '':
                         out_dir2 = Path(tar_dir)
-                        os.makedirs(out_dir2,exist_ok=True)
                     else:
                         out_dir2 = f'{Path(img_dir)}/predictions/'
+                    os.makedirs(out_dir2,exist_ok=True)
                     pred_plot_i.savefig(f'{out_dir2}/{file_id}_{model_id}_composite.png',dpi=300,bbox_inches='tight',pad_inches = 0)
                     plt.clf()
                     plt.close(pred_plot_i)

@@ -14,7 +14,7 @@ _1
 tSNE_clustering.ipynb
 copilot-instructions.md
 *json
-
+*.DS_Store
 # figures
 *.png
 *.jpg
